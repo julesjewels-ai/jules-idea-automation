@@ -11,6 +11,12 @@ from src.gemini_client import GeminiClient
 from src.github_client import GitHubClient
 from src.scraper import scrape_text
 
+
+def hello_world():
+    """Prints 'Hello, World!' to the console."""
+    print("Hello, World!")
+
+
 def process_idea_workflow(idea_data):
     """
     Orchestrates the creation of a GitHub repo and Jules session from an idea.
@@ -69,6 +75,9 @@ def main():
     website_parser = subparsers.add_parser("website", help="Scrape a website for an idea and send to Jules")
     website_parser.add_argument("--url", required=True, help="URL to scrape")
 
+    # Command: hello
+    subparsers.add_parser("hello", help="Prints a hello world message")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -95,6 +104,9 @@ def main():
             gemini = GeminiClient()
             idea_data = gemini.extract_idea_from_text(text)
             process_idea_workflow(idea_data)
+
+        elif args.command == "hello":
+            hello_world()
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
