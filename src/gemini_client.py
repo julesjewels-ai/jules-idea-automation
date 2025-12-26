@@ -16,7 +16,7 @@ class GeminiClient:
             raise ValueError("GEMINI_API_KEY environment variable is not set")
         
         self.client = genai.Client(api_key=self.api_key)
-        self.model_name = "gemini-3-pro-preview"
+        self.model_name = os.environ.get("GEMINI_MODEL", "gemini-3-pro-preview")
 
     def generate_idea(self):
         """Generates a unique software idea using Gemini 3."""

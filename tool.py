@@ -26,32 +26,41 @@ def process_idea_workflow(idea_data):
     username = user['login']
     
     print(f"Creating GitHub repository '{idea_data['slug']}'...")
-    gh_client.create_repo(
-        name=idea_data['slug'],
-        description=idea_data['description'],
-        private=True
-    )
-    
-    print("Initializing repository content...")
-    readme_content = f"# {idea_data['title']}\n\n{idea_data['description']}"
-    gh_client.create_file(
-        owner=username,
-        repo=idea_data['slug'],
-        path="README.md",
-        content=readme_content,
-        message="Initial commit: Add README with project description"
-    )
-    
+    try:
+        gh_client.create_repo(
+            name=idea_data['slug'],
+            description=idea_data['description'],
+            private=True
+        )
+
+        # Only try to create README if we think it's fresh, or just try anyway.
+        # But if repo existed, create_repo returned early.
+        # It's safer to just try creating/updating the README to ensure it matches current idea.
+        print("Initializing repository content...")
+        readme_content = f"# {idea_data['title']}\n\n{idea_data['description']}"
+        gh_client.create_file(
+            owner=username,
+            repo=idea_data['slug'],
+            path="README.md",
+            content=readme_content,
+            message="Initial commit: Add README with project description"
+        )
+    except Exception as e:
+        print(f"GitHub setup warning: {e}")
+        print("Proceeding to Jules session creation...")
+
     # 2. Jules Session
     source_id = f"sources/github/{username}/{idea_data['slug']}"
     print(f"Constructed Source ID: {source_id}")
     
     print("Creating session in Jules...")
-    jules = JulesClient()
-    session = jules.create_session(source_id, idea_data['description'])
-    
-    print("Session Created!")
-    print(json.dumps(session, indent=2))
+    try:
+        jules = JulesClient()
+        session = jules.create_session(source_id, idea_data['description'])
+        print("Session Created!")
+        print(json.dumps(session, indent=2))
+    except Exception as e:
+        print(f"Jules session creation failed: {e}")
 
 
 def main():

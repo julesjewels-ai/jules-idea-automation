@@ -20,8 +20,28 @@ class GitHubClient:
         response.raise_for_status()
         return response.json()
 
+    def get_repo(self, owner, name):
+        """Fetches repository details. Returns None if not found."""
+        url = f"{self.base_url}/repos/{owner}/{name}"
+        response = requests.get(url, headers=self.headers)
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()
+
     def create_repo(self, name, description, private=True):
-        """Creates a new repository."""
+        """Creates a new repository. Returns existing one if it already exists."""
+        # First check if it exists
+        try:
+            user = self.get_user()
+            owner = user['login']
+            existing_repo = self.get_repo(owner, name)
+            if existing_repo:
+                print(f"Repository '{owner}/{name}' already exists. Using existing repository.")
+                return existing_repo
+        except Exception as e:
+            print(f"Warning: Failed to check for existing repo: {e}")
+
         payload = {
             "name": name,
             "description": description,
