@@ -85,21 +85,38 @@ class GeminiClient:
         Returns:
             ProjectScaffold with files, requirements, and run command
         """
-        # Simplified prompt for faster generation
+        # Developer-ready MVP prompt
         prompt = f"""
-Generate a minimal MVP project scaffold for:
+Generate a DEVELOPER-READY MVP project scaffold for:
 
 **Project:** {idea_data['title']}
 **Description:** {idea_data['description'][:500]}
 
-Create these files:
-1. main.py - Orchestration only, imports from src/
-2. src/__init__.py - Empty
-3. src/core/__init__.py - Empty  
-4. src/core/app.py - Main business logic class
-5. .gitignore - Python defaults
+Create a complete, immediately-runnable project with these files:
 
-Keep code simple and functional. Use type hints. Max 50 lines per file.
+## Core Application
+1. main.py - Entry point with argparse CLI (--help, --version flags)
+2. src/__init__.py - Package marker
+3. src/core/__init__.py - Package marker
+4. src/core/app.py - Main business logic class with clear docstrings
+
+## Developer Experience  
+5. Makefile - With targets: install, run, test, clean
+6. .env.example - Sample environment variables (if any needed)
+7. .gitignore - Python + venv + IDE + .env patterns
+
+## Testing
+8. tests/__init__.py - Package marker
+9. tests/test_core.py - Basic unit test using pytest
+
+## Requirements:
+- Include 'pytest' in the requirements list
+- Makefile 'install' should: create venv, install deps
+- Makefile 'run' should: activate venv and run main.py
+- Makefile 'test' should: run pytest
+- Tests should pass immediately when run
+- Use type hints throughout
+- Each file should have a module docstring
 """
         
         for attempt in range(max_retries + 1):
@@ -124,30 +141,99 @@ Keep code simple and functional. Use type hints. Max 50 lines per file.
                     return self._get_fallback_scaffold(idea_data)
     
     def _get_fallback_scaffold(self, idea_data: dict) -> dict:
-        """Returns a minimal fallback scaffold when generation fails."""
+        """Returns a developer-ready fallback scaffold when generation fails."""
+        title = idea_data['title']
+        slug = idea_data.get('slug', 'app')
+        desc = idea_data['description'][:200]
+        
         return {
             "files": [
                 {
                     "path": "main.py",
                     "content": f'''#!/usr/bin/env python3
 """
-{idea_data['title']}
-{idea_data['description'][:200]}
+{title}
+
+{desc}
 """
 
-def main():
-    print("Welcome to {idea_data['title']}")
-    # TODO: Implement main logic
+import argparse
+from src.core.app import App
+
+
+def main() -> None:
+    """Main entry point with CLI support."""
+    parser = argparse.ArgumentParser(description="{title}")
+    parser.add_argument("--version", action="version", version="0.1.0")
+    args = parser.parse_args()
+    
+    app = App()
+    app.run()
+
 
 if __name__ == "__main__":
     main()
 ''',
-                    "description": "Main entry point"
+                    "description": "Main entry point with CLI"
                 },
                 {
                     "path": "src/__init__.py",
-                    "content": '"""Core package."""\n',
-                    "description": "Package init"
+                    "content": '"""Source package."""\n',
+                    "description": "Package marker"
+                },
+                {
+                    "path": "src/core/__init__.py",
+                    "content": '"""Core application package."""\n',
+                    "description": "Package marker"
+                },
+                {
+                    "path": "src/core/app.py",
+                    "content": f'''"""Core application logic for {title}."""
+
+
+class App:
+    """Main application class."""
+    
+    def __init__(self) -> None:
+        """Initialize the application."""
+        self.name = "{title}"
+    
+    def run(self) -> None:
+        """Run the main application logic."""
+        print(f"Welcome to {{self.name}}")
+        # TODO: Implement main logic
+''',
+                    "description": "Main business logic"
+                },
+                {
+                    "path": "Makefile",
+                    "content": f'''.PHONY: install run test clean
+
+install:
+\tpython -m venv venv
+\t. venv/bin/activate && pip install -r requirements.txt
+
+run:
+\t. venv/bin/activate && python main.py
+
+test:
+\t. venv/bin/activate && pytest tests/ -v
+
+clean:
+\trm -rf __pycache__ .pytest_cache
+\tfind . -type d -name "__pycache__" -exec rm -rf {{}} + 2>/dev/null || true
+''',
+                    "description": "Development commands"
+                },
+                {
+                    "path": ".env.example",
+                    "content": f'''# {title} - Environment Variables
+# Copy to .env and fill in values
+
+# Add your environment variables here
+# EXAMPLE_API_KEY=your_key_here
+''',
+                    "description": "Environment template"
                 },
                 {
                     "path": ".gitignore",
@@ -161,11 +247,48 @@ venv/
 *.egg-info/
 dist/
 build/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
 """,
                     "description": "Git ignore file"
+                },
+                {
+                    "path": "tests/__init__.py",
+                    "content": '"""Test package."""\n',
+                    "description": "Test package marker"
+                },
+                {
+                    "path": "tests/test_core.py",
+                    "content": f'''"""Tests for core application."""
+
+from src.core.app import App
+
+
+def test_app_init() -> None:
+    """Test app initialization."""
+    app = App()
+    assert app.name == "{title}"
+
+
+def test_app_run(capsys) -> None:
+    """Test app run output."""
+    app = App()
+    app.run()
+    captured = capsys.readouterr()
+    assert "Welcome to" in captured.out
+''',
+                    "description": "Core unit tests"
                 }
             ],
-            "requirements": [],
+            "requirements": ["pytest"],
             "run_command": "python main.py"
         }
 

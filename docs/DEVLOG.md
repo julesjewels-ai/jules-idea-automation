@@ -169,7 +169,38 @@ src/
 
 ---
 
+### Phase 7: Developer-Ready MVP Scaffolds
+
+**Date:** 2025-12-27
+
+**Changes:**
+
+Enhanced the generated MVP scaffolds to be immediately runnable by developers:
+
+1.  **Expanded Scaffold Files:**
+    -   `main.py` - Now includes argparse CLI with `--help` and `--version`
+    -   `src/core/app.py` - Business logic with clear docstrings
+    -   `Makefile` - `install`, `run`, `test`, `clean` targets
+    -   `.env.example` - Environment variable template
+    -   `tests/test_core.py` - Runnable unit tests with pytest
+    -   Total: 9 files (up from 5)
+
+2.  **Enhanced README Template:**
+    -   Added **Quick Start** section with one-liner setup
+    -   Added **Development** section with Makefile commands
+    -   Added **Testing** section with pytest command
+
+3.  **Improved Fallback Scaffold:**
+    -   Now generates full developer-ready structure even on API failure
+
+**Files Changed:**
+-   `src/services/gemini.py` - Enhanced prompt and fallback scaffold
+-   `src/core/readme_builder.py` - Added developer-focused sections
+
+---
+
 ### Future Improvements
 -   Add error handling for repo name collisions
 -   Support for configuring the GitHub organization
 -   Add unit tests with mocked services
+

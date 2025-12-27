@@ -47,6 +47,22 @@ def build_readme(
             "",
         ])
     
+    # Quick Start section
+    lines.extend([
+        "## Quick Start",
+        "",
+        "```bash",
+        "# Clone and setup",
+        "git clone <repo-url>",
+        f"cd {title.lower().replace(' ', '-')}",
+        "make install",
+        "",
+        "# Run the application",
+        "make run",
+        "```",
+        "",
+    ])
+    
     if requirements:
         lines.extend([
             "## Setup",
@@ -67,4 +83,28 @@ def build_readme(
             "",
         ])
     
+    # Development section
+    lines.extend([
+        "## Development",
+        "",
+        "```bash",
+        "make install  # Create venv and install dependencies",
+        "make run      # Run the application",
+        "make test     # Run tests",
+        "make clean    # Remove cache files",
+        "```",
+        "",
+    ])
+    
+    # Testing section
+    lines.extend([
+        "## Testing",
+        "",
+        "```bash",
+        "pytest tests/ -v",
+        "```",
+        "",
+    ])
+    
     return "\n".join(lines)
+
