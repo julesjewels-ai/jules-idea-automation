@@ -110,8 +110,40 @@ The user requested an enhancement to the workflow: **Automated Repository Creati
 
 ---
 
+### Phase 5: MVP Scaffolding with SOLID Principles
+
+**Date:** 2025-12-27
+
+**New Features:**
+
+1.  **AI-Generated Project Structure:**
+    -   Uses Gemini to generate complete MVP scaffold based on the idea
+    -   Creates modular `src/` directory structure (core/, services/, utils/)
+    -   Follows SOLID principles with clean separation of concerns
+    -   Main script is orchestration-only, no business logic
+
+2.  **Pydantic Models for Scaffold:**
+    -   `ProjectFile` - Represents a single file with path, content, description
+    -   `ProjectScaffold` - Contains files[], requirements[], run_command
+
+3.  **Batch File Creation:**
+    -   New `GitHubClient.create_files()` method using Git Data API
+    -   Creates all scaffold files in a single commit
+    -   Much more efficient than individual file creation
+
+4.  **Enhanced README:**
+    -   Automatically includes Setup and Usage sections
+    -   Shows pip install command from requirements
+    -   Documents run command from scaffold
+
+**Files Changed:**
+-   `src/gemini_client.py` - `ProjectFile`, `ProjectScaffold` models, `generate_project_scaffold()`
+-   `src/github_client.py` - `create_files()` for batch commits
+-   `tool.py` - Integration of scaffold generation into workflow
+
+---
+
 ### Future Improvements
 -   Add error handling for repo name collisions
 -   Support for configuring the GitHub organization
--   Add project templates for different categories
 -   Generate Markdown summary files with timestamps

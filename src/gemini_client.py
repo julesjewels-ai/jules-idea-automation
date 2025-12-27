@@ -92,48 +92,97 @@ class GeminiClient:
         )
         return json.loads(response.text)
 
-    def generate_project_scaffold(self, idea_data: dict):
+    def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
         """Generates a complete MVP project scaffold for the given idea.
         
         Args:
             idea_data: Dict with title, description, slug, tech_stack, features
+            max_retries: Number of retries on failure (default: 2)
         
         Returns:
             ProjectScaffold with files, requirements, and run command
         """
+        # Simplified prompt for faster generation
         prompt = f"""
-Generate a complete, working MVP project scaffold for this software idea:
+Generate a minimal MVP project scaffold for:
 
 **Project:** {idea_data['title']}
-**Description:** {idea_data['description']}
-**Tech Stack:** {', '.join(idea_data.get('tech_stack', ['Python']))}
-**Features:** {', '.join(idea_data.get('features', []))}
+**Description:** {idea_data['description'][:500]}
 
-Requirements:
-1. Follow SOLID principles strictly
-2. Keep main.py clean - orchestration ONLY, no business logic
-3. Create a src/ directory with modular components:
-   - src/core/ - Business logic and domain models
-   - src/services/ - External integrations and services  
-   - src/utils/ - Helper functions and utilities
-4. Include proper __init__.py files
-5. Add a .gitignore with Python defaults
-6. Create a README.md with setup instructions
-7. Generate working, runnable code (not just stubs)
-8. Use type hints throughout
-9. Include basic error handling
-10. Keep it minimal but functional - this is an MVP
+Create these files:
+1. main.py - Orchestration only, imports from src/
+2. src/__init__.py - Empty
+3. src/core/__init__.py - Empty  
+4. src/core/app.py - Main business logic class
+5. .gitignore - Python defaults
 
-Generate the complete file contents for each file.
+Keep code simple and functional. Use type hints. Max 50 lines per file.
 """
         
-        response = self.client.models.generate_content(
-            model=self.model_name,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(include_thoughts=True),
-                response_mime_type="application/json",
-                response_schema=ProjectScaffold
-            ),
-        )
-        return json.loads(response.text)
+        for attempt in range(max_retries + 1):
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        thinking_config=types.ThinkingConfig(include_thoughts=True),
+                        response_mime_type="application/json",
+                        response_schema=ProjectScaffold
+                    ),
+                )
+                return json.loads(response.text)
+            except Exception as e:
+                if attempt < max_retries:
+                    print(f"  Scaffold generation attempt {attempt + 1} failed, retrying...")
+                    continue
+                else:
+                    print(f"  Scaffold generation failed after {max_retries + 1} attempts: {e}")
+                    # Return minimal fallback scaffold
+                    return self._get_fallback_scaffold(idea_data)
+    
+    def _get_fallback_scaffold(self, idea_data: dict) -> dict:
+        """Returns a minimal fallback scaffold when generation fails."""
+        return {
+            "files": [
+                {
+                    "path": "main.py",
+                    "content": f'''#!/usr/bin/env python3
+"""
+{idea_data['title']}
+{idea_data['description'][:200]}
+"""
+
+def main():
+    print("Welcome to {idea_data['title']}")
+    # TODO: Implement main logic
+
+if __name__ == "__main__":
+    main()
+''',
+                    "description": "Main entry point"
+                },
+                {
+                    "path": "src/__init__.py",
+                    "content": '"""Core package."""\n',
+                    "description": "Package init"
+                },
+                {
+                    "path": ".gitignore",
+                    "content": """# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+venv/
+.env
+*.egg-info/
+dist/
+build/
+""",
+                    "description": "Git ignore file"
+                }
+            ],
+            "requirements": [],
+            "run_command": "python main.py"
+        }
+

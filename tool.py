@@ -37,7 +37,12 @@ def process_idea_workflow(idea_data, private=False, timeout=1800):
         private=private
     )
     
-    # Build enhanced README with tech stack and features
+    # Generate MVP scaffold with Gemini
+    print("Generating MVP scaffold with Gemini (this may take a moment)...")
+    gemini = GeminiClient()
+    scaffold = gemini.generate_project_scaffold(idea_data)
+    
+    # Build enhanced README with tech stack, features, and run instructions
     readme_lines = [
         f"# {idea_data['title']}",
         "",
@@ -61,9 +66,31 @@ def process_idea_workflow(idea_data, private=False, timeout=1800):
             "",
         ])
     
+    # Add setup and run instructions from scaffold
+    if scaffold.get('requirements'):
+        readme_lines.extend([
+            "## Setup",
+            "",
+            "```bash",
+            "pip install -r requirements.txt",
+            "```",
+            "",
+        ])
+    
+    if scaffold.get('run_command'):
+        readme_lines.extend([
+            "## Usage",
+            "",
+            "```bash",
+            scaffold['run_command'],
+            "```",
+            "",
+        ])
+    
     readme_content = "\n".join(readme_lines)
     
-    print("Initializing repository content...")
+    # First commit: Create README to initialize the repo
+    print("Initializing repository with README...")
     gh_client.create_file(
         owner=username,
         repo=idea_data['slug'],
@@ -71,6 +98,37 @@ def process_idea_workflow(idea_data, private=False, timeout=1800):
         content=readme_content,
         message="Initial commit: Add README with project description"
     )
+    
+    # Second commit: Add all scaffold files
+    if scaffold.get('files'):
+        print(f"Adding {len(scaffold['files'])} MVP files...")
+        
+        # Prepare files for batch creation
+        files_to_create = []
+        for file_info in scaffold['files']:
+            # Skip README.md since we already created it
+            if file_info['path'].lower() == 'readme.md':
+                continue
+            files_to_create.append({
+                'path': file_info['path'],
+                'content': file_info['content']
+            })
+        
+        # Add requirements.txt if we have dependencies
+        if scaffold.get('requirements'):
+            files_to_create.append({
+                'path': 'requirements.txt',
+                'content': '\n'.join(scaffold['requirements'])
+            })
+        
+        if files_to_create:
+            result = gh_client.create_files(
+                owner=username,
+                repo=idea_data['slug'],
+                files=files_to_create,
+                message="feat: Add MVP scaffold with SOLID structure"
+            )
+            print(f"  Created {result['files_created']} files in single commit")
     
     repo_url = f"https://github.com/{username}/{idea_data['slug']}"
     
