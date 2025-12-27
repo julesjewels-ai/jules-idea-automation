@@ -2,26 +2,9 @@ import os
 import json
 from google import genai
 from google.genai import types
-from pydantic import BaseModel, Field
 
-class IdeaResponse(BaseModel):
-    title: str = Field(description="The name of the software idea.")
-    description: str = Field(description="A detailed description of the idea, highlighting core functionality and value proposition.")
-    slug: str = Field(description="A short, kebab-case string suitable for a GitHub repository name (e.g., 'awesome-crm-tool').")
-    tech_stack: list[str] = Field(description="Recommended technologies and frameworks for implementing this idea.")
-    features: list[str] = Field(description="Key features to implement in the MVP.")
+from src.core.models import IdeaResponse, ProjectFile, ProjectScaffold
 
-
-class ProjectFile(BaseModel):
-    path: str = Field(description="Relative file path from project root (e.g., 'src/core/service.py')")
-    content: str = Field(description="Complete file content with proper formatting")
-    description: str = Field(description="Brief description of what this file does")
-
-
-class ProjectScaffold(BaseModel):
-    files: list[ProjectFile] = Field(description="List of files to create for the MVP")
-    requirements: list[str] = Field(description="Python package dependencies (for requirements.txt)")
-    run_command: str = Field(description="Command to run the application (e.g., 'python main.py')")
 
 
 # Category-specific prompt templates

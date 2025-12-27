@@ -143,7 +143,33 @@ The user requested an enhancement to the workflow: **Automated Repository Creati
 
 ---
 
+### Phase 6: SOLID Refactoring
+
+**Date:** 2025-12-27
+
+**Changes:**
+
+Refactored monolithic `tool.py` (387 lines) into clean modular structure:
+
+```
+main.py              # Entry point (orchestration only)
+src/
+├── cli/             # Argument parsing, command handlers
+├── core/            # Workflow, models, README builder
+├── services/        # Gemini, GitHub, Jules, Scraper
+└── utils/           # Polling, reporter
+```
+
+**Key Improvements:**
+-   **SRP**: Each file has one responsibility
+-   **DIP**: `IdeaWorkflow` uses dependency injection
+-   **Testability**: Services can be mocked for unit tests
+
+**Usage:** `python3 main.py agent --category cli_tool`
+
+---
+
 ### Future Improvements
 -   Add error handling for repo name collisions
 -   Support for configuring the GitHub organization
--   Generate Markdown summary files with timestamps
+-   Add unit tests with mocked services
