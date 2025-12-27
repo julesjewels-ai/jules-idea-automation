@@ -8,7 +8,7 @@ from argparse import Namespace
 from src.services.gemini import GeminiClient
 from src.services.github import GitHubClient
 from src.services.jules import JulesClient
-from src.services.scraper import scrape_text
+from src.services.scraper import scrape_text, ScrapingError
 from src.core.workflow import IdeaWorkflow
 from src.utils.reporter import (
     print_session_status,
@@ -47,9 +47,20 @@ def handle_agent(args: Namespace) -> None:
 def handle_website(args: Namespace) -> None:
     """Handle the website command."""
     print(f"Scraping {args.url}...")
-    text = scrape_text(args.url)
     
+    try:
+        text = scrape_text(args.url)
+    except ScrapingError as e:
+        print(f"\n❌ Scraping failed: {e}", file=sys.stderr)
+        print("\nTips:", file=sys.stderr)
+        print("  • Ensure the URL is publicly accessible (no login required)", file=sys.stderr)
+        print("  • Try a different URL that contains the idea description", file=sys.stderr)
+        print("  • Use 'python main.py agent' to generate a random idea instead", file=sys.stderr)
+        sys.exit(1)
+    
+    print(f"✓ Extracted {len(text)} characters of content")
     print("Extracting idea with Gemini...")
+    
     gemini = GeminiClient()
     idea_data = gemini.extract_idea_from_text(text)
     
