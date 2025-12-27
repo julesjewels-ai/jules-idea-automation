@@ -43,7 +43,75 @@ The user requested an enhancement to the workflow: **Automated Repository Creati
 -   **Environment Variables:** Adopted `python-dotenv` early to manage the growing list of keys (`JULES`, `GEMINI`, `GITHUB`).
 -   **Repo Initialization:** GitHub repos created via API are empty by default. To make them usable by Jules immediately, we added a step to commit a `README.md` via the API, which implicitly creates the default branch.
 
+---
+
+### Phase 3: Category Targeting & Open Source by Default
+
+**Date:** 2025-12-26
+
+**New Features:**
+
+1.  **Category-Aware Idea Generation:**
+    -   Added `--category` flag to target specific project types: `web_app`, `cli_tool`, `api_service`, `mobile_app`, `automation`, `ai_ml`.
+    -   Each category has a tailored prompt to generate more relevant ideas.
+
+2.  **Enhanced Idea Output:**
+    -   Ideas now include `tech_stack[]` and `features[]` arrays.
+    -   README.md is automatically enriched with these sections.
+
+3.  **Public Repositories by Default:**
+    -   Repos are now created as **public** by default (open source!).
+    -   Use `--private` flag to create private repositories.
+    -   Verified `.env` is in `.gitignore` to prevent secret exposure.
+
+4.  **Configurable Timeout:**
+    -   Added `--timeout` flag (default: 1800s = 30 minutes).
+    -   Controls how long to wait for Jules to index new repositories.
+
+5.  **Simple Reporting:**
+    -   Added `print_report()` function that summarizes the workflow.
+    -   Shows project name, repo URL, and Jules session URL.
+
+**Files Changed:**
+-   `src/gemini_client.py` - Category prompts, enhanced `IdeaResponse` model
+-   `tool.py` - New CLI args, updated workflow, reporting
+-   `.env.example` - Documentation for required environment variables
+-   `docs/ROADMAP.md` - Future phases documented
+
+---
+
+### Phase 4: Enhanced Session Tracking
+
+**Date:** 2025-12-26
+
+**New Features:**
+
+1.  **Session Tracking API Methods:**
+    -   `get_session(session_id)` - Retrieve session details
+    -   `list_sessions(page_size)` - List recent sessions
+    -   `list_activities(session_id)` - Get progress updates
+    -   `send_message(session_id, prompt)` - Send follow-up messages
+    -   `approve_plan(session_id)` - Approve pending plans
+    -   `is_session_complete(session_id)` - Check completion status and PR URL
+
+2.  **Watch Mode:**
+    -   Added `--watch` flag to `agent` and `website` commands
+    -   Polls session every 30 seconds until completion
+    -   Displays live progress updates and final PR URL
+
+3.  **Status Command:**
+    -   New `status <session_id>` command
+    -   Shows session title, URL, completion status, and recent activity
+    -   Supports `--watch` flag for continuous monitoring
+
+**Files Changed:**
+-   `src/jules_client.py` - 6 new session tracking methods
+-   `tool.py` - `--watch` flags, `status` command, `watch_session()` function
+
+---
+
 ### Future Improvements
--   Add error handling for repo name collisions (currently, GitHub API will return 422 if the repo exists).
--   Support for configuring the GitHub organization (currently defaults to the authenticated user).
--   Add support for `auto_init` with specific `.gitignore` templates.
+-   Add error handling for repo name collisions
+-   Support for configuring the GitHub organization
+-   Add project templates for different categories
+-   Generate Markdown summary files with timestamps
