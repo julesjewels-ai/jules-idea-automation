@@ -5,11 +5,6 @@ import sys
 import time
 from argparse import Namespace
 
-from src.services.gemini import GeminiClient
-from src.services.github import GitHubClient
-from src.services.jules import JulesClient
-from src.services.scraper import scrape_text, ScrapingError
-from src.core.workflow import IdeaWorkflow
 from src.utils.reporter import (
     print_session_status,
     print_watch_complete,
@@ -20,6 +15,8 @@ from src.utils.reporter import (
 
 def handle_list_sources() -> None:
     """Handle the list-sources command."""
+    from src.services.jules import JulesClient
+
     client = JulesClient()
     sources = client.list_sources()
     print(json.dumps(sources, indent=2))
@@ -27,6 +24,9 @@ def handle_list_sources() -> None:
 
 def handle_agent(args: Namespace) -> None:
     """Handle the agent command."""
+    from src.services.gemini import GeminiClient
+    from src.core.workflow import IdeaWorkflow
+
     category = getattr(args, 'category', None)
     print(f"Generating idea with Gemini{f' (category: {category})' if category else ''}...")
     
@@ -46,6 +46,10 @@ def handle_agent(args: Namespace) -> None:
 
 def handle_website(args: Namespace) -> None:
     """Handle the website command."""
+    from src.services.gemini import GeminiClient
+    from src.services.scraper import scrape_text, ScrapingError
+    from src.core.workflow import IdeaWorkflow
+
     print(f"Scraping {args.url}...")
     
     try:
@@ -77,6 +81,8 @@ def handle_website(args: Namespace) -> None:
 
 def handle_status(args: Namespace) -> None:
     """Handle the status command."""
+    from src.services.jules import JulesClient
+
     client = JulesClient()
     session_id = args.session_id
     
@@ -114,6 +120,8 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
     Returns:
         Tuple of (is_complete, pr_url or None)
     """
+    from src.services.jules import JulesClient
+
     jules = JulesClient()
     poll_interval = 30
     elapsed = 0
