@@ -43,7 +43,164 @@ The user requested an enhancement to the workflow: **Automated Repository Creati
 -   **Environment Variables:** Adopted `python-dotenv` early to manage the growing list of keys (`JULES`, `GEMINI`, `GITHUB`).
 -   **Repo Initialization:** GitHub repos created via API are empty by default. To make them usable by Jules immediately, we added a step to commit a `README.md` via the API, which implicitly creates the default branch.
 
+---
+
+### Phase 3: Category Targeting & Open Source by Default
+
+**Date:** 2025-12-26
+
+**New Features:**
+
+1.  **Category-Aware Idea Generation:**
+    -   Added `--category` flag to target specific project types: `web_app`, `cli_tool`, `api_service`, `mobile_app`, `automation`, `ai_ml`.
+    -   Each category has a tailored prompt to generate more relevant ideas.
+
+2.  **Enhanced Idea Output:**
+    -   Ideas now include `tech_stack[]` and `features[]` arrays.
+    -   README.md is automatically enriched with these sections.
+
+3.  **Public Repositories by Default:**
+    -   Repos are now created as **public** by default (open source!).
+    -   Use `--private` flag to create private repositories.
+    -   Verified `.env` is in `.gitignore` to prevent secret exposure.
+
+4.  **Configurable Timeout:**
+    -   Added `--timeout` flag (default: 1800s = 30 minutes).
+    -   Controls how long to wait for Jules to index new repositories.
+
+5.  **Simple Reporting:**
+    -   Added `print_report()` function that summarizes the workflow.
+    -   Shows project name, repo URL, and Jules session URL.
+
+**Files Changed:**
+-   `src/gemini_client.py` - Category prompts, enhanced `IdeaResponse` model
+-   `tool.py` - New CLI args, updated workflow, reporting
+-   `.env.example` - Documentation for required environment variables
+-   `docs/ROADMAP.md` - Future phases documented
+
+---
+
+### Phase 4: Enhanced Session Tracking
+
+**Date:** 2025-12-26
+
+**New Features:**
+
+1.  **Session Tracking API Methods:**
+    -   `get_session(session_id)` - Retrieve session details
+    -   `list_sessions(page_size)` - List recent sessions
+    -   `list_activities(session_id)` - Get progress updates
+    -   `send_message(session_id, prompt)` - Send follow-up messages
+    -   `approve_plan(session_id)` - Approve pending plans
+    -   `is_session_complete(session_id)` - Check completion status and PR URL
+
+2.  **Watch Mode:**
+    -   Added `--watch` flag to `agent` and `website` commands
+    -   Polls session every 30 seconds until completion
+    -   Displays live progress updates and final PR URL
+
+3.  **Status Command:**
+    -   New `status <session_id>` command
+    -   Shows session title, URL, completion status, and recent activity
+    -   Supports `--watch` flag for continuous monitoring
+
+**Files Changed:**
+-   `src/jules_client.py` - 6 new session tracking methods
+-   `tool.py` - `--watch` flags, `status` command, `watch_session()` function
+
+---
+
+### Phase 5: MVP Scaffolding with SOLID Principles
+
+**Date:** 2025-12-27
+
+**New Features:**
+
+1.  **AI-Generated Project Structure:**
+    -   Uses Gemini to generate complete MVP scaffold based on the idea
+    -   Creates modular `src/` directory structure (core/, services/, utils/)
+    -   Follows SOLID principles with clean separation of concerns
+    -   Main script is orchestration-only, no business logic
+
+2.  **Pydantic Models for Scaffold:**
+    -   `ProjectFile` - Represents a single file with path, content, description
+    -   `ProjectScaffold` - Contains files[], requirements[], run_command
+
+3.  **Batch File Creation:**
+    -   New `GitHubClient.create_files()` method using Git Data API
+    -   Creates all scaffold files in a single commit
+    -   Much more efficient than individual file creation
+
+4.  **Enhanced README:**
+    -   Automatically includes Setup and Usage sections
+    -   Shows pip install command from requirements
+    -   Documents run command from scaffold
+
+**Files Changed:**
+-   `src/gemini_client.py` - `ProjectFile`, `ProjectScaffold` models, `generate_project_scaffold()`
+-   `src/github_client.py` - `create_files()` for batch commits
+-   `tool.py` - Integration of scaffold generation into workflow
+
+---
+
+### Phase 6: SOLID Refactoring
+
+**Date:** 2025-12-27
+
+**Changes:**
+
+Refactored monolithic `tool.py` (387 lines) into clean modular structure:
+
+```
+main.py              # Entry point (orchestration only)
+src/
+├── cli/             # Argument parsing, command handlers
+├── core/            # Workflow, models, README builder
+├── services/        # Gemini, GitHub, Jules, Scraper
+└── utils/           # Polling, reporter
+```
+
+**Key Improvements:**
+-   **SRP**: Each file has one responsibility
+-   **DIP**: `IdeaWorkflow` uses dependency injection
+-   **Testability**: Services can be mocked for unit tests
+
+**Usage:** `python3 main.py agent --category cli_tool`
+
+---
+
+### Phase 7: Developer-Ready MVP Scaffolds
+
+**Date:** 2025-12-27
+
+**Changes:**
+
+Enhanced the generated MVP scaffolds to be immediately runnable by developers:
+
+1.  **Expanded Scaffold Files:**
+    -   `main.py` - Now includes argparse CLI with `--help` and `--version`
+    -   `src/core/app.py` - Business logic with clear docstrings
+    -   `Makefile` - `install`, `run`, `test`, `clean` targets
+    -   `.env.example` - Environment variable template
+    -   `tests/test_core.py` - Runnable unit tests with pytest
+    -   Total: 9 files (up from 5)
+
+2.  **Enhanced README Template:**
+    -   Added **Quick Start** section with one-liner setup
+    -   Added **Development** section with Makefile commands
+    -   Added **Testing** section with pytest command
+
+3.  **Improved Fallback Scaffold:**
+    -   Now generates full developer-ready structure even on API failure
+
+**Files Changed:**
+-   `src/services/gemini.py` - Enhanced prompt and fallback scaffold
+-   `src/core/readme_builder.py` - Added developer-focused sections
+
+---
+
 ### Future Improvements
--   Add error handling for repo name collisions (currently, GitHub API will return 422 if the repo exists).
--   Support for configuring the GitHub organization (currently defaults to the authenticated user).
--   Add support for `auto_init` with specific `.gitignore` templates.
+-   Add error handling for repo name collisions
+-   Support for configuring the GitHub organization
+-   Add unit tests with mocked services
+
