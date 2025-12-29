@@ -1,6 +1,44 @@
 """Console reporting utilities."""
 
+import sys
+import time
+import threading
 from typing import Optional
+
+
+class Spinner:
+    """A simple terminal spinner for long-running operations."""
+
+    def __init__(self, message: str = "Processing"):
+        self.message = message
+        self._stop_event = threading.Event()
+        self._thread = threading.Thread(target=self._spin, daemon=True)
+
+    def _spin(self) -> None:
+        chars = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+        i = 0
+        while not self._stop_event.is_set():
+            sys.stdout.write(f"\r{chars[i % len(chars)]} {self.message}")
+            sys.stdout.flush()
+            time.sleep(0.1)
+            i += 1
+        # Clear line on exit
+        sys.stdout.write(f"\r{' ' * (len(self.message) + 10)}\r")
+        sys.stdout.flush()
+
+    def update(self, message: str) -> None:
+        """Update the spinner message."""
+        # Ensure new message overwrites old one completely if shorter
+        padding = max(0, len(self.message) - len(message))
+        self.message = message + " " * padding
+
+    def __enter__(self) -> 'Spinner':
+        self._thread.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self._stop_event.set()
+        self._thread.join()
 
 
 def print_header(title: str, char: str = "=", width: int = 50) -> None:
