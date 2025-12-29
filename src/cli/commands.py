@@ -9,7 +9,8 @@ from src.utils.reporter import (
     print_session_status,
     print_watch_complete,
     print_watch_timeout,
-    print_progress
+    print_progress,
+    Spinner
 )
 
 
@@ -28,10 +29,11 @@ def handle_agent(args: Namespace) -> None:
     from src.core.workflow import IdeaWorkflow
 
     category = getattr(args, 'category', None)
-    print(f"Generating idea with Gemini{f' (category: {category})' if category else ''}...")
     
     gemini = GeminiClient()
-    idea_data = gemini.generate_idea(category=category)
+    msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
+    with Spinner(msg):
+        idea_data = gemini.generate_idea(category=category)
     
     workflow = IdeaWorkflow()
     result = workflow.execute(
@@ -53,7 +55,8 @@ def handle_website(args: Namespace) -> None:
     print(f"Scraping {args.url}...")
     
     try:
-        text = scrape_text(args.url)
+        with Spinner(f"Scraping {args.url}..."):
+            text = scrape_text(args.url)
     except ScrapingError as e:
         print(f"\n❌ Scraping failed: {e}", file=sys.stderr)
         print("\nTips:", file=sys.stderr)
@@ -63,10 +66,10 @@ def handle_website(args: Namespace) -> None:
         sys.exit(1)
     
     print(f"✓ Extracted {len(text)} characters of content")
-    print("Extracting idea with Gemini...")
     
     gemini = GeminiClient()
-    idea_data = gemini.extract_idea_from_text(text)
+    with Spinner("Extracting idea with Gemini..."):
+        idea_data = gemini.extract_idea_from_text(text)
     
     workflow = IdeaWorkflow()
     result = workflow.execute(
@@ -125,29 +128,35 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
     jules = JulesClient()
     poll_interval = 30
     elapsed = 0
+    is_complete = False
+    pr_url = None
     
-    print(f"\n👀 Watching session {session_id} (timeout: {timeout}s)...")
+    with Spinner(f"[{elapsed}s] Watching session {session_id}...") as spinner:
+        while elapsed < timeout:
+            is_complete, pr_url = jules.is_session_complete(session_id)
+
+            if is_complete:
+                break
+
+            # Show latest activity
+            try:
+                activities = jules.list_activities(session_id, page_size=1)
+                if activities.get("activities"):
+                    latest = activities["activities"][0]
+                    title = latest.get("progressUpdated", {}).get("title", "Working...")
+                    spinner.update(f"[{elapsed}s] {title}")
+                else:
+                    spinner.update(f"[{elapsed}s] Working...")
+            except Exception:
+                spinner.update(f"[{elapsed}s] Polling...")
+
+            time.sleep(poll_interval)
+            elapsed += poll_interval
     
-    while elapsed < timeout:
-        is_complete, pr_url = jules.is_session_complete(session_id)
-        
-        if is_complete:
-            print_watch_complete(elapsed, pr_url)
-            return is_complete, pr_url
-        
-        # Show latest activity
-        try:
-            activities = jules.list_activities(session_id, page_size=1)
-            if activities.get("activities"):
-                latest = activities["activities"][0]
-                title = latest.get("progressUpdated", {}).get("title", "Working...")
-                print_progress(elapsed, title)
-        except Exception:
-            print_progress(elapsed, "Polling...")
-        
-        time.sleep(poll_interval)
-        elapsed += poll_interval
-    
+    if is_complete:
+        print_watch_complete(elapsed, pr_url)
+        return is_complete, pr_url
+
     session = jules.get_session(session_id)
     print_watch_timeout(timeout, session.get('url', 'N/A'))
     return False, None
