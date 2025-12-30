@@ -1,10 +1,8 @@
 """Web scraping utilities with content validation."""
 
-import socket
-import ipaddress
-from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
+from src.utils.security import validate_url, ScrapingError
 
 
 # Minimum characters required to consider the page has meaningful content
@@ -25,11 +23,6 @@ BLOCKED_INDICATORS = [
 ]
 
 
-class ScrapingError(Exception):
-    """Raised when scraping fails or returns insufficient content."""
-    pass
-
-
 def scrape_text(url: str) -> str:
     """Fetches the content of a URL and extracts validated text.
     
@@ -43,7 +36,7 @@ def scrape_text(url: str) -> str:
         ScrapingError: If the page cannot be scraped or has insufficient content
     """
     try:
-        _validate_url(url)
+        validate_url(url)
 
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
@@ -74,8 +67,6 @@ def scrape_text(url: str) -> str:
         
     except ScrapingError:
         raise
-    except socket.gaierror:
-        raise ScrapingError(f"Could not resolve hostname for {url}")
     except requests.exceptions.HTTPError as e:
         raise ScrapingError(f"HTTP error accessing {url}: {e}")
     except requests.exceptions.Timeout:
@@ -84,42 +75,6 @@ def scrape_text(url: str) -> str:
         raise ScrapingError(f"Network error accessing {url}: {e}")
     except Exception as e:
         raise ScrapingError(f"Failed to scrape {url}: {e}")
-
-
-def _validate_url(url: str) -> None:
-    """Validate that the URL is safe to scrape.
-
-    Prevents SSRF by blocking access to local/private network addresses.
-
-    Args:
-        url: The URL to validate
-
-    Raises:
-        ScrapingError: If the URL is invalid or unsafe
-    """
-    try:
-        parsed = urlparse(url)
-        if parsed.scheme not in ('http', 'https'):
-            raise ScrapingError(f"Invalid scheme: {parsed.scheme}. Only http/https allowed.")
-
-        hostname = parsed.hostname
-        if not hostname:
-            raise ScrapingError("Invalid URL: No hostname found")
-
-        # Resolve hostname to IP
-        try:
-            ip_str = socket.gethostbyname(hostname)
-        except socket.gaierror:
-            raise ScrapingError(f"Could not resolve hostname: {hostname}")
-
-        ip = ipaddress.ip_address(ip_str)
-
-        # Check for private/local IPs
-        if ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_reserved:
-             raise ScrapingError(f"Access to private/local address {hostname} ({ip_str}) is blocked for security.")
-
-    except ValueError:
-        raise ScrapingError(f"Invalid URL format: {url}")
 
 
 def _validate_content(text: str, url: str) -> None:
