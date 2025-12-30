@@ -27,6 +27,9 @@ def main() -> None:
     
     try:
         dispatch_command(args)
+    except KeyboardInterrupt:
+        print("\n\n👋 Operation cancelled by user.", file=sys.stderr)
+        sys.exit(130)
     except Exception as e:
         if hasattr(e, 'response') and e.response is not None:
             print(f"HTTP Error: {e.response.status_code} - {e.response.text}", file=sys.stderr)
