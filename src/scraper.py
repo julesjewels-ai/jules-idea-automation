@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
+from src.utils.security import validate_url, ScrapingError
 
 def scrape_text(url):
     """
@@ -8,6 +9,9 @@ def scrape_text(url):
     Uses Playwright for JavaScript rendering support, falls back to requests.
     """
     try:
+        # Security: Validate URL to prevent SSRF
+        validate_url(url)
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
@@ -32,9 +36,14 @@ def scrape_text(url):
         text = '\n'.join(chunk for chunk in chunks if chunk)
         
         return text
+    except ScrapingError:
+        raise
     except Exception as e:
         print(f"Playwright scraping failed: {e}. Falling back to requests.")
         try:
+            # Re-validate just in case (though should be redundant if already checked)
+            validate_url(url)
+
             response = requests.get(url, timeout=10)
             response.raise_for_status()
 
@@ -55,5 +64,7 @@ def scrape_text(url):
             text = '\n'.join(chunk for chunk in chunks if chunk)
 
             return text
+        except ScrapingError:
+            raise
         except Exception as e2:
              raise RuntimeError(f"Failed to scrape URL {url}: {e2}")
