@@ -33,12 +33,18 @@ class Spinner:
         self.message = message + " " * padding
 
     def __enter__(self) -> 'Spinner':
+        if sys.stdout.isatty():
+            sys.stdout.write("\033[?25l")  # Hide cursor
+            sys.stdout.flush()
         self._thread.start()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self._stop_event.set()
         self._thread.join()
+        if sys.stdout.isatty():
+            sys.stdout.write("\033[?25h")  # Show cursor
+            sys.stdout.flush()
 
 
 def print_header(title: str, char: str = "=", width: int = 50) -> None:
