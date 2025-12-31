@@ -1,3 +1,3 @@
-## 2024-05-20 - CLI Spinners
-**Learning:** Python CLIs benefit significantly from threaded spinners for synchronous blocking operations. Simple `print` loops feel unresponsive.
-**Action:** Use the new `Spinner` class in `src/utils/reporter.py` for any future long-running tasks.
+## 2024-05-23 - CLI Color Experience
+**Learning:** Adding colors to CLI output significantly improves readability and user confidence, especially for error states and success messages. It makes the tool feel more polished and "pro".
+**Action:** Use a consistent color palette (Green=Success, Red=Error, Cyan=Info, Yellow=Warning/Tips) across all CLI interactions. Ensure colors are defined in a centralized way (like `Colors` class) for maintainability.
