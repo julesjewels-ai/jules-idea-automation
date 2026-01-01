@@ -1,5 +1,7 @@
 # Jules Automation Tool
 
+[![Website](https://img.shields.io/badge/Website-Visit%20Site-blue)](https://julesjewels-ai.github.io/jules-idea-automation/)
+
 A Python CLI tool that automates the software development lifecycle by generating ideas, creating repositories, and initializing Jules sessions.
 
 ## Overview

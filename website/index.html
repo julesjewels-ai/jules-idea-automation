@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jules Idea Automation | From Concept to Code in Seconds</title>
+    <meta name="description" content="Automate your software development lifecycle. Generate ideas, create GitHub repositories, and start Jules sessions with one command.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Background Particles -->
+    <div id="particles-js"></div>
+
+    <nav class="glass-nav">
+        <div class="nav-container">
+            <a href="#" class="logo">Jules<span>Idea</span></a>
+            <ul class="nav-links">
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#commands">Commands</a></li>
+                <li><a href="#integration">Integration</a></li>
+            </ul>
+            <a href="https://github.com/julesjewels-ai/jules-idea-automation" class="btn btn-primary btn-sm">GitHub</a>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="reveal">The AI-Powered <br><span class="gradient-text">Idea Factory</span></h1>
+                <p class="lead reveal">Automate the transition from raw concepts to initialized development environments. One tool. Infinite possibilities.</p>
+                <div class="hero-btns reveal">
+                    <a href="#integration" class="btn btn-primary btn-lg">Get Started</a>
+                    <a href="#features" class="btn btn-outline btn-lg">Explore Features</a>
+                </div>
+            </div>
+            
+            <div class="terminal-demo reveal">
+                <div class="terminal-header">
+                    <div class="dots">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                    </div>
+                    <div class="terminal-title">bash</div>
+                </div>
+                <div class="terminal-body">
+                    <div class="line"><span class="prompt">$</span> python main.py agent --category web_app</div>
+                    <div class="line output">Extracting innovation concepts...</div>
+                    <div class="line output">Generating SOLID MVP scaffold...</div>
+                    <div class="line output">Creating GitHub repository: <span class="cyan">jules-web-mvp</span></div>
+                    <div class="line output">Initializing development session...</div>
+                    <div class="line success">Done! Session active: <a href="#">v1/sessions/xyz...</a></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section id="overview" class="section">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2>Streamlined Workflow</h2>
+                <p>Jules-Idea-Automation bridges the gap between thinking and building.</p>
+            </div>
+            
+            <div class="workflow-grid">
+                <div class="workflow-step glass-card">
+                    <div class="step-icon">💡</div>
+                    <h3>Ideate</h3>
+                    <p>Uses Gemini Thinking Mode to brainstorm enterprise-grade concepts or extract them from URLs.</p>
+                </div>
+                <div class="workflow-step glass-card">
+                    <div class="step-icon">🏗️</div>
+                    <h3>Scaffold</h3>
+                    <p>Generates a 9-file SOLID project structure including tests, CLI, and environment configuration.</p>
+                </div>
+                <div class="workflow-step glass-card">
+                    <div class="step-icon">🚀</div>
+                    <h3>Deploy</h3>
+                    <p>Pushes to GitHub and triggers a Jules agent session to begin autonomous development.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="section bg-alt">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2>Powerful Capabilities</h2>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">🎯</div>
+                    <h4>Categorized Intelligence</h4>
+                    <p>Tailor your MVP with specific categories: Web Apps, CLI Tools, AI services, and more.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🧱</div>
+                    <h4>SOLID Architecture</h4>
+                    <p>Generated code follows best practices from day one, making it easy for AI agents to scale.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🛡️</div>
+                    <h4>Security-First</h4>
+                    <p>Automated .gitignore validation and environment sanitization for public repository safety.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">👁️</div>
+                    <h4>Real-time Tracking</h4>
+                    <p>Watch your session evolve with live status updates and PR generation triggers.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🕵️</div>
+                    <h4>Web Ingestion</h4>
+                    <p>Point the tool at any URL and let it extract technical requirements automatically.</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🛠️</div>
+                    <h4>CLI Power</h4>
+                    <p>Extensive command options for full control over timeouts, privacy, and categories.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="commands" class="section">
+        <div class="container">
+            <div class="section-header text-center">
+                <h2>CLI Reference</h2>
+                <p>Command your development lifecycle.</p>
+            </div>
+
+            <div class="command-box glass-card">
+                <div class="command-tabs">
+                    <button class="tab-btn active" data-target="cmd-agent">Agent</button>
+                    <button class="tab-btn" data-target="cmd-website">Website</button>
+                    <button class="tab-btn" data-target="cmd-status">Status</button>
+                </div>
+                <div class="tab-content" id="cmd-agent">
+                    <div class="code-header">
+                        <span>Terminal</span>
+                        <button class="copy-btn" data-copy="python main.py agent --category cli_tool --watch">Copy</button>
+                    </div>
+                    <pre><code>python main.py agent --category cli_tool --watch</code></pre>
+                    <p class="cmd-desc">Generate a CLI tool idea, scaffold repo, and watch the development session until completion.</p>
+                </div>
+                <div class="tab-content hidden" id="cmd-website">
+                    <div class="code-header">
+                        <span>Terminal</span>
+                        <button class="copy-btn" data-copy="python main.py website --url https://github.com/example">Copy</button>
+                    </div>
+                    <pre><code>python main.py website --url [URL]</code></pre>
+                    <p class="cmd-desc">Extract a project idea from a website and initialize the full automation pipeline.</p>
+                </div>
+                <div class="tab-content hidden" id="cmd-status">
+                    <div class="code-header">
+                        <span>Terminal</span>
+                        <button class="copy-btn" data-copy="python main.py status [SESSION_ID] --watch">Copy</button>
+                    </div>
+                    <pre><code>python main.py status [ID] --watch</code></pre>
+                    <p class="cmd-desc">Monitor an ongoing session and automatically report the Pull Request URL when finished.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="integration" class="section bg-alt">
+        <div class="container">
+            <div class="grid-2">
+                <div class="integration-content">
+                    <h2>Ready to Integrate?</h2>
+                    <p>Get up and running in minutes. Simply clone, configure, and execute.</p>
+                    <ul class="steps-list">
+                        <li>
+                            <span class="step-num">1</span>
+                            <div>
+                                <strong>Clone & Install</strong>
+                                <p>Standard Python venv setup.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">2</span>
+                            <div>
+                                <strong>Configure .env</strong>
+                                <p>Provide GitHub, Gemini, and Jules keys.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="step-num">3</span>
+                            <div>
+                                <strong>Run the Factory</strong>
+                                <p>Start your first automated project.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="integration-code glass-card">
+                    <div class="code-header">
+                        <span>Quick Setup</span>
+                        <button class="copy-btn" data-copy="git clone https://github.com/julesjewels-ai/jules-idea-automation.git
+cd jules-idea-automation
+pip install -r requirements.txt">Copy</button>
+                    </div>
+                    <pre><code># Quickstart
+git clone https://github.com/julesjewels-ai/jules-idea-automation.git
+cd jules-idea-automation
+pip install -r requirements.txt</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="logo">Jules<span>Idea</span></a>
+                    <p>Architecting the future of autonomous development.</p>
+                </div>
+                <div class="footer-links">
+                    <h5>Links</h5>
+                    <ul>
+                        <li><a href="https://github.com/julesjewels-ai/jules-idea-automation">GitHub</a></li>
+                        <li><a href="https://jules.ai">Jules Platform</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Jules-Idea-Automation. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
