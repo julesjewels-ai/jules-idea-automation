@@ -21,7 +21,11 @@ class Colors:
 
 
 class Spinner:
-    """A simple terminal spinner for long-running operations."""
+    """A simple terminal spinner for long-running operations.
+
+    Displays a spinning animation during execution and updates to a
+    success (✔) or failure (✖) state upon completion.
+    """
 
     def __init__(self, message: str = "Processing"):
         self.message = message
@@ -36,9 +40,6 @@ class Spinner:
             sys.stdout.flush()
             time.sleep(0.1)
             i += 1
-        # Clear line on exit
-        sys.stdout.write(f"\r{' ' * (len(self.message) + 10)}\r")
-        sys.stdout.flush()
 
     def update(self, message: str) -> None:
         """Update the spinner message."""
@@ -58,6 +59,14 @@ class Spinner:
         self._thread.join()
         if sys.stdout.isatty():
             sys.stdout.write("\033[?25h")  # Show cursor
+
+            if exc_type:
+                symbol = f"{Colors.FAIL}✖{Colors.ENDC}"
+            else:
+                symbol = f"{Colors.GREEN}✔{Colors.ENDC}"
+
+            # Overwrite the spinner with final status
+            sys.stdout.write(f"\r{symbol} {self.message}\n")
             sys.stdout.flush()
 
 
