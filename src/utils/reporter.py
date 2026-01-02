@@ -145,3 +145,23 @@ def print_watch_timeout(timeout: int, session_url: str) -> None:
     """Prints timeout message."""
     print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {timeout}s. Session still running.{Colors.ENDC}")
     print(f"   Check status at: {Colors.UNDERLINE}{session_url}{Colors.ENDC}")
+
+def print_sources_list(response: dict) -> None:
+    """Prints a formatted list of sources."""
+    sources = response.get("sources", [])
+
+    print_header("📚 JULES SOURCES")
+
+    if not sources:
+        print(f"\n{Colors.YELLOW}No sources found.{Colors.ENDC}")
+        print(f"\n{Colors.BOLD}Tips:{Colors.ENDC}")
+        print("  • Connect a GitHub repository to Jules to get started")
+        return
+
+    print(f"\nFound {len(sources)} source(s):\n")
+
+    for source in sources:
+        name = source.get("name", "Unknown")
+
+        print(f"{Colors.GREEN}• {Colors.BOLD}{name}{Colors.ENDC}")
+        print("")
