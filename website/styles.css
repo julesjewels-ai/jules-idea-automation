@@ -340,11 +340,14 @@ pre {
     overflow-x: auto;
     margin-bottom: 1rem;
     border: 1px solid rgba(255, 255, 255, 0.05);
+    max-width: 100%;
 }
 
 code {
     font-family: var(--font-mono);
     color: #ADDB67;
+    white-space: pre;
+    word-break: normal;
 }
 
 .copy-btn {
@@ -451,14 +454,75 @@ code {
 
 /* Responsive */
 @media (max-width: 968px) {
+    .container {
+        padding: 0 1.5rem;
+    }
+
     .hero .container, .grid-2, .workflow-grid, .features-grid {
         grid-template-columns: 1fr;
+        gap: 2.5rem;
     }
     
     .hero-content { text-align: center; }
     .hero-btns { justify-content: center; }
-    .hero { padding-top: 6rem; }
+    .hero { padding: 6rem 0 3rem; }
     .hero-content h1 { font-size: 2.8rem; }
     
     .nav-links { display: none; }
+
+    .integration-code {
+        margin-top: 1rem;
+    }
+
+    .grid-2 > div {
+        min-width: 0;
+    }
+
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        text-align: center;
+    }
+
+    .footer-brand p {
+        margin: 1rem auto;
+    }
+}
+
+@media (max-width: 600px) {
+    .hero-content h1 {
+        font-size: 2.2rem;
+    }
+
+    .section-header h2 {
+        font-size: 2rem;
+    }
+
+    .hero-btns {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .btn-lg {
+        width: 100%;
+        text-align: center;
+    }
+
+    .terminal-demo {
+        font-size: 0.8rem;
+    }
+
+    .glass-card {
+        padding: 1.5rem;
+    }
+
+    .nav-container {
+        padding: 0 1rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .hero-content h1 {
+        font-size: 1.8rem;
+    }
 }
