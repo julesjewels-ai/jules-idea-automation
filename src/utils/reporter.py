@@ -145,3 +145,27 @@ def print_watch_timeout(timeout: int, session_url: str) -> None:
     """Prints timeout message."""
     print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {timeout}s. Session still running.{Colors.ENDC}")
     print(f"   Check status at: {Colors.UNDERLINE}{session_url}{Colors.ENDC}")
+
+
+def print_sources_list(sources_data: dict) -> None:
+    """Prints a formatted list of available sources."""
+    sources = sources_data.get("sources", [])
+
+    print_header("🔌 AVAILABLE SOURCES")
+
+    if not sources:
+        print(f"{Colors.YELLOW}No sources found.{Colors.ENDC}")
+        return
+
+    print(f"{Colors.BOLD}{'NAME':<30} {'REPO URL':<50}{Colors.ENDC}")
+    print(f"{Colors.BLUE}{'-' * 81}{Colors.ENDC}")
+
+    for source in sources:
+        display_name = source.get("displayName", "Unknown")
+        # Extract repo URL if available
+        repo_url = source.get("githubSource", {}).get("url", "N/A")
+
+        print(f"{Colors.GREEN}{display_name:<30}{Colors.ENDC} {repo_url:<50}")
+
+    print(f"{Colors.BLUE}{'=' * 81}{Colors.ENDC}")
+    print(f"{Colors.CYAN}Tip: Use these source names when generating ideas.{Colors.ENDC}\n")
