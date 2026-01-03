@@ -1,17 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jules Idea Automation | From Concept to Code in Seconds</title>
-    <meta name="description" content="Automate your software development lifecycle. Generate ideas, create GitHub repositories, and start Jules sessions with one command.">
+    <meta name="description"
+        content="Automate your software development lifecycle. Generate ideas, create GitHub repositories, and start Jules sessions with one command.">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
     <!-- Background Particles -->
     <div id="particles-js"></div>
 
@@ -28,17 +34,18 @@
         </div>
     </nav>
 
-    <header class="hero">
+    <header id="main-content" class="hero">
         <div class="container">
             <div class="hero-content">
                 <h1 class="reveal">The AI-Powered <br><span class="gradient-text">Idea Factory</span></h1>
-                <p class="lead reveal">Automate the transition from raw concepts to initialized development environments. One tool. Infinite possibilities.</p>
+                <p class="lead reveal">Automate the transition from raw concepts to initialized development
+                    environments. One tool. Infinite possibilities.</p>
                 <div class="hero-btns reveal">
                     <a href="#integration" class="btn btn-primary btn-lg">Get Started</a>
                     <a href="#features" class="btn btn-outline btn-lg">Explore Features</a>
                 </div>
             </div>
-            
+
             <div class="terminal-demo reveal">
                 <div class="terminal-header">
                     <div class="dots">
@@ -66,7 +73,7 @@
                 <h2>Streamlined Workflow</h2>
                 <p>Jules-Idea-Automation bridges the gap between thinking and building.</p>
             </div>
-            
+
             <div class="workflow-grid">
                 <div class="workflow-step glass-card">
                     <div class="step-icon">💡</div>
@@ -76,7 +83,8 @@
                 <div class="workflow-step glass-card">
                     <div class="step-icon">🏗️</div>
                     <h3>Scaffold</h3>
-                    <p>Generates a 9-file SOLID project structure including tests, CLI, and environment configuration.</p>
+                    <p>Generates a 9-file SOLID project structure including tests, CLI, and environment configuration.
+                    </p>
                 </div>
                 <div class="workflow-step glass-card">
                     <div class="step-icon">🚀</div>
@@ -92,7 +100,7 @@
             <div class="section-header text-center">
                 <h2>Powerful Capabilities</h2>
             </div>
-            
+
             <div class="features-grid">
                 <div class="feature-item">
                     <div class="feature-icon">🎯</div>
@@ -136,34 +144,43 @@
             </div>
 
             <div class="command-box glass-card">
-                <div class="command-tabs">
-                    <button class="tab-btn active" data-target="cmd-agent">Agent</button>
-                    <button class="tab-btn" data-target="cmd-website">Website</button>
-                    <button class="tab-btn" data-target="cmd-status">Status</button>
+                <div class="command-tabs" role="tablist" aria-label="CLI Commands">
+                    <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="cmd-agent"
+                        id="tab-agent" data-target="cmd-agent">Agent</button>
+                    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="cmd-website"
+                        id="tab-website" data-target="cmd-website">Website</button>
+                    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="cmd-status" id="tab-status"
+                        data-target="cmd-status">Status</button>
                 </div>
-                <div class="tab-content" id="cmd-agent">
+                <div class="tab-content" id="cmd-agent" role="tabpanel" aria-labelledby="tab-agent">
                     <div class="code-header">
                         <span>Terminal</span>
-                        <button class="copy-btn" data-copy="python main.py agent --category cli_tool --watch">Copy</button>
+                        <button class="copy-btn" aria-label="Copy code to clipboard"
+                            data-copy="python main.py agent --category cli_tool --watch">Copy</button>
                     </div>
                     <pre><code>python main.py agent --category cli_tool --watch</code></pre>
-                    <p class="cmd-desc">Generate a CLI tool idea, scaffold repo, and watch the development session until completion.</p>
+                    <p class="cmd-desc">Generate a CLI tool idea, scaffold repo, and watch the development session until
+                        completion.</p>
                 </div>
-                <div class="tab-content hidden" id="cmd-website">
+                <div class="tab-content hidden" id="cmd-website" role="tabpanel" aria-labelledby="tab-website">
                     <div class="code-header">
                         <span>Terminal</span>
-                        <button class="copy-btn" data-copy="python main.py website --url https://github.com/example">Copy</button>
+                        <button class="copy-btn" aria-label="Copy code to clipboard"
+                            data-copy="python main.py website --url https://github.com/example">Copy</button>
                     </div>
                     <pre><code>python main.py website --url [URL]</code></pre>
-                    <p class="cmd-desc">Extract a project idea from a website and initialize the full automation pipeline.</p>
+                    <p class="cmd-desc">Extract a project idea from a website and initialize the full automation
+                        pipeline.</p>
                 </div>
-                <div class="tab-content hidden" id="cmd-status">
+                <div class="tab-content hidden" id="cmd-status" role="tabpanel" aria-labelledby="tab-status">
                     <div class="code-header">
                         <span>Terminal</span>
-                        <button class="copy-btn" data-copy="python main.py status [SESSION_ID] --watch">Copy</button>
+                        <button class="copy-btn" aria-label="Copy code to clipboard"
+                            data-copy="python main.py status [SESSION_ID] --watch">Copy</button>
                     </div>
                     <pre><code>python main.py status [ID] --watch</code></pre>
-                    <p class="cmd-desc">Monitor an ongoing session and automatically report the Pull Request URL when finished.</p>
+                    <p class="cmd-desc">Monitor an ongoing session and automatically report the Pull Request URL when
+                        finished.</p>
                 </div>
             </div>
         </div>
@@ -202,7 +219,7 @@
                 <div class="integration-code glass-card">
                     <div class="code-header">
                         <span>Quick Setup</span>
-                        <button class="copy-btn" data-copy="git clone https://github.com/julesjewels-ai/jules-idea-automation.git
+                        <button class="copy-btn" aria-label="Copy code to clipboard" data-copy="git clone https://github.com/julesjewels-ai/jules-idea-automation.git
 cd jules-idea-automation
 pip install -r requirements.txt">Copy</button>
                     </div>
@@ -238,4 +255,5 @@ pip install -r requirements.txt</code></pre>
 
     <script src="script.js"></script>
 </body>
+
 </html>

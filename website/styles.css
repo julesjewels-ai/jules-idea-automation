@@ -32,6 +32,24 @@ body {
     overflow-x: hidden;
 }
 
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: 0;
+    background: var(--primary);
+    color: white;
+    padding: 1rem;
+    z-index: 2000;
+    transition: top 0.3s;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 0 0 8px 0;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -142,8 +160,20 @@ h1, h2, h3, h4, h5 {
     background: var(--glass);
 }
 
+.btn-success {
+    background: var(--success) !important;
+    color: white !important;
+    border-color: var(--success) !important;
+}
+
 .btn-lg { padding: 1rem 2rem; font-size: 1.1rem; }
 .btn-sm { padding: 0.5rem 1rem; font-size: 0.9rem; }
+
+/* Focus States */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 4px;
+}
 
 /* Hero Section */
 .hero {

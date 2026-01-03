@@ -23,8 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const target = btn.dataset.target;
 
             // Update Buttons
-            tabBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            tabBtns.forEach(b => {
+                const isActive = b === btn;
+                b.classList.toggle('active', isActive);
+                b.setAttribute('aria-selected', isActive);
+            });
 
             // Update Content
             tabContents.forEach(content => {
@@ -44,12 +47,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const textToCopy = btn.dataset.copy;
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const originalText = btn.textContent;
+                const originalAria = btn.getAttribute('aria-label');
                 btn.textContent = 'Copied!';
                 btn.classList.add('btn-success');
+                btn.setAttribute('aria-label', 'Copied to clipboard');
                 
                 setTimeout(() => {
                     btn.textContent = originalText;
                     btn.classList.remove('btn-success');
+                    btn.setAttribute('aria-label', originalAria);
                 }, 2000);
             });
         });
