@@ -15,7 +15,7 @@ class JulesClient:
     def list_sources(self):
         """Lists available sources from Jules API."""
         url = f"{self.base_url}/sources"
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(url, headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json()
 
@@ -37,7 +37,7 @@ class JulesClient:
             "title": "Automated Idea Session"
         }
         
-        response = requests.post(url, headers=self.headers, json=payload)
+        response = requests.post(url, headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()
         return response.json()
     
@@ -59,7 +59,7 @@ class JulesClient:
             Session object with outputs if complete
         """
         url = f"{self.base_url}/sessions/{session_id}"
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(url, headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json()
     
@@ -70,7 +70,7 @@ class JulesClient:
             page_size: Number of sessions to return (default: 10)
         """
         url = f"{self.base_url}/sessions?pageSize={page_size}"
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(url, headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json()
     
@@ -82,7 +82,7 @@ class JulesClient:
             page_size: Number of activities to return (default: 30)
         """
         url = f"{self.base_url}/sessions/{session_id}/activities?pageSize={page_size}"
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(url, headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json()
     
@@ -95,7 +95,7 @@ class JulesClient:
         """
         url = f"{self.base_url}/sessions/{session_id}:sendMessage"
         payload = {"prompt": prompt}
-        response = requests.post(url, headers=self.headers, json=payload)
+        response = requests.post(url, headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()
         return response.json() if response.text else {}
     
@@ -106,7 +106,7 @@ class JulesClient:
             session_id: The session ID
         """
         url = f"{self.base_url}/sessions/{session_id}:approvePlan"
-        response = requests.post(url, headers=self.headers)
+        response = requests.post(url, headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json() if response.text else {}
     

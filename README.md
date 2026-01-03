@@ -7,9 +7,23 @@ A Python CLI tool that automates the software development lifecycle by generatin
 ## Overview
 
 This tool acts as an "Idea Factory" that:
-1. **Generates Ideas:** Uses Google's Gemini 3 to generate or extract software concepts
-2. **Creates Repos:** Automatically creates a GitHub repository with MVP scaffold
-3. **Starts Jules:** Creates a Jules session linked to the new repository
+1. **Generates Ideas:** Uses Google's Gemini 3 (Thinking Mode) to generate or extract software concepts.
+2. **Creates Repos:** Automatically creates a GitHub repository with a SOLID MVP scaffold.
+3. **Starts Jules:** Creates a Jules session linked to the new repository for autonomous development.
+4. **Web UI:** Provides a beautiful landing page for project overview and quick setup.
+
+## 🌐 Web Interface
+
+The project includes a modern, responsive web interface located in the `website/` directory.
+
+- **Landing Page:** Interactive overview of features and workflow.
+- **Terminal Demo:** Visual representation of the CLI in action.
+- **Mobile Optimized:** Fully responsive design with glassmorphism aesthetics.
+
+To view the site locally:
+```bash
+open website/index.html
+```
 
 ## Prerequisites
 
@@ -37,36 +51,57 @@ GITHUB_TOKEN=your_github_token
 
 ## Usage
 
-Run via `main.py`:
+The tool provides several commands to manage your developer lifecycle:
 
+### 🤖 Agent Mode
+Generate a new idea from scratch.
 ```bash
 # Generate a random idea
 python main.py agent
 
-# Generate a targeted idea (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
-python main.py agent --category cli_tool
+# Generate a targeted idea by category
+# Categories: web_app, cli_tool, api_service, mobile_app, automation, ai_ml
+python main.py agent --category cli_tool --watch
+```
 
-# Extract idea from a website
-python main.py website --url https://example.com
+### 🌐 Website Mode
+Extract an idea from an existing URL.
+```bash
+# Point to a blog post, GitHub issue, or landing page
+python main.py website --url https://example.com/idea --watch
+```
 
-# Watch session until PR is created
-python main.py agent --watch
-
-# Check session status
+### 📊 Status & Tracking
+Monitor active sessions.
+```bash
+# Check progress and get PR URL
 python main.py status <session_id>
 
-# List available sources
+# Watch until completion
+python main.py status <session_id> --watch
+
+# List your Jules sources
 python main.py list-sources
 ```
 
 ### Options
 
-| Flag | Description |
-|------|-------------|
-| `--category` | Target a specific idea category |
-| `--private` | Create private repo (default: public) |
-| `--timeout` | Timeout in seconds (default: 1800) |
-| `--watch` | Watch session until completion |
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--category` | Target a specific idea category | None |
+| `--private` | Create private repo (instead of public) | False |
+| `--timeout` | Timeout in seconds for indexing/watching | 1800 |
+| `--watch` | Live-poll session until completion | False |
+| `--url` | Target URL for website mode | Required |
+
+## 🛡️ Security
+
+Security is a first-class citizen in the Jules Automation Tool:
+
+1. **SSRF Protection:** Web scraping includes hostname resolution and private IP blocking to prevent Server-Side Request Forgery.
+2. **Content Validation:** Ingested text is validated for meaningful content and blocked-access indicators.
+3. **Network Robustness:** All external API calls (GitHub, Jules) include a 30-second timeout to prevent application hangs.
+4. **Credential Safety:** Automated `.gitignore` patterns prevent accidental exposure of `.env` files.
 
 ## Project Structure
 

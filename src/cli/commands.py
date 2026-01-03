@@ -82,6 +82,47 @@ def handle_website(args: Namespace) -> None:
         watch_session(result.session_id, timeout=args.timeout)
 
 
+def handle_manual(args: Namespace) -> None:
+    """Handle the manual command."""
+    from src.core.workflow import IdeaWorkflow
+    from src.utils.slugify import slugify
+
+    # Handle very long titles gracefully
+    raw_title = args.title
+    if len(raw_title) > 100:
+        # If the title is too long, it's likely a full description
+        description = raw_title
+        # Use first 50 chars as a title prefix
+        title = raw_title[:50].split('.')[0].strip() or "Manual Idea"
+    else:
+        title = raw_title
+        description = args.description or raw_title
+
+    slug = args.slug or slugify(title)
+
+    # Parse comma-separated lists
+    tech_stack = [item.strip() for item in args.tech_stack.split(',')] if args.tech_stack else []
+    features = [item.strip() for item in args.features.split(',')] if args.features else []
+
+    idea_data = {
+        "title": title,
+        "description": description,
+        "slug": slug,
+        "tech_stack": tech_stack,
+        "features": features
+    }
+
+    workflow = IdeaWorkflow()
+    result = workflow.execute(
+        idea_data,
+        private=args.private,
+        timeout=args.timeout
+    )
+
+    if result.session_id and args.watch:
+        watch_session(result.session_id, timeout=args.timeout)
+
+
 def handle_status(args: Namespace) -> None:
     """Handle the status command."""
     from src.services.jules import JulesClient
@@ -168,6 +209,7 @@ def dispatch_command(args: Namespace) -> None:
         "list-sources": lambda: handle_list_sources(),
         "agent": lambda: handle_agent(args),
         "website": lambda: handle_website(args),
+        "manual": lambda: handle_manual(args),
         "status": lambda: handle_status(args),
     }
     

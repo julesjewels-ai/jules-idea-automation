@@ -79,4 +79,31 @@ def create_parser() -> argparse.ArgumentParser:
         help="Timeout in seconds for watching (default: 1800 = 30 min)"
     )
 
+    # Command: manual
+    manual_parser = subparsers.add_parser(
+        "manual",
+        help="Manually enter an idea and send to Jules"
+    )
+    manual_parser.add_argument("title", help="The title of the idea")
+    manual_parser.add_argument("--description", help="A detailed description of the idea")
+    manual_parser.add_argument("--slug", help="Custom GitHub repository slug (auto-generated if omitted)")
+    manual_parser.add_argument("--tech_stack", help="Comma-separated list of technologies")
+    manual_parser.add_argument("--features", help="Comma-separated list of MVP features")
+    manual_parser.add_argument(
+        "--private",
+        action="store_true",
+        help="Create a private repository (default: public)"
+    )
+    manual_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=1800,
+        help="Timeout in seconds for Jules indexing (default: 1800 = 30 min)"
+    )
+    manual_parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="Watch the session until completion and show PR URL"
+    )
+
     return parser

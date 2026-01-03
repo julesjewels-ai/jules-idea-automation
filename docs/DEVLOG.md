@@ -199,6 +199,79 @@ Enhanced the generated MVP scaffolds to be immediately runnable by developers:
 
 ---
 
+---
+
+### Phase 8: Security Audit & Remediation
+
+**Date:** 2025-12-27
+
+**Goal:** Address vulnerabilities identified in the initial security scan.
+
+**Changes:**
+1.  **Dependency Pinning:** Updated `requirements.txt` to use specific versions for all libraries.
+2.  **Network Timeouts:** Implemented 30s timeouts on all `requests` calls in `GitHubClient` and `JulesClient` to prevent hangs.
+3.  **Error Sanitization:** Reduced verbosity of exception reporting in `main.py` to prevent internal path leaks.
+
+**Files Changed:**
+-   `requirements.txt`
+-   `src/services/github.py`
+-   `src/services/jules.py`
+-   `main.py`
+
+---
+
+### Phase 9: Robust Web Scraping
+
+**Date:** 2025-12-27
+
+**Goal:** Prevent SSRF and improve content quality for `website` command.
+
+**Changes:**
+1.  **SSRF Protection:** Added `_validate_url` to `scraper.py` which resolves hostnames and blocks private/local IP ranges.
+2.  **Content Validation:** Added `_validate_content` to ensure scraped text is meaningful (>200 chars) and doesn't contain login/blocked markers.
+3.  **Improved Extraction:** Refined logic to exclude navigation, headers, and footers from text extraction.
+
+**Files Changed:**
+-   `src/services/scraper.py`
+-   `tests/services/test_scraper.py`
+
+---
+
+### Phase 10: Web Interface Development
+
+**Date:** 2026-01-01
+
+**Goal:** Create a visual landing page for the project.
+
+**Changes:**
+1.  **Modern UI:** Created `website/index.html` with a sleek dark-mode aesthetic, glassmorphism nav, and particle backgrounds.
+2.  **Terminal Simulation:** Implemented a terminal-header component to visually demonstrate the CLI workflow.
+3.  **Dynamic Interactions:** Added `script.js` for command tab switching and reveal animations.
+
+**Files Changed:**
+-   `website/index.html`
+-   `website/styles.css`
+-   `website/script.js`
+
+---
+
+### Phase 11: Mobile Optimization
+
+**Date:** 2026-01-02
+
+**Goal:** Fix layout issues on small screens.
+
+**Changes:**
+1.  **Responsive Layout:** Fixed horizontal overflow in the "Quick Setup" guide section using media queries and responsive units.
+2.  **Touch Optimizations:** Improved button sizing and spacing for mobile interaction.
+3.  **Cross-Browser Polish:** Verified rendering on various mobile viewports.
+
+**Files Changed:**
+-   `website/styles.css`
+-   `website/index.html`
+
+---
+
 ### Future Improvements
 -   Add error handling for repo name collisions
 -   Support for configuring the GitHub organization

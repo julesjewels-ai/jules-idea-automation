@@ -16,7 +16,7 @@ class GitHubClient:
 
     def get_user(self):
         """Returns the authenticated user's details."""
-        response = requests.get(f"{self.base_url}/user", headers=self.headers)
+        response = requests.get(f"{self.base_url}/user", headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json()
 
@@ -28,7 +28,7 @@ class GitHubClient:
             "private": private,
             "auto_init": False # We will add content manually
         }
-        response = requests.post(f"{self.base_url}/user/repos", headers=self.headers, json=payload)
+        response = requests.post(f"{self.base_url}/user/repos", headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()
         return response.json()
 
@@ -44,7 +44,7 @@ class GitHubClient:
             "content": encoded_content
         }
         
-        response = requests.put(url, headers=self.headers, json=payload)
+        response = requests.put(url, headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()
         return response.json()
 
@@ -60,13 +60,13 @@ class GitHubClient:
         """
         # Step 1: Get the latest commit SHA for the branch
         ref_url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
-        ref_response = requests.get(ref_url, headers=self.headers)
+        ref_response = requests.get(ref_url, headers=self.headers, timeout=30)
         ref_response.raise_for_status()
         latest_commit_sha = ref_response.json()["object"]["sha"]
         
         # Step 2: Get the tree SHA from that commit
         commit_url = f"{self.base_url}/repos/{owner}/{repo}/git/commits/{latest_commit_sha}"
-        commit_response = requests.get(commit_url, headers=self.headers)
+        commit_response = requests.get(commit_url, headers=self.headers, timeout=30)
         commit_response.raise_for_status()
         base_tree_sha = commit_response.json()["tree"]["sha"]
         
@@ -78,7 +78,7 @@ class GitHubClient:
                 "content": file_info["content"],
                 "encoding": "utf-8"
             }
-            blob_response = requests.post(blob_url, headers=self.headers, json=blob_payload)
+            blob_response = requests.post(blob_url, headers=self.headers, json=blob_payload, timeout=30)
             blob_response.raise_for_status()
             blob_sha = blob_response.json()["sha"]
             
@@ -95,7 +95,7 @@ class GitHubClient:
             "base_tree": base_tree_sha,
             "tree": tree_items
         }
-        tree_response = requests.post(tree_url, headers=self.headers, json=tree_payload)
+        tree_response = requests.post(tree_url, headers=self.headers, json=tree_payload, timeout=30)
         tree_response.raise_for_status()
         new_tree_sha = tree_response.json()["sha"]
         
@@ -106,7 +106,7 @@ class GitHubClient:
             "tree": new_tree_sha,
             "parents": [latest_commit_sha]
         }
-        new_commit_response = requests.post(new_commit_url, headers=self.headers, json=new_commit_payload)
+        new_commit_response = requests.post(new_commit_url, headers=self.headers, json=new_commit_payload, timeout=30)
         new_commit_response.raise_for_status()
         new_commit_sha = new_commit_response.json()["sha"]
         
@@ -114,7 +114,7 @@ class GitHubClient:
         update_ref_payload = {
             "sha": new_commit_sha
         }
-        update_ref_response = requests.patch(ref_url, headers=self.headers, json=update_ref_payload)
+        update_ref_response = requests.patch(ref_url, headers=self.headers, json=update_ref_payload, timeout=30)
         update_ref_response.raise_for_status()
         
         return {
