@@ -1,6 +1,5 @@
 """Command handlers for the CLI."""
 
-import json
 import sys
 import time
 from argparse import Namespace
@@ -10,6 +9,7 @@ from src.utils.reporter import (
     print_watch_complete,
     print_watch_timeout,
     print_progress,
+    print_sources_list,
     Spinner,
     Colors
 )
@@ -20,8 +20,10 @@ def handle_list_sources() -> None:
     from src.services.jules import JulesClient
 
     client = JulesClient()
-    sources = client.list_sources()
-    print(json.dumps(sources, indent=2))
+    with Spinner("Fetching sources..."):
+        sources = client.list_sources()
+
+    print_sources_list(sources)
 
 
 def handle_agent(args: Namespace) -> None:
