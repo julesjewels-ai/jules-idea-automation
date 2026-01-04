@@ -10,6 +10,7 @@ from src.utils.reporter import (
     print_watch_timeout,
     print_progress,
     print_sources_list,
+    print_idea_summary,
     Spinner,
     Colors
 )
@@ -38,6 +39,8 @@ def handle_agent(args: Namespace) -> None:
     with Spinner(msg):
         idea_data = gemini.generate_idea(category=category)
     
+    print_idea_summary(idea_data)
+
     workflow = IdeaWorkflow()
     result = workflow.execute(
         idea_data,
@@ -74,6 +77,8 @@ def handle_website(args: Namespace) -> None:
     with Spinner("Extracting idea with Gemini..."):
         idea_data = gemini.extract_idea_from_text(text)
     
+    print_idea_summary(idea_data)
+
     workflow = IdeaWorkflow()
     result = workflow.execute(
         idea_data,
