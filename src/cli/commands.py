@@ -20,7 +20,7 @@ def handle_list_sources() -> None:
     from src.services.jules import JulesClient
 
     client = JulesClient()
-    with Spinner("Fetching sources..."):
+    with Spinner("Fetching sources...", success_message="Sources fetched"):
         sources = client.list_sources()
 
     print_sources_list(sources)
@@ -35,7 +35,7 @@ def handle_agent(args: Namespace) -> None:
     
     gemini = GeminiClient()
     msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
-    with Spinner(msg):
+    with Spinner(msg, success_message="Idea generated"):
         idea_data = gemini.generate_idea(category=category)
     
     workflow = IdeaWorkflow()
@@ -71,7 +71,7 @@ def handle_website(args: Namespace) -> None:
     print(f"✓ Extracted {len(text)} characters of content")
     
     gemini = GeminiClient()
-    with Spinner("Extracting idea with Gemini..."):
+    with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
         idea_data = gemini.extract_idea_from_text(text)
     
     workflow = IdeaWorkflow()

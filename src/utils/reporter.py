@@ -27,8 +27,9 @@ class Spinner:
     success (✔) or failure (✖) state upon completion.
     """
 
-    def __init__(self, message: str = "Processing"):
+    def __init__(self, message: str = "Processing", success_message: str = None):
         self.message = message
+        self.success_message = success_message
         self._stop_event = threading.Event()
         self._thread = threading.Thread(target=self._spin, daemon=True)
 
@@ -57,6 +58,10 @@ class Spinner:
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self._stop_event.set()
         self._thread.join()
+
+        # Even if not TTY, we want to print the final status if possible,
+        # but the current implementation limits it to TTY.
+        # We will keep the TTY check for now to avoid breaking non-interactive logs.
         if sys.stdout.isatty():
             sys.stdout.write("\033[?25h")  # Show cursor
 
@@ -64,9 +69,12 @@ class Spinner:
                 symbol = f"{Colors.FAIL}✖{Colors.ENDC}"
             else:
                 symbol = f"{Colors.GREEN}✔{Colors.ENDC}"
+                if self.success_message:
+                    self.message = self.success_message
 
             # Overwrite the spinner with final status
-            sys.stdout.write(f"\r{symbol} {self.message}\n")
+            # Use ANSI clear line (K) to clear any previous longer message
+            sys.stdout.write(f"\r{symbol} {self.message}\033[K\n")
             sys.stdout.flush()
 
 
