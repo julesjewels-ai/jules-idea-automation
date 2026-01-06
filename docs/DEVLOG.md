@@ -272,8 +272,39 @@ Enhanced the generated MVP scaffolds to be immediately runnable by developers:
 
 ---
 
+---
+
+### Phase 12: Manual Entry & CLI UX Polish
+
+**Date:** 2026-01-03
+
+**Goal:** Allow users to bypass AI generation and manually input their own project ideas.
+
+**Changes:**
+
+1.  **Manual Mode:**
+    -   Added `manual` command to the CLI.
+    -   Supports `title`, `--description`, `--slug`, `--tech_stack`, and `--features`.
+    -   Automatically parses comma-separated strings for tech stack and features into structured lists.
+
+2.  **Robust Slug Generation:**
+    -   Created `src/utils/slugify.py` to convert titles into clean GitHub-ready repository names.
+    -   Implemented a strict 100-character limit to comply with GitHub's naming constraints.
+    -   Added logic to handles exceptionally long titles (truncating for naming while preserving full text for description).
+
+3.  **Bug Fixes & Validation:**
+    -   **Pydantic Fix:** Resolved a validation error where optional list fields were receiving `None` instead of empty lists in manual mode.
+    -   **Error Handling:** Improved error reporting for API failures during repo creation.
+
+**Files Changed:**
+-   `src/cli/parser.py` - New `manual` subcommand and arguments
+-   `src/cli/commands.py` - `handle_manual` logic with long-string handling
+-   `src/utils/slugify.py` - New utility for robust URL-safe naming
+-   `src/core/models.py` - Reviewed for validation compatibility
+
 ### Future Improvements
 -   Add error handling for repo name collisions
 -   Support for configuring the GitHub organization
 -   Add unit tests with mocked services
+-   Implement an interactive prompt mode for manual entry
 

@@ -64,6 +64,21 @@ python main.py agent
 python main.py agent --category cli_tool --watch
 ```
 
+### ✍️ Manual Mode
+Provide your own idea, description, and technology choices.
+```bash
+# Basic manual entry
+python main.py manual "My Custom App" --description "A specific tool I want to build"
+
+# Full structured entry
+python main.py manual "PulseUX Tracker" \
+  --description "Local-first macOS tool for visualization." \
+  --tech_stack "Tauri, Rust, React" \
+  --features "Voice Transcription, Privacy Storage" \
+  --slug "simulation-tracker" \
+  --watch
+```
+
 ### 🌐 Website Mode
 Extract an idea from an existing URL.
 ```bash
@@ -88,7 +103,11 @@ python main.py list-sources
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--category` | Target a specific idea category | None |
+| `--category` | Target a specific idea category (Agent mode) | None |
+| `--description` | Detailed project description (Manual mode) | None |
+| `--slug` | Custom GitHub repository name (Manual mode) | Auto-gen |
+| `--tech_stack` | Comma-separated list of technologies (Manual mode) | [] |
+| `--features` | Comma-separated list of MVP features (Manual mode) | [] |
 | `--private` | Create private repo (instead of public) | False |
 | `--timeout` | Timeout in seconds for indexing/watching | 1800 |
 | `--watch` | Live-poll session until completion | False |
