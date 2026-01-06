@@ -165,3 +165,19 @@ def print_sources_list(response: dict) -> None:
 
         print(f"{Colors.GREEN}• {Colors.BOLD}{name}{Colors.ENDC}")
         print("")
+
+
+def print_idea_summary(idea_data: dict) -> None:
+    """Prints a summary of the generated idea."""
+    print(f"\n{Colors.BOLD}{Colors.HEADER}✨ Generated Idea: {idea_data['title']}{Colors.ENDC}")
+    print(f"{Colors.BOLD}📝 Description:{Colors.ENDC} {idea_data['description']}")
+
+    if idea_data.get('tech_stack'):
+        tech = ", ".join(idea_data['tech_stack'])
+        print(f"{Colors.BOLD}🛠️  Tech Stack:{Colors.ENDC}  {tech}")
+
+    if idea_data.get('features'):
+        print(f"{Colors.BOLD}⚡ Features:{Colors.ENDC}")
+        for feature in idea_data['features']:
+            print(f"   • {feature}")
+    print("")
