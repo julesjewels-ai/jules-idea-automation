@@ -137,12 +137,12 @@ def print_session_status(
 
 def print_progress(elapsed: int, message: str) -> None:
     """Prints a progress update."""
-    print(f"  {Colors.CYAN}[{elapsed}s]{Colors.ENDC} {message[:60]}...")
+    print(f"  {Colors.CYAN}[{format_duration(elapsed)}]{Colors.ENDC} {message[:60]}...")
 
 
 def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
     """Prints session completion message."""
-    print(f"\n{Colors.GREEN}✅ Session completed after {elapsed}s!{Colors.ENDC}")
+    print(f"\n{Colors.GREEN}✅ Session completed after {format_duration(elapsed)}!{Colors.ENDC}")
     if pr_url:
         print(f"{Colors.BOLD}🎉 Pull Request:{Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     else:
@@ -151,8 +151,22 @@ def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
 
 def print_watch_timeout(timeout: int, session_url: str) -> None:
     """Prints timeout message."""
-    print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {timeout}s. Session still running.{Colors.ENDC}")
+    print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {format_duration(timeout)}. Session still running.{Colors.ENDC}")
     print(f"   Check status at: {Colors.UNDERLINE}{session_url}{Colors.ENDC}")
+
+
+def format_duration(seconds: int) -> str:
+    """Formats seconds into a human-readable string (e.g., '1m 30s')."""
+    if seconds < 60:
+        return f"{seconds}s"
+
+    minutes, seconds = divmod(seconds, 60)
+    if minutes < 60:
+        return f"{minutes}m {seconds}s"
+
+    hours, minutes = divmod(minutes, 60)
+    return f"{hours}h {minutes}m {seconds}s"
+
 
 def print_sources_list(response: dict) -> None:
     """Prints a formatted list of sources."""
