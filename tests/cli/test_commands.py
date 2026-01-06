@@ -20,7 +20,7 @@ def test_handle_list_sources(mock_print_sources, mock_jules_client_class, mock_s
     mock_jules_client_class.assert_called_once()
     mock_client_instance.list_sources.assert_called_once()
     mock_print_sources.assert_called_once_with(mock_sources)
-    mock_spinner.assert_called_once_with("Fetching sources...")
+    mock_spinner.assert_called_once_with("Fetching sources...", success_message="Sources fetched")
 
 @patch('src.cli.commands.Spinner')
 @patch('src.services.jules.JulesClient')
