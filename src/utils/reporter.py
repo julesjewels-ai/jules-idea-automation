@@ -3,6 +3,7 @@
 import sys
 import time
 import threading
+import re
 from typing import Optional
 
 
@@ -18,6 +19,47 @@ class Colors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+
+def strip_ansi(text: str) -> str:
+    """Removes ANSI escape codes from text."""
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape.sub('', text)
+
+
+def print_panel(lines: list[str], title: str = "", width: int = 60, border_color: str = Colors.BLUE) -> None:
+    """Prints a message in a box."""
+    # Calculate width based on longest line if it exceeds default
+    # Add 4 for padding (2 spaces left, 2 spaces right)
+    max_content_len = max([len(strip_ansi(line)) for line in lines] + [len(title) + 4]) if lines else 0
+    width = max(width, max_content_len + 4)
+
+    # borders
+    tl, tr, bl, br = "╭", "╮", "╰", "╯"
+    h, v = "─", "│"
+
+    # Title handling
+    if title:
+        title_text = f" {title} "
+        # Title is bold header color
+        # We need to calculate title length without colors just in case (though here it's plain string)
+        title_len = len(title_text)
+        right_dash_len = width - 2 - 2 - title_len # -2 for corners, -2 for side dashes if we wanted them centered?
+        # Actually standard style: ╭─ Title ──────╮
+        right_dash_len = width - 2 - title_len - 1 # -2 corners, -1 left dash
+
+        top_border = f"{tl}{h}{Colors.BOLD}{Colors.HEADER}{title_text}{Colors.ENDC}{border_color}{h * right_dash_len}{tr}"
+    else:
+        top_border = f"{tl}{h * (width - 2)}{tr}"
+
+    print(f"\n{border_color}{top_border}{Colors.ENDC}")
+
+    for line in lines:
+        visible_len = len(strip_ansi(line))
+        padding = width - 4 - visible_len
+        print(f"{border_color}{v}{Colors.ENDC} {line}{' ' * padding} {border_color}{v}{Colors.ENDC}")
+
+    print(f"{border_color}{bl}{h * (width - 2)}{br}{Colors.ENDC}\n")
 
 
 class Spinner:
@@ -80,6 +122,7 @@ class Spinner:
 
 def print_header(title: str, char: str = "=", width: int = 50) -> None:
     """Prints a formatted header."""
+    # Kept for backward compatibility if needed, but preferably use print_panel
     print("")
     print(f"{Colors.BOLD}{Colors.BLUE}{char * width}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.HEADER}{title}{Colors.ENDC}")
@@ -95,20 +138,22 @@ def print_workflow_report(
     pr_url: Optional[str] = None
 ) -> None:
     """Prints a summary report of the workflow results."""
-    print_header("✨ WORKFLOW COMPLETE")
-    print(f"{Colors.BOLD}📦 Project:{Colors.ENDC} {Colors.GREEN}{title}{Colors.ENDC}")
-    print(f"{Colors.BOLD}📝 Slug:   {Colors.ENDC} {slug}")
-    print(f"{Colors.BOLD}🔗 Repo:   {Colors.ENDC} {Colors.UNDERLINE}{repo_url}{Colors.ENDC}")
+    lines = []
+
+    lines.append(f"{Colors.BOLD}📦 Project:{Colors.ENDC} {Colors.GREEN}{title}{Colors.ENDC}")
+    lines.append(f"{Colors.BOLD}📝 Slug:   {Colors.ENDC} {slug}")
+    lines.append(f"{Colors.BOLD}🔗 Repo:   {Colors.ENDC} {Colors.UNDERLINE}{repo_url}{Colors.ENDC}")
+    lines.append("") # Empty line for spacing
     
     if session_id:
-        print(f"{Colors.BOLD}🤖 Jules:  {Colors.ENDC} {Colors.UNDERLINE}{session_url or 'N/A'}{Colors.ENDC}")
-        print(f"{Colors.BOLD}   Session:{Colors.ENDC} {session_id}")
+        lines.append(f"{Colors.BOLD}🤖 Jules:  {Colors.ENDC} {Colors.UNDERLINE}{session_url or 'N/A'}{Colors.ENDC}")
+        lines.append(f"{Colors.BOLD}   Session:{Colors.ENDC} {session_id}")
         if pr_url:
-            print(f"{Colors.BOLD}🎉 PR:     {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
+             lines.append(f"{Colors.BOLD}🎉 PR:     {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     else:
-        print(f"{Colors.YELLOW}⚠️  Jules session was not created (source not indexed){Colors.ENDC}")
-    
-    print(f"{Colors.BOLD}{Colors.BLUE}{'=' * 50}{Colors.ENDC}")
+        lines.append(f"{Colors.YELLOW}⚠️  Jules session was not created (source not indexed){Colors.ENDC}")
+
+    print_panel(lines, title="✨ WORKFLOW COMPLETE")
 
 
 def print_session_status(
@@ -120,19 +165,25 @@ def print_session_status(
     activities: Optional[list[str]] = None
 ) -> None:
     """Prints status information for a Jules session."""
-    print(f"\n{Colors.BOLD}📋 Session Status:{Colors.ENDC} {Colors.CYAN}{session_id}{Colors.ENDC}")
-    print(f"   {Colors.BOLD}Title:   {Colors.ENDC} {title}")
-    print(f"   {Colors.BOLD}URL:     {Colors.ENDC} {Colors.UNDERLINE}{url}{Colors.ENDC}")
+    lines = []
+    lines.append(f"{Colors.BOLD}Title:   {Colors.ENDC} {title}")
+    lines.append(f"{Colors.BOLD}URL:     {Colors.ENDC} {Colors.UNDERLINE}{url}{Colors.ENDC}")
+
     status_msg = f"{Colors.GREEN}✅ Yes{Colors.ENDC}" if is_complete else f"{Colors.YELLOW}⏳ In Progress{Colors.ENDC}"
-    print(f"   {Colors.BOLD}Complete:{Colors.ENDC} {status_msg}")
+    lines.append(f"{Colors.BOLD}Complete:{Colors.ENDC} {status_msg}")
     
     if pr_url:
-        print(f"   {Colors.BOLD}PR:      {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
+        lines.append(f"{Colors.BOLD}PR:      {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     
     if activities:
-        print(f"\n   {Colors.BOLD}Recent Activity:{Colors.ENDC}")
+        lines.append("")
+        lines.append(f"{Colors.BOLD}Recent Activity:{Colors.ENDC}")
         for activity in activities[:3]:
-            print(f"   - {activity[:70]}")
+            # Truncate if too long to fit comfortably in default panel
+            act_text = activity if len(activity) < 65 else activity[:62] + "..."
+            lines.append(f" - {act_text}")
+
+    print_panel(lines, title=f"📋 Session Status: {session_id}")
 
 
 def print_progress(elapsed: int, message: str) -> None:
@@ -158,34 +209,36 @@ def print_sources_list(response: dict) -> None:
     """Prints a formatted list of sources."""
     sources = response.get("sources", [])
 
-    print_header("📚 JULES SOURCES")
-
     if not sources:
         print(f"\n{Colors.YELLOW}No sources found.{Colors.ENDC}")
         print(f"\n{Colors.BOLD}Tips:{Colors.ENDC}")
         print("  • Connect a GitHub repository to Jules to get started")
         return
 
-    print(f"\nFound {len(sources)} source(s):\n")
+    lines = []
+    lines.append(f"Found {len(sources)} source(s):")
+    lines.append("")
 
     for source in sources:
         name = source.get("name", "Unknown")
+        lines.append(f"{Colors.GREEN}• {Colors.BOLD}{name}{Colors.ENDC}")
 
-        print(f"{Colors.GREEN}• {Colors.BOLD}{name}{Colors.ENDC}")
-        print("")
+    print_panel(lines, title="📚 JULES SOURCES")
 
 
 def print_idea_summary(idea_data: dict) -> None:
     """Prints a summary of the generated idea."""
-    print(f"\n{Colors.BOLD}{Colors.HEADER}✨ Generated Idea: {idea_data['title']}{Colors.ENDC}")
-    print(f"{Colors.BOLD}📝 Description:{Colors.ENDC} {idea_data['description']}")
+    lines = []
+    lines.append(f"{Colors.BOLD}📝 Description:{Colors.ENDC} {idea_data['description']}")
 
     if idea_data.get('tech_stack'):
         tech = ", ".join(idea_data['tech_stack'])
-        print(f"{Colors.BOLD}🛠️  Tech Stack:{Colors.ENDC}  {tech}")
+        lines.append(f"{Colors.BOLD}🛠️  Tech Stack:{Colors.ENDC}  {tech}")
 
     if idea_data.get('features'):
-        print(f"{Colors.BOLD}⚡ Features:{Colors.ENDC}")
+        lines.append("")
+        lines.append(f"{Colors.BOLD}⚡ Features:{Colors.ENDC}")
         for feature in idea_data['features']:
-            print(f"   • {feature}")
-    print("")
+            lines.append(f"   • {feature}")
+
+    print_panel(lines, title=f"✨ Generated Idea: {idea_data['title']}")
