@@ -20,6 +20,25 @@ class Colors:
     UNDERLINE = '\033[4m'
 
 
+def format_duration(seconds: int) -> str:
+    """Formats a duration in seconds to a human-readable string.
+
+    Examples:
+        30 -> "30s"
+        90 -> "1m 30s"
+        3665 -> "1h 1m 5s"
+    """
+    if seconds < 60:
+        return f"{seconds}s"
+
+    minutes, seconds = divmod(seconds, 60)
+    if minutes < 60:
+        return f"{minutes}m {seconds}s"
+
+    hours, minutes = divmod(minutes, 60)
+    return f"{hours}h {minutes}m {seconds}s"
+
+
 class Spinner:
     """A simple terminal spinner for long-running operations.
 
@@ -137,12 +156,14 @@ def print_session_status(
 
 def print_progress(elapsed: int, message: str) -> None:
     """Prints a progress update."""
-    print(f"  {Colors.CYAN}[{elapsed}s]{Colors.ENDC} {message[:60]}...")
+    duration = format_duration(elapsed)
+    print(f"  {Colors.CYAN}[{duration}]{Colors.ENDC} {message[:60]}...")
 
 
 def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
     """Prints session completion message."""
-    print(f"\n{Colors.GREEN}✅ Session completed after {elapsed}s!{Colors.ENDC}")
+    duration = format_duration(elapsed)
+    print(f"\n{Colors.GREEN}✅ Session completed after {duration}!{Colors.ENDC}")
     if pr_url:
         print(f"{Colors.BOLD}🎉 Pull Request:{Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     else:
@@ -151,7 +172,8 @@ def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
 
 def print_watch_timeout(timeout: int, session_url: str) -> None:
     """Prints timeout message."""
-    print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {timeout}s. Session still running.{Colors.ENDC}")
+    duration = format_duration(timeout)
+    print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {duration}. Session still running.{Colors.ENDC}")
     print(f"   Check status at: {Colors.UNDERLINE}{session_url}{Colors.ENDC}")
 
 def print_sources_list(response: dict) -> None:

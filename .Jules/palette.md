@@ -1,7 +1,5 @@
-## 2024-05-23 - CLI Color Experience
-**Learning:** Adding colors to CLI output significantly improves readability and user confidence, especially for error states and success messages. It makes the tool feel more polished and "pro".
-**Action:** Use a consistent color palette (Green=Success, Red=Error, Cyan=Info, Yellow=Warning/Tips) across all CLI interactions. Ensure colors are defined in a centralized way (like `Colors` class) for maintainability.
+# Palette's Journal - Critical Learnings
 
-## 2024-05-24 - Visibility of AI Generation
-**Learning:** Users trust AI tools more when they can see *what* was generated before an automated action occurs. Silence during "magic" steps creates anxiety about what is happening.
-**Action:** Always print a summary of generated content (e.g., Title, Description, key metadata) immediately after generation and before execution. Use formatting to make it scannable.
+## 2024-05-22 - Initial Setup
+**Learning:** This is a Python CLI tool, not a React app. UX here means DX (Developer Experience) - colors, spinners, help text, clear errors.
+**Action:** Adapt standard web UX practices to CLI context (e.g., visual hierarchy with colors instead of CSS, spinners for wait times).
