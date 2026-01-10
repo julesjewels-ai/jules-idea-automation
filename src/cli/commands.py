@@ -12,7 +12,8 @@ from src.utils.reporter import (
     print_sources_list,
     print_idea_summary,
     Spinner,
-    Colors
+    Colors,
+    format_duration,
 )
 
 
@@ -139,7 +140,7 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
     is_complete = False
     pr_url = None
     
-    with Spinner(f"[{elapsed}s] Watching session {session_id}...") as spinner:
+    with Spinner(f"[{format_duration(elapsed)}] Watching session {session_id}...") as spinner:
         while elapsed < timeout:
             is_complete, pr_url = jules.is_session_complete(session_id)
 
@@ -147,16 +148,17 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
                 break
 
             # Show latest activity
+            duration = format_duration(elapsed)
             try:
                 activities = jules.list_activities(session_id, page_size=1)
                 if activities.get("activities"):
                     latest = activities["activities"][0]
                     title = latest.get("progressUpdated", {}).get("title", "Working...")
-                    spinner.update(f"[{elapsed}s] {title}")
+                    spinner.update(f"[{duration}] {title}")
                 else:
-                    spinner.update(f"[{elapsed}s] Working...")
+                    spinner.update(f"[{duration}] Working...")
             except Exception:
-                spinner.update(f"[{elapsed}s] Polling...")
+                spinner.update(f"[{duration}] Polling...")
 
             time.sleep(poll_interval)
             elapsed += poll_interval

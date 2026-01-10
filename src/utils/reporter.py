@@ -135,14 +135,29 @@ def print_session_status(
             print(f"   - {activity[:70]}")
 
 
+def format_duration(seconds: int) -> str:
+    """Formats a duration in seconds to a human-readable string."""
+    if seconds < 60:
+        return f"{seconds}s"
+    minutes = seconds // 60
+    remaining_seconds = seconds % 60
+    if minutes < 60:
+        return f"{minutes}m {remaining_seconds}s"
+    hours = minutes // 60
+    remaining_minutes = minutes % 60
+    return f"{hours}h {remaining_minutes}m {remaining_seconds}s"
+
+
 def print_progress(elapsed: int, message: str) -> None:
     """Prints a progress update."""
-    print(f"  {Colors.CYAN}[{elapsed}s]{Colors.ENDC} {message[:60]}...")
+    duration = format_duration(elapsed)
+    print(f"  {Colors.CYAN}[{duration}]{Colors.ENDC} {message[:60]}...")
 
 
 def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
     """Prints session completion message."""
-    print(f"\n{Colors.GREEN}✅ Session completed after {elapsed}s!{Colors.ENDC}")
+    duration = format_duration(elapsed)
+    print(f"\n{Colors.GREEN}✅ Session completed after {duration}!{Colors.ENDC}")
     if pr_url:
         print(f"{Colors.BOLD}🎉 Pull Request:{Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     else:
@@ -151,8 +166,10 @@ def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
 
 def print_watch_timeout(timeout: int, session_url: str) -> None:
     """Prints timeout message."""
-    print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {timeout}s. Session still running.{Colors.ENDC}")
+    duration = format_duration(timeout)
+    print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {duration}. Session still running.{Colors.ENDC}")
     print(f"   Check status at: {Colors.UNDERLINE}{session_url}{Colors.ENDC}")
+
 
 def print_sources_list(response: dict) -> None:
     """Prints a formatted list of sources."""
