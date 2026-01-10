@@ -3,6 +3,7 @@
 import sys
 import time
 import threading
+import re
 from typing import Optional
 
 
@@ -18,6 +19,95 @@ class Colors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+def strip_ansi(text: str) -> str:
+    """Removes ANSI escape codes from text."""
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    return ansi_escape.sub('', text)
+
+def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: int = 60) -> None:
+    """Prints content inside a bordered panel."""
+
+    # Box drawing characters
+    H_LINE = "─"
+    V_LINE = "│"
+    TL_CORNER = "╭"
+    TR_CORNER = "╮"
+    BL_CORNER = "╰"
+    BR_CORNER = "╯"
+
+    # Calculate title placement
+    if title:
+        title_text = f" {title} "
+
+        # Check for emojis to adjust padding for visual consistency (best effort)
+        # Assuming common emojis are 2 chars wide but length 1
+        # This is not perfect but improves the most common case in this app (✨)
+        visual_offset = 0
+        if "✨" in title:
+            visual_offset += 1
+
+        # Ensure title fits
+        if len(title_text) > width - 4:
+            title_text = title_text[:width-5] + "…"
+
+        left_pad = 2
+        # Adjust right pad calculation by subtracting visual offset from the available space
+        # (wait, if visual length is longer, we need LESS padding characters to reach the same width)
+        right_pad = width - 2 - len(title_text) - left_pad - visual_offset
+
+        if right_pad < 0:
+            right_pad = 0
+
+        top_border = f"{TL_CORNER}{H_LINE * left_pad}{Colors.BOLD}{title_text}{Colors.ENDC}{color}{H_LINE * right_pad}{TR_CORNER}"
+    else:
+        top_border = f"{TL_CORNER}{H_LINE * (width - 2)}{TR_CORNER}"
+
+    print(f"{color}{top_border}{Colors.ENDC}")
+
+    # Process content
+    lines = content.split('\n')
+    wrapped_lines = []
+
+    for line in lines:
+        if not line:
+            wrapped_lines.append("")
+            continue
+
+        # We need to account for ANSI codes when wrapping, but textwrap doesn't ignore them.
+        # A simple approach for now:
+        # 1. If line is short, just add it
+        # 2. If line is long, wrap it based on visible length
+
+        visible_len = len(strip_ansi(line))
+        if visible_len <= width - 4:
+            wrapped_lines.append(line)
+        else:
+            # Simple word wrap
+            current_line = []
+            current_len = 0
+            words = line.split(' ')
+
+            for word in words:
+                word_len = len(strip_ansi(word))
+                if current_len + word_len + 1 > width - 4:
+                    wrapped_lines.append(" ".join(current_line))
+                    current_line = [word]
+                    current_len = word_len
+                else:
+                    current_line.append(word)
+                    current_len += word_len + 1
+            if current_line:
+                wrapped_lines.append(" ".join(current_line))
+
+    for line in wrapped_lines:
+        visible_len = len(strip_ansi(line))
+        padding = width - 4 - visible_len
+        if padding < 0:
+             padding = 0
+        print(f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} {color}{V_LINE}{Colors.ENDC}")
+
+    print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}")
 
 
 class Spinner:
@@ -194,15 +284,38 @@ def print_sources_list(response: dict) -> None:
 
 def print_idea_summary(idea_data: dict) -> None:
     """Prints a summary of the generated idea."""
-    print(f"\n{Colors.BOLD}{Colors.HEADER}✨ Generated Idea: {idea_data['title']}{Colors.ENDC}")
-    print(f"{Colors.BOLD}📝 Description:{Colors.ENDC} {idea_data['description']}")
 
+    content_lines = []
+
+    # Description
+    content_lines.append(f"{Colors.BOLD}📝 Description:{Colors.ENDC}")
+    content_lines.append(idea_data['description'])
+    content_lines.append("")
+
+    # Tech Stack
     if idea_data.get('tech_stack'):
         tech = ", ".join(idea_data['tech_stack'])
-        print(f"{Colors.BOLD}🛠️  Tech Stack:{Colors.ENDC}  {tech}")
+        content_lines.append(f"{Colors.BOLD}🛠️  Tech Stack:{Colors.ENDC}")
+        content_lines.append(tech)
+        content_lines.append("")
 
+    # Features
     if idea_data.get('features'):
-        print(f"{Colors.BOLD}⚡ Features:{Colors.ENDC}")
+        content_lines.append(f"{Colors.BOLD}⚡ Features:{Colors.ENDC}")
         for feature in idea_data['features']:
-            print(f"   • {feature}")
-    print("")
+            content_lines.append(f"• {feature}")
+
+    # Remove trailing empty line if exists
+    if content_lines and content_lines[-1] == "":
+        content_lines.pop()
+
+    full_content = "\n".join(content_lines)
+
+    print("") # spacing before
+    print_panel(
+        full_content,
+        title=f"✨ {idea_data['title']}",
+        color=Colors.HEADER,
+        width=70
+    )
+    print("") # spacing after
