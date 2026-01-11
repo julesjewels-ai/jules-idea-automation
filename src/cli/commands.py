@@ -28,18 +28,10 @@ def handle_list_sources() -> None:
     print_sources_list(sources)
 
 
-def handle_agent(args: Namespace) -> None:
-    """Handle the agent command."""
-    from src.services.gemini import GeminiClient
+def _execute_and_watch(idea_data: dict, args: Namespace) -> None:
+    """Executes workflow and optionally watches session."""
     from src.core.workflow import IdeaWorkflow
 
-    category = getattr(args, 'category', None)
-    
-    gemini = GeminiClient()
-    msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
-    with Spinner(msg, success_message="Idea generated"):
-        idea_data = gemini.generate_idea(category=category)
-    
     print_idea_summary(idea_data)
 
     workflow = IdeaWorkflow()
@@ -48,16 +40,29 @@ def handle_agent(args: Namespace) -> None:
         private=args.private,
         timeout=args.timeout
     )
-    
+
     if result.session_id and args.watch:
         watch_session(result.session_id, timeout=args.timeout)
+
+
+def handle_agent(args: Namespace) -> None:
+    """Handle the agent command."""
+    from src.services.gemini import GeminiClient
+
+    category = getattr(args, 'category', None)
+
+    gemini = GeminiClient()
+    msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
+    with Spinner(msg, success_message="Idea generated"):
+        idea_data = gemini.generate_idea(category=category)
+
+    _execute_and_watch(idea_data, args)
 
 
 def handle_website(args: Namespace) -> None:
     """Handle the website command."""
     from src.services.gemini import GeminiClient
     from src.services.scraper import scrape_text, ScrapingError
-    from src.core.workflow import IdeaWorkflow
 
     print(f"Scraping {args.url}...")
     
@@ -78,17 +83,7 @@ def handle_website(args: Namespace) -> None:
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
         idea_data = gemini.extract_idea_from_text(text)
     
-    print_idea_summary(idea_data)
-
-    workflow = IdeaWorkflow()
-    result = workflow.execute(
-        idea_data,
-        private=args.private,
-        timeout=args.timeout
-    )
-    
-    if result.session_id and args.watch:
-        watch_session(result.session_id, timeout=args.timeout)
+    _execute_and_watch(idea_data, args)
 
 
 def handle_status(args: Namespace) -> None:
@@ -123,46 +118,37 @@ def handle_status(args: Namespace) -> None:
 
 
 def watch_session(session_id: str, timeout: int = 1800) -> tuple:
-    """Watch a Jules session until completion or timeout.
-    
-    Args:
-        session_id: The session ID to watch
-        timeout: Max seconds to wait
-    
-    Returns:
-        Tuple of (is_complete, pr_url or None)
-    """
+    """Watch a Jules session until completion or timeout."""
     from src.services.jules import JulesClient
+    from src.utils.polling import poll_with_result
 
     jules = JulesClient()
-    poll_interval = 30
-    elapsed = 0
-    is_complete = False
-    pr_url = None
     
-    with Spinner(f"[{format_duration(elapsed)}] Watching session {session_id}...") as spinner:
-        while elapsed < timeout:
-            is_complete, pr_url = jules.is_session_complete(session_id)
+    def get_status() -> str:
+        try:
+            activities = jules.list_activities(session_id, page_size=1)
+            if activities.get("activities"):
+                return activities["activities"][0].get("progressUpdated", {}).get("title", "Working...")
+            return "Working..."
+        except Exception:
+            return "Polling..."
 
-            if is_complete:
-                break
+    start_time = time.time()
 
-            # Show latest activity
-            duration = format_duration(elapsed)
-            try:
-                activities = jules.list_activities(session_id, page_size=1)
-                if activities.get("activities"):
-                    latest = activities["activities"][0]
-                    title = latest.get("progressUpdated", {}).get("title", "Working...")
-                    spinner.update(f"[{duration}] {title}")
-                else:
-                    spinner.update(f"[{duration}] Working...")
-            except Exception:
-                spinner.update(f"[{duration}] Polling...")
+    with Spinner(f"[0s] Watching session {session_id}...") as spinner:
+        def update_spinner(elapsed: int, status: str) -> None:
+            spinner.update(f"[{format_duration(elapsed)}] {status}")
 
-            time.sleep(poll_interval)
-            elapsed += poll_interval
-    
+        is_complete, pr_url = poll_with_result(
+            check=lambda: jules.is_session_complete(session_id),
+            timeout=timeout,
+            interval=30,
+            on_poll=update_spinner,
+            status_extractor=get_status
+        )
+
+    elapsed = int(time.time() - start_time)
+
     if is_complete:
         print_watch_complete(elapsed, pr_url)
         return is_complete, pr_url
