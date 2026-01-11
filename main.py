@@ -23,6 +23,7 @@ def main() -> None:
     
     if not args.command:
         parser.print_help()
+        print("\n💡 Tip: Run 'python main.py guide' for an interactive tutorial\n")
         sys.exit(1)
     
     try:

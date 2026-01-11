@@ -172,6 +172,82 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
     return False, None
 
 
+def handle_guide(args: Namespace) -> None:
+    """Handle the guide command."""
+    from src.utils.guide import (
+        print_welcome_guide,
+        print_agent_guide,
+        print_website_guide,
+        print_manual_guide,
+        print_examples
+    )
+    
+    workflow = getattr(args, 'workflow', None)
+    
+    if workflow == 'agent':
+        print_agent_guide()
+    elif workflow == 'website':
+        print_website_guide()
+    elif workflow == 'manual':
+        print_manual_guide()
+    else:
+        # Show welcome guide with all options
+        print_welcome_guide()
+        print_examples()
+
+
+def handle_manual(args: Namespace) -> None:
+    """Handle the manual command."""
+    from src.utils.slugify import slugify
+    from src.core.workflow import IdeaWorkflow
+    
+    raw_title = args.title
+    
+    # Handle very long titles gracefully (Description-as-Title pattern)
+    if len(raw_title) > 100:
+        # If the title is too long, it's likely a full description
+        description = raw_title
+        # Use first sentence or prefix as a title
+        title = raw_title[:50].split('.')[0].strip() or "Manual Idea"
+    else:
+        title = raw_title
+        description = args.description or raw_title
+    
+    # Generate slug from title if not provided
+    slug = args.slug or slugify(title)
+    
+    # Parse comma-separated lists
+    tech_stack = []
+    if args.tech_stack:
+        tech_stack = [item.strip() for item in args.tech_stack.split(',')]
+    
+    features = []
+    if args.features:
+        features = [item.strip() for item in args.features.split(',')]
+    
+    # Construct idea_data dictionary compatible with IdeaResponse
+    idea_data = {
+        "title": title,
+        "description": description,
+        "slug": slug,
+        "tech_stack": tech_stack,
+        "features": features
+    }
+    
+    print_idea_summary(idea_data)
+    
+    # Execute via standard workflow
+    workflow = IdeaWorkflow()
+    result = workflow.execute(
+        idea_data,
+        private=args.private,
+        timeout=args.timeout
+    )
+    
+    if result.session_id and args.watch:
+        watch_session(result.session_id, timeout=args.timeout)
+
+
 def dispatch_command(args: Namespace) -> None:
     """Dispatch to the appropriate command handler."""
     handlers = {
@@ -179,6 +255,8 @@ def dispatch_command(args: Namespace) -> None:
         "agent": lambda: handle_agent(args),
         "website": lambda: handle_website(args),
         "status": lambda: handle_status(args),
+        "guide": lambda: handle_guide(args),
+        "manual": lambda: handle_manual(args),
     }
     
     handler = handlers.get(args.command)

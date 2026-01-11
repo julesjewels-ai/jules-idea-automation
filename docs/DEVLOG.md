@@ -4,6 +4,38 @@
 
 This log documents the development journey, design decisions, and evolution of the Jules Automation Tool.
 
+### Phase 8: In-CLI User Guide System
+
+**Date:** 2026-01-11
+
+**Changes:**
+
+Implemented comprehensive in-CLI user guide system to improve discoverability and user onboarding:
+
+1. **New Commands:**
+   - `guide` - Interactive user guide showing all workflows
+     - Supports `--workflow` flag for targeted help (agent/website/manual)
+   - `manual` - Provide custom idea details (completes the three-workflow vision)
+     - Auto-generates kebab-case slug from title
+     - Handles long titles gracefully (Description-as-Title pattern)
+     - Supports description, slug, tech_stack, features arguments
+
+2. **New Utilities:**
+   - `src/utils/slugify.py` - GitHub-compliant slug generation (100-char limit)
+   - `src/utils/guide.py` - Interactive guide system with formatted panels
+     - Welcome guide, per-workflow guides, usage examples
+
+3. **Enhanced Files:**
+   - `src/cli/parser.py` - Added guide and manual parsers
+   - `src/cli/commands.py` - Added `handle_guide()` and `handle_manual()`
+   - `main.py` - Guide tip when no command provided
+   - `README.md` - Reorganized with three main workflows prominently featured
+
+**Rationale:**
+The CLI had powerful functionality but lacked discoverability. The guide system provides interactive, context-aware help following established CLI UX standards while maintaining SOLID principles.
+
+---
+
 ### Phase 1: Inception & Core Requirements
 
 **Goal:** Create an automation tool to feed software ideas into the Jules API.

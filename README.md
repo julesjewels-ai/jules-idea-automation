@@ -35,7 +35,17 @@ GITHUB_TOKEN=your_github_token
 
 ## Usage
 
-Run via `main.py`:
+### Getting Started
+
+If you're new to the tool, start with the interactive guide:
+
+```bash
+python main.py guide
+```
+
+### Three Main Workflows
+
+**🤖 Agent Mode** - Let Gemini AI generate ideas:
 
 ```bash
 # Generate a random idea
@@ -44,17 +54,46 @@ python main.py agent
 # Generate a targeted idea (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
 python main.py agent --category cli_tool
 
+# Watch session until PR is created
+python main.py agent --watch
+```
+
+**🌐 Website Mode** - Extract ideas from websites:
+
+```bash
 # Extract idea from a website
 python main.py website --url https://example.com
 
-# Watch session until PR is created
-python main.py agent --watch
+# Watch session until completion
+python main.py website --url https://example.com --watch
+```
 
+**✍️ Manual Mode** - Provide your own custom idea:
+
+```bash
+# Basic (title only)
+python main.py manual "My Awesome Tool"
+
+# Full options
+python main.py manual "Task Manager" \
+  --description "A CLI tool for managing daily tasks" \
+  --slug my-task-cli \
+  --tech_stack "Python,Click,SQLite" \
+  --features "CRUD operations,Priority tags,Export CSV" \
+  --watch
+```
+
+### Other Commands
+
+```bash
 # Check session status
 python main.py status <session_id>
 
 # List available sources
 python main.py list-sources
+
+# Get detailed help for a specific workflow
+python main.py guide --workflow agent
 ```
 
 ### Options
