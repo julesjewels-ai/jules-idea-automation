@@ -74,31 +74,88 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
             wrapped_lines.append("")
             continue
 
-        # We need to account for ANSI codes when wrapping, but textwrap doesn't ignore them.
-        # A simple approach for now:
-        # 1. If line is short, just add it
-        # 2. If line is long, wrap it based on visible length
+        # Determine indentation for wrapped lines (hanging indent)
+        clean_line = strip_ansi(line)
+        indent_str = ""
+        if clean_line.lstrip().startswith(('•', '-', '*')):
+            indent_str = "  "
+        indent_len = len(indent_str)
 
-        visible_len = len(strip_ansi(line))
+        visible_len = len(clean_line)
         if visible_len <= width - 4:
             wrapped_lines.append(line)
         else:
-            # Simple word wrap
+            # Improved word wrap with hanging indent and long word handling
+            words = line.split(' ')
             current_line = []
             current_len = 0
-            words = line.split(' ')
+
+            is_first_line = True
 
             for word in words:
-                word_len = len(strip_ansi(word))
-                if current_len + word_len + 1 > width - 4:
-                    wrapped_lines.append(" ".join(current_line))
-                    current_line = [word]
-                    current_len = word_len
-                else:
+                word_clean = strip_ansi(word)
+                word_len = len(word_clean)
+
+                # Available width depends on whether it's the first line or wrapped line
+                available_width = width - 4
+                if not is_first_line:
+                    available_width -= indent_len
+
+                # Check if adding word exceeds width
+                # Add 1 for space if line is not empty
+                space_cost = 1 if current_line else 0
+
+                if current_len + space_cost + word_len <= available_width:
                     current_line.append(word)
-                    current_len += word_len + 1
+                    current_len += space_cost + word_len
+                else:
+                    # Word doesn't fit.
+
+                    # 1. Flush current line if it exists
+                    if current_line:
+                        line_str = " ".join(current_line)
+                        if not is_first_line:
+                            line_str = indent_str + line_str
+                        wrapped_lines.append(line_str)
+
+                        is_first_line = False
+                        current_line = []
+                        current_len = 0
+                        available_width = width - 4 - indent_len # Recalculate for next line
+
+                    # 2. Check if the word ITSELF is too long for a single line
+                    if word_len > available_width:
+                        # Force split
+                        # Simple chunking (unsafe for internal ANSI, but acceptable for URLs/Tokens)
+                        current_word = word
+                        while len(strip_ansi(current_word)) > available_width:
+                            # We can't easily slice ANSI strings, so we assume long words are plain text
+                            # or accept potential breakage for the sake of layout safety.
+                            # A slightly safer approach for the cut point:
+                            chunk = current_word[:available_width]
+
+                            line_str = chunk
+                            if not is_first_line:
+                                line_str = indent_str + line_str
+                            wrapped_lines.append(line_str)
+
+                            current_word = current_word[available_width:]
+                            is_first_line = False
+                            available_width = width - 4 - indent_len
+
+                        # Add remaining part to current_line
+                        current_line.append(current_word)
+                        current_len = len(strip_ansi(current_word))
+                    else:
+                        # Word fits on a new line
+                        current_line.append(word)
+                        current_len = word_len
+
             if current_line:
-                wrapped_lines.append(" ".join(current_line))
+                line_str = " ".join(current_line)
+                if not is_first_line:
+                    line_str = indent_str + line_str
+                wrapped_lines.append(line_str)
 
     for line in wrapped_lines:
         visible_len = len(strip_ansi(line))
