@@ -3,8 +3,12 @@ import json
 from google import genai
 from google.genai import types
 
-from src.core.models import IdeaResponse, ProjectFile, ProjectScaffold
-
+from src.core.models import (
+    IdeaResponse,
+    ProjectFile,
+    ProjectScaffold,
+    TextAnalysisInput,
+)
 
 
 # Category-specific prompt templates
@@ -50,38 +54,44 @@ class GeminiClient:
         )
         return json.loads(response.text)
 
-    def extract_idea_from_text(self, text):
+    def extract_idea_from_text(self, text: str) -> dict:
         """Extracts the core app idea from the provided text."""
-        # Truncate text if it's too long to avoid token limits
-        max_chars = 100000 
+        # Truncate text before validation to avoid rejection of valid but long content
+        # This restores original behavior while adding structure
+        max_chars = 100000
         truncated_text = text[:max_chars]
         
+        # Validate using Pydantic model
+        input_data = TextAnalysisInput(text=truncated_text)
+
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
-        
+
         Text content:
-        {truncated_text}
+        <content>
+        {input_data.text}
+        </content>
         """
-        
+
         response = self.client.models.generate_content(
             model=self.model_name,
             contents=prompt,
-             config=types.GenerateContentConfig(
+            config=types.GenerateContentConfig(
                 thinking_config=types.ThinkingConfig(include_thoughts=True),
                 response_mime_type="application/json",
-                response_schema=IdeaResponse
+                response_schema=IdeaResponse,
             ),
         )
         return json.loads(response.text)
 
-    def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
+    def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2) -> dict:
         """Generates a complete MVP project scaffold for the given idea.
-        
+
         Args:
             idea_data: Dict with title, description, slug, tech_stack, features
             max_retries: Number of retries on failure (default: 2)
-        
+
         Returns:
             ProjectScaffold with files, requirements, and run command
         """
@@ -89,8 +99,10 @@ class GeminiClient:
         prompt = f"""
 Generate a DEVELOPER-READY MVP project scaffold for:
 
+<project_context>
 **Project:** {idea_data['title']}
 **Description:** {idea_data['description'][:500]}
+</project_context>
 
 Create a complete, immediately-runnable project with these files:
 

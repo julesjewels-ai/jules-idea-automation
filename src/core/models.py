@@ -4,6 +4,15 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 
+class TextAnalysisInput(BaseModel):
+    """Input model for text analysis to prevent prompt injection."""
+    text: str = Field(
+        ...,
+        max_length=100000,
+        description="The text to analyze. Must be under 100k chars."
+    )
+
+
 class IdeaResponse(BaseModel):
     """Represents a generated software idea."""
     title: str = Field(description="The name of the software idea.")
