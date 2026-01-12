@@ -11,6 +11,7 @@ from src.utils.reporter import (
     print_progress,
     print_sources_list,
     print_idea_summary,
+    print_panel,
     Spinner,
     Colors,
     format_duration,
@@ -19,33 +20,42 @@ from src.utils.reporter import (
 
 def handle_list_sources() -> None:
     """Handle the list-sources command."""
-    from src.services.jules import JulesClient
+    from src.services.jules import JulesClient, JulesAPIError
 
-    client = JulesClient()
-    with Spinner("Fetching sources...", success_message="Sources fetched"):
-        sources = client.list_sources()
-
-    print_sources_list(sources)
+    try:
+        client = JulesClient()
+        with Spinner("Fetching sources...", success_message="Sources fetched"):
+            sources = client.list_sources()
+        print_sources_list(sources)
+    except (JulesAPIError, ValueError) as e:
+        print_panel(f"{Colors.FAIL}{str(e)}{Colors.ENDC}", title="Error", color=Colors.FAIL)
+        sys.exit(1)
 
 
 def handle_agent(args: Namespace) -> None:
     """Handle the agent command."""
     from src.services.gemini import GeminiClient
+    from src.services.jules import JulesAPIError
 
     category = getattr(args, 'category', None)
     
-    gemini = GeminiClient()
-    msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
-    with Spinner(msg, success_message="Idea generated"):
-        idea_data = gemini.generate_idea(category=category)
-    
-    _execute_and_watch(args, idea_data)
+    try:
+        gemini = GeminiClient()
+        msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
+        with Spinner(msg, success_message="Idea generated"):
+            idea_data = gemini.generate_idea(category=category)
+
+        _execute_and_watch(args, idea_data)
+    except (JulesAPIError, ValueError) as e:
+        print_panel(f"{Colors.FAIL}{str(e)}{Colors.ENDC}", title="Error", color=Colors.FAIL)
+        sys.exit(1)
 
 
 def handle_website(args: Namespace) -> None:
     """Handle the website command."""
     from src.services.gemini import GeminiClient
     from src.services.scraper import scrape_text, ScrapingError
+    from src.services.jules import JulesAPIError
 
     print(f"Scraping {args.url}...")
     
@@ -62,42 +72,50 @@ def handle_website(args: Namespace) -> None:
     
     print(f"✓ Extracted {len(text)} characters of content")
     
-    gemini = GeminiClient()
-    with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
-        idea_data = gemini.extract_idea_from_text(text)
-    
-    _execute_and_watch(args, idea_data)
+    try:
+        gemini = GeminiClient()
+        with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
+            idea_data = gemini.extract_idea_from_text(text)
+
+        _execute_and_watch(args, idea_data)
+    except (JulesAPIError, ValueError) as e:
+        print_panel(f"{Colors.FAIL}{str(e)}{Colors.ENDC}", title="Error", color=Colors.FAIL)
+        sys.exit(1)
 
 
 def handle_status(args: Namespace) -> None:
     """Handle the status command."""
-    from src.services.jules import JulesClient
+    from src.services.jules import JulesClient, JulesAPIError
 
-    client = JulesClient()
     session_id = args.session_id
     
-    if args.watch:
-        watch_session(session_id, timeout=args.timeout)
-    else:
-        session = client.get_session(session_id)
-        is_complete, pr_url = client.is_session_complete(session_id)
-        
-        # Get recent activity titles
-        activities = client.list_activities(session_id, page_size=3)
-        activity_titles = []
-        for act in activities.get("activities", []):
-            title = act.get("progressUpdated", {}).get("title", "")
-            if title:
-                activity_titles.append(title)
-        
-        print_session_status(
-            session_id=session_id,
-            title=session.get('title', 'N/A'),
-            url=session.get('url', 'N/A'),
-            is_complete=is_complete,
-            pr_url=pr_url,
-            activities=activity_titles
-        )
+    try:
+        client = JulesClient()
+        if args.watch:
+            watch_session(session_id, timeout=args.timeout)
+        else:
+            session = client.get_session(session_id)
+            is_complete, pr_url = client.is_session_complete(session_id)
+
+            # Get recent activity titles
+            activities = client.list_activities(session_id, page_size=3)
+            activity_titles = []
+            for act in activities.get("activities", []):
+                title = act.get("progressUpdated", {}).get("title", "")
+                if title:
+                    activity_titles.append(title)
+
+            print_session_status(
+                session_id=session_id,
+                title=session.get('title', 'N/A'),
+                url=session.get('url', 'N/A'),
+                is_complete=is_complete,
+                pr_url=pr_url,
+                activities=activity_titles
+            )
+    except (JulesAPIError, ValueError) as e:
+        print_panel(f"{Colors.FAIL}{str(e)}{Colors.ENDC}", title="Error", color=Colors.FAIL)
+        sys.exit(1)
 
 
 def _execute_and_watch(args: Namespace, idea_data: dict) -> None:
@@ -134,7 +152,12 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
     """
     from src.services.jules import JulesClient
 
-    jules = JulesClient()
+    try:
+        jules = JulesClient()
+    except ValueError as e:
+         print(f"{Colors.FAIL}{str(e)}{Colors.ENDC}", file=sys.stderr)
+         return False, None
+
     poll_interval = 30
     elapsed = 0
     is_complete = False
@@ -142,14 +165,15 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
     
     with Spinner(f"[{format_duration(elapsed)}] Watching session {session_id}...") as spinner:
         while elapsed < timeout:
-            is_complete, pr_url = jules.is_session_complete(session_id)
-
-            if is_complete:
-                break
-
-            # Show latest activity
-            duration = format_duration(elapsed)
             try:
+                is_complete, pr_url = jules.is_session_complete(session_id)
+
+                if is_complete:
+                    break
+
+                # Show latest activity
+                duration = format_duration(elapsed)
+
                 activities = jules.list_activities(session_id, page_size=1)
                 if activities.get("activities"):
                     latest = activities["activities"][0]
@@ -167,8 +191,12 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
         print_watch_complete(elapsed, pr_url)
         return is_complete, pr_url
 
-    session = jules.get_session(session_id)
-    print_watch_timeout(timeout, session.get('url', 'N/A'))
+    try:
+        session = jules.get_session(session_id)
+        print_watch_timeout(timeout, session.get('url', 'N/A'))
+    except Exception:
+        print_watch_timeout(timeout, "N/A")
+
     return False, None
 
 
@@ -198,6 +226,7 @@ def handle_guide(args: Namespace) -> None:
 
 def handle_manual(args: Namespace) -> None:
     """Handle the manual command."""
+    from src.services.jules import JulesAPIError
     from src.utils.slugify import slugify
     
     raw_title = args.title
@@ -233,7 +262,11 @@ def handle_manual(args: Namespace) -> None:
         "features": features
     }
     
-    _execute_and_watch(args, idea_data)
+    try:
+        _execute_and_watch(args, idea_data)
+    except (JulesAPIError, ValueError) as e:
+        print_panel(f"{Colors.FAIL}{str(e)}{Colors.ENDC}", title="Error", color=Colors.FAIL)
+        sys.exit(1)
 
 
 def dispatch_command(args: Namespace) -> None:
