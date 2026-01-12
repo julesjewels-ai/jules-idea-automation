@@ -28,18 +28,10 @@ def handle_list_sources() -> None:
     print_sources_list(sources)
 
 
-def handle_agent(args: Namespace) -> None:
-    """Handle the agent command."""
-    from src.services.gemini import GeminiClient
+def _execute_and_watch(idea_data: dict, args: Namespace) -> None:
+    """Execute the workflow and optionally watch the session."""
     from src.core.workflow import IdeaWorkflow
 
-    category = getattr(args, 'category', None)
-    
-    gemini = GeminiClient()
-    msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
-    with Spinner(msg, success_message="Idea generated"):
-        idea_data = gemini.generate_idea(category=category)
-    
     print_idea_summary(idea_data)
 
     workflow = IdeaWorkflow()
@@ -53,11 +45,24 @@ def handle_agent(args: Namespace) -> None:
         watch_session(result.session_id, timeout=args.timeout)
 
 
+def handle_agent(args: Namespace) -> None:
+    """Handle the agent command."""
+    from src.services.gemini import GeminiClient
+
+    category = getattr(args, 'category', None)
+
+    gemini = GeminiClient()
+    msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
+    with Spinner(msg, success_message="Idea generated"):
+        idea_data = gemini.generate_idea(category=category)
+
+    _execute_and_watch(idea_data, args)
+
+
 def handle_website(args: Namespace) -> None:
     """Handle the website command."""
     from src.services.gemini import GeminiClient
     from src.services.scraper import scrape_text, ScrapingError
-    from src.core.workflow import IdeaWorkflow
 
     print(f"Scraping {args.url}...")
     
@@ -78,17 +83,7 @@ def handle_website(args: Namespace) -> None:
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
         idea_data = gemini.extract_idea_from_text(text)
     
-    print_idea_summary(idea_data)
-
-    workflow = IdeaWorkflow()
-    result = workflow.execute(
-        idea_data,
-        private=args.private,
-        timeout=args.timeout
-    )
-    
-    if result.session_id and args.watch:
-        watch_session(result.session_id, timeout=args.timeout)
+    _execute_and_watch(idea_data, args)
 
 
 def handle_status(args: Namespace) -> None:
@@ -199,7 +194,6 @@ def handle_guide(args: Namespace) -> None:
 def handle_manual(args: Namespace) -> None:
     """Handle the manual command."""
     from src.utils.slugify import slugify
-    from src.core.workflow import IdeaWorkflow
     
     raw_title = args.title
     
@@ -234,18 +228,7 @@ def handle_manual(args: Namespace) -> None:
         "features": features
     }
     
-    print_idea_summary(idea_data)
-    
-    # Execute via standard workflow
-    workflow = IdeaWorkflow()
-    result = workflow.execute(
-        idea_data,
-        private=args.private,
-        timeout=args.timeout
-    )
-    
-    if result.session_id and args.watch:
-        watch_session(result.session_id, timeout=args.timeout)
+    _execute_and_watch(idea_data, args)
 
 
 def dispatch_command(args: Namespace) -> None:
