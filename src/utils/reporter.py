@@ -20,10 +20,39 @@ class Colors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+# Compile regex once at module level
+ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
 def strip_ansi(text: str) -> str:
     """Removes ANSI escape codes from text."""
-    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    return ansi_escape.sub('', text)
+    return ANSI_ESCAPE.sub('', text)
+
+def _wrap_text_with_ansi(text: str, width: int) -> list[str]:
+    """Wraps text respecting ANSI codes for visible length."""
+    wrapped_lines = []
+
+    # Simple word wrap respecting visible length
+    current_line: list[str] = []
+    current_len = 0
+    words = text.split(' ')
+
+    for word in words:
+        word_len = len(strip_ansi(word))
+        # +1 for the space we'll add if it's not the first word
+        space_len = 1 if current_len > 0 else 0
+
+        if current_len + word_len + space_len > width:
+            wrapped_lines.append(" ".join(current_line))
+            current_line = [word]
+            current_len = word_len
+        else:
+            current_line.append(word)
+            current_len += word_len + space_len
+
+    if current_line:
+        wrapped_lines.append(" ".join(current_line))
+
+    return wrapped_lines
 
 def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: int = 60) -> None:
     """Prints content inside a bordered panel."""
@@ -41,23 +70,14 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
         title_text = f" {title} "
 
         # Check for emojis to adjust padding for visual consistency (best effort)
-        # Assuming common emojis are 2 chars wide but length 1
-        # This is not perfect but improves the most common case in this app (✨)
-        visual_offset = 0
-        if "✨" in title:
-            visual_offset += 1
+        visual_offset = 1 if "✨" in title else 0
 
         # Ensure title fits
         if len(title_text) > width - 4:
             title_text = title_text[:width-5] + "…"
 
         left_pad = 2
-        # Adjust right pad calculation by subtracting visual offset from the available space
-        # (wait, if visual length is longer, we need LESS padding characters to reach the same width)
-        right_pad = width - 2 - len(title_text) - left_pad - visual_offset
-
-        if right_pad < 0:
-            right_pad = 0
+        right_pad = max(0, width - 2 - len(title_text) - left_pad - visual_offset)
 
         top_border = f"{TL_CORNER}{H_LINE * left_pad}{Colors.BOLD}{title_text}{Colors.ENDC}{color}{H_LINE * right_pad}{TR_CORNER}"
     else:
@@ -68,43 +88,22 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
     # Process content
     lines = content.split('\n')
     wrapped_lines = []
+    content_width = width - 4
 
     for line in lines:
         if not line:
             wrapped_lines.append("")
             continue
 
-        # We need to account for ANSI codes when wrapping, but textwrap doesn't ignore them.
-        # A simple approach for now:
-        # 1. If line is short, just add it
-        # 2. If line is long, wrap it based on visible length
-
         visible_len = len(strip_ansi(line))
-        if visible_len <= width - 4:
+        if visible_len <= content_width:
             wrapped_lines.append(line)
         else:
-            # Simple word wrap
-            current_line = []
-            current_len = 0
-            words = line.split(' ')
-
-            for word in words:
-                word_len = len(strip_ansi(word))
-                if current_len + word_len + 1 > width - 4:
-                    wrapped_lines.append(" ".join(current_line))
-                    current_line = [word]
-                    current_len = word_len
-                else:
-                    current_line.append(word)
-                    current_len += word_len + 1
-            if current_line:
-                wrapped_lines.append(" ".join(current_line))
+            wrapped_lines.extend(_wrap_text_with_ansi(line, content_width))
 
     for line in wrapped_lines:
         visible_len = len(strip_ansi(line))
-        padding = width - 4 - visible_len
-        if padding < 0:
-             padding = 0
+        padding = max(0, content_width - visible_len)
         print(f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} {color}{V_LINE}{Colors.ENDC}")
 
     print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}")
@@ -117,7 +116,7 @@ class Spinner:
     success (✔) or failure (✖) state upon completion.
     """
 
-    def __init__(self, message: str = "Processing", success_message: str = None):
+    def __init__(self, message: str = "Processing", success_message: Optional[str] = None):
         self.message = message
         self.success_message = success_message
         self._stop_event = threading.Event()
