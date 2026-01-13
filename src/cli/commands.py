@@ -8,7 +8,6 @@ from src.utils.reporter import (
     print_session_status,
     print_watch_complete,
     print_watch_timeout,
-    print_progress,
     print_sources_list,
     print_idea_summary,
     Spinner,
