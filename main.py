@@ -32,9 +32,11 @@ def main() -> None:
         print("\n\n👋 Operation cancelled by user.", file=sys.stderr)
         sys.exit(130)
     except Exception as e:
+        from src.utils.reporter import print_error_panel
+        error_msg = str(e)
         if hasattr(e, 'response') and e.response is not None:
-            print(f"HTTP Error: {e.response.status_code} - {e.response.text}", file=sys.stderr)
-        print(f"Error: {e}", file=sys.stderr)
+            error_msg = f"HTTP Error: {e.response.status_code} - {e.response.text}\n{error_msg}"
+        print_error_panel(error_msg, title="Unexpected Error")
         sys.exit(1)
 
 

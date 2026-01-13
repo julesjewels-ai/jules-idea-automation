@@ -4,7 +4,7 @@ import sys
 import time
 import threading
 import re
-from typing import Optional
+from typing import Optional, TextIO
 
 
 class Colors:
@@ -25,7 +25,7 @@ def strip_ansi(text: str) -> str:
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     return ansi_escape.sub('', text)
 
-def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: int = 60) -> None:
+def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: int = 60, stream: TextIO = sys.stdout) -> None:
     """Prints content inside a bordered panel."""
 
     # Box drawing characters
@@ -63,7 +63,7 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
     else:
         top_border = f"{TL_CORNER}{H_LINE * (width - 2)}{TR_CORNER}"
 
-    print(f"{color}{top_border}{Colors.ENDC}")
+    print(f"{color}{top_border}{Colors.ENDC}", file=stream)
 
     # Process content
     lines = content.split('\n')
@@ -105,9 +105,9 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
         padding = width - 4 - visible_len
         if padding < 0:
              padding = 0
-        print(f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} {color}{V_LINE}{Colors.ENDC}")
+        print(f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} {color}{V_LINE}{Colors.ENDC}", file=stream)
 
-    print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}")
+    print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}", file=stream)
 
 
 class Spinner:
@@ -319,3 +319,23 @@ def print_idea_summary(idea_data: dict) -> None:
         width=70
     )
     print("") # spacing after
+
+
+def print_error_panel(error_message: str, title: str = "Error", tips: Optional[list[str]] = None) -> None:
+    """Prints a formatted error panel.
+
+    Args:
+        error_message: The main error message to display
+        title: Title of the error panel
+        tips: Optional list of helpful tips for the user
+    """
+    content = f"{error_message}"
+
+    if tips:
+        content += f"\n\n{Colors.YELLOW}Tips:{Colors.ENDC}"
+        for tip in tips:
+            content += f"\n• {tip}"
+
+    print("", file=sys.stderr) # spacing before
+    print_panel(content, title=f"❌ {title}", color=Colors.FAIL, width=70, stream=sys.stderr)
+    print("", file=sys.stderr) # spacing after
