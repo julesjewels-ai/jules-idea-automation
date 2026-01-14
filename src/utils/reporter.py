@@ -4,7 +4,7 @@ import sys
 import time
 import threading
 import re
-from typing import Optional
+from typing import Optional, TextIO
 
 
 class Colors:
@@ -25,7 +25,7 @@ def strip_ansi(text: str) -> str:
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     return ansi_escape.sub('', text)
 
-def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: int = 60) -> None:
+def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: int = 60, stream: TextIO = sys.stdout) -> None:
     """Prints content inside a bordered panel."""
 
     # Box drawing characters
@@ -63,7 +63,7 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
     else:
         top_border = f"{TL_CORNER}{H_LINE * (width - 2)}{TR_CORNER}"
 
-    print(f"{color}{top_border}{Colors.ENDC}")
+    print(f"{color}{top_border}{Colors.ENDC}", file=stream)
 
     # Process content
     lines = content.split('\n')
@@ -84,7 +84,7 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
             wrapped_lines.append(line)
         else:
             # Simple word wrap
-            current_line = []
+            current_line: list[str] = []
             current_len = 0
             words = line.split(' ')
 
@@ -105,9 +105,14 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
         padding = width - 4 - visible_len
         if padding < 0:
              padding = 0
-        print(f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} {color}{V_LINE}{Colors.ENDC}")
+        print(f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} {color}{V_LINE}{Colors.ENDC}", file=stream)
 
-    print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}")
+    print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}", file=stream)
+
+
+def print_error_panel(content: str, title: str = "Error") -> None:
+    """Prints an error message inside a red bordered panel to stderr."""
+    print_panel(content, title=title, color=Colors.FAIL, stream=sys.stderr)
 
 
 class Spinner:
@@ -117,7 +122,7 @@ class Spinner:
     success (✔) or failure (✖) state upon completion.
     """
 
-    def __init__(self, message: str = "Processing", success_message: str = None):
+    def __init__(self, message: str = "Processing", success_message: Optional[str] = None):
         self.message = message
         self.success_message = success_message
         self._stop_event = threading.Event()

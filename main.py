@@ -14,6 +14,7 @@ load_dotenv()
 
 from src.cli.parser import create_parser
 from src.cli.commands import dispatch_command
+from src.utils.reporter import print_error_panel
 
 
 def main() -> None:
@@ -33,8 +34,9 @@ def main() -> None:
         sys.exit(130)
     except Exception as e:
         if hasattr(e, 'response') and e.response is not None:
-            print(f"HTTP Error: {e.response.status_code} - {e.response.text}", file=sys.stderr)
-        print(f"Error: {e}", file=sys.stderr)
+            print_error_panel(f"HTTP Error: {e.response.status_code}\n{e.response.text}", title="HTTP Error")
+        else:
+            print_error_panel(str(e), title="Error")
         sys.exit(1)
 
 

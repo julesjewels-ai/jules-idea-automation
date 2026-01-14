@@ -11,6 +11,7 @@ from src.utils.reporter import (
     print_progress,
     print_sources_list,
     print_idea_summary,
+    print_error_panel,
     Spinner,
     Colors,
     format_duration,
@@ -53,11 +54,11 @@ def handle_website(args: Namespace) -> None:
         with Spinner(f"Scraping {args.url}..."):
             text = scrape_text(args.url)
     except ScrapingError as e:
-        print(f"\n{Colors.FAIL}❌ Scraping failed: {e}{Colors.ENDC}", file=sys.stderr)
-        print(f"\n{Colors.YELLOW}Tips:{Colors.ENDC}", file=sys.stderr)
-        print("  • Ensure the URL is publicly accessible (no login required)", file=sys.stderr)
-        print("  • Try a different URL that contains the idea description", file=sys.stderr)
-        print("  • Use 'python main.py agent' to generate a random idea instead", file=sys.stderr)
+        error_msg = f"{e}\n\n{Colors.YELLOW}Tips:{Colors.ENDC}\n" \
+                    f"• Ensure the URL is publicly accessible\n" \
+                    f"• Try a different URL\n" \
+                    f"• Use 'python main.py agent' instead"
+        print_error_panel(error_msg, title="Scraping Failed")
         sys.exit(1)
     
     print(f"✓ Extracted {len(text)} characters of content")
