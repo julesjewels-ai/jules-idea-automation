@@ -4,6 +4,11 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 
+class TextAnalysisInput(BaseModel):
+    """Input model for text analysis with validation."""
+    text: str = Field(..., max_length=100000, description="The text content to analyze.")
+
+
 class IdeaResponse(BaseModel):
     """Represents a generated software idea."""
     title: str = Field(description="The name of the software idea.")
