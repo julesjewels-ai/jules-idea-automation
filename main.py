@@ -32,9 +32,20 @@ def main() -> None:
         print("\n\n👋 Operation cancelled by user.", file=sys.stderr)
         sys.exit(130)
     except Exception as e:
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"HTTP Error: {e.response.status_code} - {e.response.text}", file=sys.stderr)
-        print(f"Error: {e}", file=sys.stderr)
+        from src.utils.reporter import print_panel, Colors
+        from src.services.jules import JulesAPIError
+
+        if isinstance(e, JulesAPIError):
+            print_panel(
+                str(e),
+                title="Jules API Error",
+                color=Colors.FAIL,
+                width=70
+            )
+        else:
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"HTTP Error: {e.response.status_code} - {e.response.text}", file=sys.stderr)
+            print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
 
