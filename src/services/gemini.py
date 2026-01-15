@@ -2,10 +2,13 @@ import os
 import json
 from google import genai
 from google.genai import types
+from pydantic import BaseModel, Field
 
 from src.core.models import IdeaResponse, ProjectFile, ProjectScaffold
 
-
+# Input validation model for text analysis
+class TextAnalysisInput(BaseModel):
+    text: str = Field(..., min_length=1, max_length=100000)
 
 # Category-specific prompt templates
 CATEGORY_PROMPTS = {
@@ -30,13 +33,14 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def generate_idea(self, category: str = None):
+    def generate_idea(self, category: str | None = None):
         """Generates a unique software idea using Gemini 3.
         
         Args:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
         """
-        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
+        cat = category or "default"
+        base_prompt = CATEGORY_PROMPTS.get(cat, CATEGORY_PROMPTS["default"])
         prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
         
         response = self.client.models.generate_content(
@@ -52,16 +56,19 @@ class GeminiClient:
 
     def extract_idea_from_text(self, text):
         """Extracts the core app idea from the provided text."""
-        # Truncate text if it's too long to avoid token limits
-        max_chars = 100000 
-        truncated_text = text[:max_chars]
+        # Validate input using Pydantic
+        input_data = TextAnalysisInput(text=text)
+
+        # Escape XML delimiters to prevent injection
+        safe_text = input_data.text.replace("</content>", "&lt;/content&gt;")
         
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
-        Text content:
-        {truncated_text}
+        <content>
+        {safe_text}
+        </content>
         """
         
         response = self.client.models.generate_content(
@@ -291,4 +298,3 @@ def test_app_run(capsys) -> None:
             "requirements": ["pytest"],
             "run_command": "python main.py"
         }
-
