@@ -1,12 +1,16 @@
 import os
 import requests
 import base64
+from src.utils.errors import ConfigurationError
 
 class GitHubClient:
     def __init__(self, token=None):
         self.token = token or os.environ.get("GITHUB_TOKEN")
         if not self.token:
-            raise ValueError("GITHUB_TOKEN environment variable is not set")
+            raise ConfigurationError(
+                "GITHUB_TOKEN environment variable is not set",
+                tip="Create a Personal Access Token (PAT) with 'repo' scope at https://github.com/settings/tokens and add it to your .env file."
+            )
         self.base_url = "https://api.github.com"
         self.headers = {
             "Authorization": f"token {self.token}",

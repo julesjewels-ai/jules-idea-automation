@@ -1,11 +1,15 @@
 import os
 import requests
+from src.utils.errors import ConfigurationError
 
 class JulesClient:
     def __init__(self, api_key=None):
         self.api_key = api_key or os.environ.get("JULES_API_KEY")
         if not self.api_key:
-            raise ValueError("JULES_API_KEY environment variable is not set")
+            raise ConfigurationError(
+                "JULES_API_KEY environment variable is not set",
+                tip="Ensure you have access to the Jules API and add the key to your .env file."
+            )
         self.base_url = "https://jules.googleapis.com/v1alpha"
         self.headers = {
             "x-goog-api-key": self.api_key,

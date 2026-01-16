@@ -14,6 +14,8 @@ load_dotenv()
 
 from src.cli.parser import create_parser
 from src.cli.commands import dispatch_command
+from src.utils.errors import AppError
+from src.utils.reporter import print_panel, Colors
 
 
 def main() -> None:
@@ -31,6 +33,14 @@ def main() -> None:
     except KeyboardInterrupt:
         print("\n\n👋 Operation cancelled by user.", file=sys.stderr)
         sys.exit(130)
+    except AppError as e:
+        tip_msg = f"\n\n{Colors.BOLD}💡 Tip:{Colors.ENDC}\n{e.tip}" if e.tip else ""
+        print_panel(
+            f"{str(e)}{tip_msg}",
+            title="Configuration Error",
+            color=Colors.FAIL
+        )
+        sys.exit(1)
     except Exception as e:
         if hasattr(e, 'response') and e.response is not None:
             print(f"HTTP Error: {e.response.status_code} - {e.response.text}", file=sys.stderr)
