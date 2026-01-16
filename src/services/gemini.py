@@ -1,9 +1,27 @@
 import os
 import json
+from typing import Optional
 from google import genai
 from google.genai import types
+from pydantic import BaseModel, Field, field_validator
 
 from src.core.models import IdeaResponse, ProjectFile, ProjectScaffold
+
+
+class TextAnalysisInput(BaseModel):
+    """Input model for text analysis with security validation."""
+    text: str = Field(..., description="The raw text content to analyze.")
+
+    @field_validator('text')
+    @classmethod
+    def sanitize_and_truncate(cls, v: str) -> str:
+        """Truncate text and sanitize XML tags to prevent prompt injection."""
+        # Truncate to 100,000 characters
+        if len(v) > 100_000:
+            v = v[:100_000]
+
+        # Escape XML closing tags to prevent injection
+        return v.replace("</content>", r"<\/content>")
 
 
 
@@ -19,7 +37,7 @@ CATEGORY_PROMPTS = {
 }
 
 class GeminiClient:
-    def __init__(self, api_key=None):
+    def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY environment variable is not set")
@@ -30,13 +48,14 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def generate_idea(self, category: str = None):
+    def generate_idea(self, category: Optional[str] = None):
         """Generates a unique software idea using Gemini 3.
         
         Args:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
         """
-        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
+        cat_key = category if category else "default"
+        base_prompt = CATEGORY_PROMPTS.get(cat_key, CATEGORY_PROMPTS["default"])
         prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
         
         response = self.client.models.generate_content(
@@ -52,16 +71,21 @@ class GeminiClient:
 
     def extract_idea_from_text(self, text):
         """Extracts the core app idea from the provided text."""
-        # Truncate text if it's too long to avoid token limits
-        max_chars = 100000 
-        truncated_text = text[:max_chars]
+        # Validate and sanitize input
+        try:
+            input_data = TextAnalysisInput(text=text)
+            sanitized_text = input_data.text
+        except Exception:
+            # Fallback sanitization if validation fails unexpectedly
+            sanitized_text = text[:100000].replace("</content>", r"<\/content>")
         
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
-        Text content:
-        {truncated_text}
+        <content>
+        {sanitized_text}
+        </content>
         """
         
         response = self.client.models.generate_content(
