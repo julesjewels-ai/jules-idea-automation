@@ -35,9 +35,13 @@ def main() -> None:
         sys.exit(130)
     except AppError as e:
         tip_msg = f"\n\n{Colors.BOLD}💡 Tip:{Colors.ENDC}\n{e.tip}" if e.tip else ""
+
+        # Format title from class name: ConfigurationError -> Configuration Error
+        title = type(e).__name__.replace("Error", " Error")
+
         print_panel(
             f"{str(e)}{tip_msg}",
-            title="Configuration Error",
+            title=title,
             color=Colors.FAIL
         )
         sys.exit(1)

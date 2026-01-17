@@ -1,12 +1,14 @@
 import os
 import json
+import logging
 from google import genai
 from google.genai import types
 
-from src.core.models import IdeaResponse, ProjectFile, ProjectScaffold
-from src.utils.errors import ConfigurationError
+from src.core.models import IdeaResponse, ProjectScaffold
+from src.utils.errors import ConfigurationError, GenerationError
 
 
+logger = logging.getLogger(__name__)
 
 # Category-specific prompt templates
 CATEGORY_PROMPTS = {
@@ -52,7 +54,13 @@ class GeminiClient:
                 response_schema=IdeaResponse
             ),
         )
-        return json.loads(response.text)
+        try:
+            return json.loads(response.text)
+        except json.JSONDecodeError as e:
+            raise GenerationError(
+                f"Failed to parse Gemini response: {e}",
+                tip="The AI model returned invalid JSON. Please try again or try a different category."
+            )
 
     def extract_idea_from_text(self, text):
         """Extracts the core app idea from the provided text."""
@@ -77,7 +85,13 @@ class GeminiClient:
                 response_schema=IdeaResponse
             ),
         )
-        return json.loads(response.text)
+        try:
+            return json.loads(response.text)
+        except json.JSONDecodeError as e:
+            raise GenerationError(
+                f"Failed to parse Gemini response: {e}",
+                tip="The AI model returned invalid JSON while analyzing the website content."
+            )
 
     def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
         """Generates a complete MVP project scaffold for the given idea.
@@ -137,17 +151,16 @@ Create a complete, immediately-runnable project with these files:
                 return json.loads(response.text)
             except Exception as e:
                 if attempt < max_retries:
-                    print(f"  Scaffold generation attempt {attempt + 1} failed, retrying...")
+                    logger.warning(f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
                     continue
                 else:
-                    print(f"  Scaffold generation failed after {max_retries + 1} attempts: {e}")
+                    logger.error(f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
                     # Return minimal fallback scaffold
                     return self._get_fallback_scaffold(idea_data)
     
     def _get_fallback_scaffold(self, idea_data: dict) -> dict:
         """Returns a developer-ready fallback scaffold when generation fails."""
         title = idea_data['title']
-        slug = idea_data.get('slug', 'app')
         desc = idea_data['description'][:200]
         
         return {
@@ -211,7 +224,7 @@ class App:
                 },
                 {
                     "path": "Makefile",
-                    "content": f'''.PHONY: install run test clean
+                    "content": '''.PHONY: install run test clean
 
 install:
 \tpython -m venv venv
@@ -225,7 +238,7 @@ test:
 
 clean:
 \trm -rf __pycache__ .pytest_cache
-\tfind . -type d -name "__pycache__" -exec rm -rf {{}} + 2>/dev/null || true
+\tfind . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 ''',
                     "description": "Development commands"
                 },
