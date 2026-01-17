@@ -2,9 +2,14 @@ import os
 import json
 from google import genai
 from google.genai import types
+from pydantic import BaseModel, Field, ValidationError
 
-from src.core.models import IdeaResponse, ProjectFile, ProjectScaffold
+from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError
+
+class TextAnalysisInput(BaseModel):
+    """Input model for text analysis to ensure safety constraints."""
+    text: str = Field(..., max_length=100000, description="The text content to be analyzed.")
 
 
 
@@ -56,16 +61,23 @@ class GeminiClient:
 
     def extract_idea_from_text(self, text):
         """Extracts the core app idea from the provided text."""
-        # Truncate text if it's too long to avoid token limits
-        max_chars = 100000 
-        truncated_text = text[:max_chars]
+        # Validate input using Pydantic
+        try:
+            # Pre-truncate to ensure we don't pass massive strings to Pydantic if not needed
+            input_data = TextAnalysisInput(text=text[:100000])
+        except ValidationError as e:
+            raise ValueError(f"Input validation failed: {e}")
+
+        # Sanitize to prevent prompt injection via XML tag manipulation
+        sanitized_text = input_data.text.replace("</content>", "<\\/content>")
         
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
-        Text content:
-        {truncated_text}
+        <content>
+        {sanitized_text}
+        </content>
         """
         
         response = self.client.models.generate_content(
@@ -147,7 +159,6 @@ Create a complete, immediately-runnable project with these files:
     def _get_fallback_scaffold(self, idea_data: dict) -> dict:
         """Returns a developer-ready fallback scaffold when generation fails."""
         title = idea_data['title']
-        slug = idea_data.get('slug', 'app')
         desc = idea_data['description'][:200]
         
         return {
@@ -211,7 +222,7 @@ class App:
                 },
                 {
                     "path": "Makefile",
-                    "content": f'''.PHONY: install run test clean
+                    "content": '''.PHONY: install run test clean
 
 install:
 \tpython -m venv venv
