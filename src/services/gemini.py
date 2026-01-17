@@ -4,6 +4,7 @@ from google import genai
 from google.genai import types
 
 from src.core.models import IdeaResponse, ProjectFile, ProjectScaffold
+from src.utils.errors import ConfigurationError
 
 
 
@@ -22,7 +23,10 @@ class GeminiClient:
     def __init__(self, api_key=None):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
-            raise ValueError("GEMINI_API_KEY environment variable is not set")
+            raise ConfigurationError(
+                "GEMINI_API_KEY environment variable is not set",
+                tip="Get your API key from https://aistudio.google.com/app/apikey and add it to your .env file."
+            )
         
         self.client = genai.Client(
             api_key=self.api_key,
