@@ -11,3 +11,7 @@ class AppError(Exception):
 class ConfigurationError(AppError):
     """Raised when configuration is missing or invalid."""
     pass
+
+class GenerationError(AppError):
+    """Raised when GenAI generation fails or returns invalid output."""
+    pass
