@@ -133,36 +133,37 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
         Tuple of (is_complete, pr_url or None)
     """
     from src.services.jules import JulesClient
+    from src.utils.polling import poll_with_result
 
     jules = JulesClient()
-    poll_interval = 30
-    elapsed = 0
-    is_complete = False
-    pr_url = None
     
-    with Spinner(f"[{format_duration(elapsed)}] Watching session {session_id}...") as spinner:
-        while elapsed < timeout:
-            is_complete, pr_url = jules.is_session_complete(session_id)
+    def check() -> tuple[bool, str | None]:
+        return jules.is_session_complete(session_id)
 
-            if is_complete:
-                break
+    def get_status() -> str:
+        try:
+            activities = jules.list_activities(session_id, page_size=1)
+            if activities.get("activities"):
+                return activities["activities"][0].get("progressUpdated", {}).get("title", "Working...")
+            return "Working..."
+        except Exception:
+            return "Polling..."
 
-            # Show latest activity
-            duration = format_duration(elapsed)
-            try:
-                activities = jules.list_activities(session_id, page_size=1)
-                if activities.get("activities"):
-                    latest = activities["activities"][0]
-                    title = latest.get("progressUpdated", {}).get("title", "Working...")
-                    spinner.update(f"[{duration}] {title}")
-                else:
-                    spinner.update(f"[{duration}] Working...")
-            except Exception:
-                spinner.update(f"[{duration}] Polling...")
+    start_time = time.time()
 
-            time.sleep(poll_interval)
-            elapsed += poll_interval
+    with Spinner(f"[{format_duration(0)}] Watching session {session_id}...") as spinner:
+        def on_poll(elapsed: int, status: str) -> None:
+            spinner.update(f"[{format_duration(elapsed)}] {status}")
+
+        is_complete, pr_url = poll_with_result(
+            check,
+            timeout=timeout,
+            on_poll=on_poll,
+            status_extractor=get_status
+        )
     
+    elapsed = int(time.time() - start_time)
+
     if is_complete:
         print_watch_complete(elapsed, pr_url)
         return is_complete, pr_url
