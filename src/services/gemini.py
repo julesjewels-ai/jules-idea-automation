@@ -2,9 +2,15 @@ import os
 import json
 from google import genai
 from google.genai import types
+from pydantic import BaseModel, Field
 
 from src.core.models import IdeaResponse, ProjectFile, ProjectScaffold
 from src.utils.errors import ConfigurationError
+
+
+class TextAnalysisInput(BaseModel):
+    """Input validation for text analysis."""
+    text: str = Field(..., max_length=100_000, description="Text content to analyze.")
 
 
 
@@ -20,7 +26,7 @@ CATEGORY_PROMPTS = {
 }
 
 class GeminiClient:
-    def __init__(self, api_key=None):
+    def __init__(self, api_key: str | None = None):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -34,13 +40,13 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def generate_idea(self, category: str = None):
+    def generate_idea(self, category: str | None = None):
         """Generates a unique software idea using Gemini 3.
         
         Args:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
         """
-        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
+        base_prompt = CATEGORY_PROMPTS.get(category or "default", CATEGORY_PROMPTS["default"])
         prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
         
         response = self.client.models.generate_content(
@@ -52,20 +58,26 @@ class GeminiClient:
                 response_schema=IdeaResponse
             ),
         )
+        if not response.text:
+            raise ValueError("Empty response from Gemini")
         return json.loads(response.text)
 
     def extract_idea_from_text(self, text):
         """Extracts the core app idea from the provided text."""
-        # Truncate text if it's too long to avoid token limits
-        max_chars = 100000 
-        truncated_text = text[:max_chars]
+        # Validate input
+        input_data = TextAnalysisInput(text=text)
+
+        # Sanitize input: remove potential XML delimiters to prevent injection
+        sanitized_text = input_data.text.replace("<content>", "").replace("</content>", "")
         
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
         Text content:
-        {truncated_text}
+        <content>
+        {sanitized_text}
+        </content>
         """
         
         response = self.client.models.generate_content(
@@ -77,6 +89,8 @@ class GeminiClient:
                 response_schema=IdeaResponse
             ),
         )
+        if not response.text:
+            raise ValueError("Empty response from Gemini")
         return json.loads(response.text)
 
     def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
@@ -134,6 +148,8 @@ Create a complete, immediately-runnable project with these files:
                         response_schema=ProjectScaffold
                     ),
                 )
+                if not response.text:
+                    raise ValueError("Empty response from Gemini")
                 return json.loads(response.text)
             except Exception as e:
                 if attempt < max_retries:
