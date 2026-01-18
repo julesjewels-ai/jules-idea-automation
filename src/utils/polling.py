@@ -40,8 +40,8 @@ def poll_with_result(
     interval: int = 30,
     on_poll: Optional[Callable[[int, str], None]] = None,
     status_extractor: Optional[Callable[[], str]] = None
-) -> tuple[bool, Optional[T]]:
-    """Polls until completion, returning a result.
+) -> tuple[bool, Optional[T], int]:
+    """Polls until completion, returning a result and elapsed time.
     
     Args:
         check: Callable that returns (is_complete, result)
@@ -51,13 +51,13 @@ def poll_with_result(
         status_extractor: Callable to get current status message
     
     Returns:
-        Tuple of (completed, result or None)
+        Tuple of (completed, result or None, elapsed_time)
     """
     elapsed = 0
     while elapsed < timeout:
         is_complete, result = check()
         if is_complete:
-            return True, result
+            return True, result, elapsed
         
         if on_poll:
             status = status_extractor() if status_extractor else "Working..."
@@ -66,4 +66,4 @@ def poll_with_result(
         time.sleep(interval)
         elapsed += interval
     
-    return False, None
+    return False, None, elapsed
