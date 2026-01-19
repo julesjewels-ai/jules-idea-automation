@@ -84,7 +84,7 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
             wrapped_lines.append(line)
         else:
             # Simple word wrap
-            current_line = []
+            current_line: list[str] = []
             current_len = 0
             words = line.split(' ')
 
@@ -117,7 +117,7 @@ class Spinner:
     success (✔) or failure (✖) state upon completion.
     """
 
-    def __init__(self, message: str = "Processing", success_message: str = None):
+    def __init__(self, message: str = "Processing", success_message: str | None = None):
         self.message = message
         self.success_message = success_message
         self._stop_event = threading.Event()

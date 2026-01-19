@@ -68,8 +68,10 @@ class IdeaWorkflow:
         session = self._create_jules_session(username, idea_data, timeout, verbose)
         
         # Build result
+        from src.core.models import IdeaResponse
+
         result = WorkflowResult(
-            idea=idea_data,
+            idea=IdeaResponse(**idea_data),
             repo_url=repo_url,
             session_id=session.get('id') if session else None,
             session_url=session.get('url') if session else None
