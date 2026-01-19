@@ -1,6 +1,8 @@
 import os
 import json
 import logging
+import re
+from typing import Union, Optional
 from google import genai
 from google.genai import types
 
@@ -22,7 +24,7 @@ CATEGORY_PROMPTS = {
 }
 
 class GeminiClient:
-    def __init__(self, api_key=None):
+    def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -36,13 +38,13 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def generate_idea(self, category: str = None):
+    def generate_idea(self, category: Optional[str] = None):
         """Generates a unique software idea using Gemini 3.
         
         Args:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
         """
-        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
+        base_prompt = CATEGORY_PROMPTS.get(category or "default", CATEGORY_PROMPTS["default"])
         prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
         
         response = self.client.models.generate_content(
@@ -54,6 +56,9 @@ class GeminiClient:
                 response_schema=IdeaResponse
             ),
         )
+        if not response.text:
+            raise GenerationError("Gemini returned empty response")
+
         try:
             return json.loads(response.text)
         except json.JSONDecodeError as e:
@@ -62,18 +67,25 @@ class GeminiClient:
                 tip="The AI model returned invalid JSON. Please try again or try a different category."
             )
 
+    def _sanitize_input(self, text: str) -> str:
+        """Sanitizes input text to prevent XML tag injection."""
+        # Remove anything that looks like XML tags to prevent prompt structure manipulation
+        return re.sub(r'<[^>]*>', '', text)
+
     def extract_idea_from_text(self, text):
         """Extracts the core app idea from the provided text."""
         # Truncate text if it's too long to avoid token limits
         max_chars = 100000 
         truncated_text = text[:max_chars]
+        sanitized_text = self._sanitize_input(truncated_text)
         
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
-        Text content:
-        {truncated_text}
+        <content>
+        {sanitized_text}
+        </content>
         """
         
         response = self.client.models.generate_content(
@@ -85,6 +97,9 @@ class GeminiClient:
                 response_schema=IdeaResponse
             ),
         )
+        if not response.text:
+            raise GenerationError("Gemini returned empty response")
+
         try:
             return json.loads(response.text)
         except json.JSONDecodeError as e:
@@ -93,22 +108,34 @@ class GeminiClient:
                 tip="The AI model returned invalid JSON while analyzing the website content."
             )
 
-    def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
+    def generate_project_scaffold(self, idea_data: Union[dict, IdeaResponse], max_retries: int = 2):
         """Generates a complete MVP project scaffold for the given idea.
         
         Args:
-            idea_data: Dict with title, description, slug, tech_stack, features
+            idea_data: IdeaResponse object or dict with title, description, slug, tech_stack, features
             max_retries: Number of retries on failure (default: 2)
         
         Returns:
             ProjectScaffold with files, requirements, and run command
         """
+        # Ensure strict typing and validation
+        if isinstance(idea_data, dict):
+            idea = IdeaResponse(**idea_data)
+        else:
+            idea = idea_data
+
+        # Sanitize inputs for prompt safety
+        safe_title = self._sanitize_input(idea.title)
+        safe_desc = self._sanitize_input(idea.description[:500])
+
         # Developer-ready MVP prompt
         prompt = f"""
-Generate a DEVELOPER-READY MVP project scaffold for:
+Generate a DEVELOPER-READY MVP project scaffold based on the context below.
 
-**Project:** {idea_data['title']}
-**Description:** {idea_data['description'][:500]}
+<project_context>
+**Project:** {safe_title}
+**Description:** {safe_desc}
+</project_context>
 
 Create a complete, immediately-runnable project with these files:
 
@@ -148,6 +175,9 @@ Create a complete, immediately-runnable project with these files:
                         response_schema=ProjectScaffold
                     ),
                 )
+                if not response.text:
+                    raise ValueError("Empty response from Gemini")
+
                 return json.loads(response.text)
             except Exception as e:
                 if attempt < max_retries:
@@ -156,7 +186,7 @@ Create a complete, immediately-runnable project with these files:
                 else:
                     logger.error(f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
                     # Return minimal fallback scaffold
-                    return self._get_fallback_scaffold(idea_data)
+                    return self._get_fallback_scaffold(idea.model_dump())
     
     def _get_fallback_scaffold(self, idea_data: dict) -> dict:
         """Returns a developer-ready fallback scaffold when generation fails."""
