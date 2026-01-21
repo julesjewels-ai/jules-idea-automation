@@ -1,20 +1,19 @@
 """Command handlers for the CLI."""
 
 import sys
-import time
 from argparse import Namespace
 
 from src.utils.reporter import (
     print_session_status,
     print_watch_complete,
     print_watch_timeout,
-    print_progress,
     print_sources_list,
     print_idea_summary,
     Spinner,
     Colors,
     format_duration,
 )
+from src.utils.polling import poll_with_result
 
 
 def handle_list_sources() -> None:
@@ -135,34 +134,39 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
     from src.services.jules import JulesClient
 
     jules = JulesClient()
-    poll_interval = 30
-    elapsed = 0
-    is_complete = False
-    pr_url = None
     
-    with Spinner(f"[{format_duration(elapsed)}] Watching session {session_id}...") as spinner:
-        while elapsed < timeout:
-            is_complete, pr_url = jules.is_session_complete(session_id)
+    def check_status() -> tuple[bool, str | None]:
+        return jules.is_session_complete(session_id)
 
-            if is_complete:
-                break
+    def get_status_message() -> str:
+        try:
+            activities = jules.list_activities(session_id, page_size=1)
+            if activities.get("activities"):
+                latest = activities["activities"][0]
+                return latest.get("progressUpdated", {}).get("title", "Working...")
+            return "Working..."
+        except Exception:
+            return "Polling..."
 
-            # Show latest activity
-            duration = format_duration(elapsed)
-            try:
-                activities = jules.list_activities(session_id, page_size=1)
-                if activities.get("activities"):
-                    latest = activities["activities"][0]
-                    title = latest.get("progressUpdated", {}).get("title", "Working...")
-                    spinner.update(f"[{duration}] {title}")
-                else:
-                    spinner.update(f"[{duration}] Working...")
-            except Exception:
-                spinner.update(f"[{duration}] Polling...")
+    # Let's use a mutable container for elapsed
+    elapsed_container = [0]
 
-            time.sleep(poll_interval)
-            elapsed += poll_interval
+    def update_spinner_with_tracking(elapsed_val: int, status: str) -> None:
+        elapsed_container[0] = elapsed_val
+        duration = format_duration(elapsed_val)
+        spinner.update(f"[{duration}] {status}")
+
+    with Spinner(f"Watching session {session_id}...") as spinner:
+        is_complete, pr_url = poll_with_result(
+            check=check_status,
+            timeout=timeout,
+            interval=30,
+            on_poll=update_spinner_with_tracking,
+            status_extractor=get_status_message
+        )
     
+    elapsed = elapsed_container[0]
+
     if is_complete:
         print_watch_complete(elapsed, pr_url)
         return is_complete, pr_url
