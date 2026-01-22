@@ -1,8 +1,9 @@
 import os
 import json
 import logging
-from google import genai
-from google.genai import types
+import xml.sax.saxutils
+from google import genai # type: ignore
+from google.genai import types # type: ignore
 
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
@@ -68,12 +69,17 @@ class GeminiClient:
         max_chars = 100000 
         truncated_text = text[:max_chars]
         
+        # Sanitize input to prevent injection
+        safe_text = xml.sax.saxutils.escape(truncated_text)
+
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
         Text content:
-        {truncated_text}
+        <text_content>
+        {safe_text}
+        </text_content>
         """
         
         response = self.client.models.generate_content(
@@ -103,12 +109,16 @@ class GeminiClient:
         Returns:
             ProjectScaffold with files, requirements, and run command
         """
+        # Sanitize inputs
+        safe_title = xml.sax.saxutils.escape(idea_data.get('title', ''))
+        safe_desc = xml.sax.saxutils.escape(idea_data.get('description', '')[:500])
+
         # Developer-ready MVP prompt
         prompt = f"""
 Generate a DEVELOPER-READY MVP project scaffold for:
 
-**Project:** {idea_data['title']}
-**Description:** {idea_data['description'][:500]}
+**Project:** <project_title>{safe_title}</project_title>
+**Description:** <project_description>{safe_desc}</project_description>
 
 Create a complete, immediately-runnable project with these files:
 
