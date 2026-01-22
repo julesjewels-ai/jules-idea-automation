@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+from pydantic import ValidationError
 from google import genai
 from google.genai import types
 
@@ -30,11 +31,21 @@ class GeminiClient:
                 tip="Get your API key from https://aistudio.google.com/app/apikey and add it to your .env file."
             )
         
+        # type: ignore
         self.client = genai.Client(
             api_key=self.api_key,
             http_options={'api_version': 'v1beta'}
         )
         self.model_name = "gemini-3-pro-preview"
+
+    def _format_validation_error(self, e: ValidationError) -> str:
+        """Formats Pydantic validation errors into a human-readable bulleted list."""
+        errors = []
+        for error in e.errors():
+            field = ".".join(str(loc) for loc in error['loc'])
+            msg = error['msg']
+            errors.append(f"• {field}: {msg}")
+        return "\n".join(errors)
 
     def generate_idea(self, category: str = None):
         """Generates a unique software idea using Gemini 3.
@@ -55,11 +66,19 @@ class GeminiClient:
             ),
         )
         try:
-            return json.loads(response.text)
+            data = json.loads(response.text)
+            IdeaResponse(**data) # Validate
+            return data
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
                 tip="The AI model returned invalid JSON. Please try again or try a different category."
+            )
+        except ValidationError as e:
+            formatted = self._format_validation_error(e)
+            raise GenerationError(
+                f"Generated idea structure is invalid:\n{formatted}",
+                tip="The AI model failed to generate a valid response structure. Please try again."
             )
 
     def extract_idea_from_text(self, text):
@@ -86,11 +105,19 @@ class GeminiClient:
             ),
         )
         try:
-            return json.loads(response.text)
+            data = json.loads(response.text)
+            IdeaResponse(**data) # Validate
+            return data
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
                 tip="The AI model returned invalid JSON while analyzing the website content."
+            )
+        except ValidationError as e:
+            formatted = self._format_validation_error(e)
+            raise GenerationError(
+                f"Extracted idea structure is invalid:\n{formatted}",
+                tip="The AI model failed to extract a structured idea from the text. The content might be too unstructured."
             )
 
     def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
@@ -148,7 +175,9 @@ Create a complete, immediately-runnable project with these files:
                         response_schema=ProjectScaffold
                     ),
                 )
-                return json.loads(response.text)
+                data = json.loads(response.text)
+                ProjectScaffold(**data) # Validate
+                return data
             except Exception as e:
                 if attempt < max_retries:
                     logger.warning(f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
@@ -308,4 +337,3 @@ def test_app_run(capsys) -> None:
             "requirements": ["pytest"],
             "run_command": "python main.py"
         }
-
