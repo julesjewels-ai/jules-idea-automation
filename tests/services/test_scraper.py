@@ -1,6 +1,5 @@
 
 import pytest
-import socket
 from src.services.scraper import scrape_text, ScrapingError
 
 def test_validate_url_local_blocked():

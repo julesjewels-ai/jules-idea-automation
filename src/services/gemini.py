@@ -36,7 +36,7 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def generate_idea(self, category: str = None):
+    def generate_idea(self, category: str | None = None):
         """Generates a unique software idea using Gemini 3.
         
         Args:

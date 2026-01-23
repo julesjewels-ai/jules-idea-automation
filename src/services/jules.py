@@ -1,9 +1,10 @@
 import os
 import requests
+from typing import Any, Optional
 from src.utils.errors import ConfigurationError
 
 class JulesClient:
-    def __init__(self, api_key=None):
+    def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.environ.get("JULES_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -16,17 +17,19 @@ class JulesClient:
             "Content-Type": "application/json"
         }
 
-    def list_sources(self):
-        """Lists available sources from Jules API."""
-        url = f"{self.base_url}/sources"
-        response = requests.get(url, headers=self.headers)
+    def _request(self, method: str, endpoint: str, **kwargs: Any) -> dict:
+        """Internal helper to handle API requests."""
+        url = f"{self.base_url}/{endpoint}"
+        response = requests.request(method, url, headers=self.headers, **kwargs)
         response.raise_for_status()
-        return response.json()
+        return response.json() if response.text else {}
 
-    def create_session(self, source_id, prompt):
+    def list_sources(self) -> dict:
+        """Lists available sources from Jules API."""
+        return self._request("GET", "sources")
+
+    def create_session(self, source_id: str, prompt: str) -> dict:
         """Creates a new session with the given source and prompt."""
-        url = f"{self.base_url}/sessions"
-        
         # Based on official API documentation:
         # https://developers.google.com/jules/api
         payload = {
@@ -40,12 +43,9 @@ class JulesClient:
             "automationMode": "AUTO_CREATE_PR",
             "title": "Automated Idea Session"
         }
-        
-        response = requests.post(url, headers=self.headers, json=payload)
-        response.raise_for_status()
-        return response.json()
+        return self._request("POST", "sessions", json=payload)
     
-    def source_exists(self, source_id):
+    def source_exists(self, source_id: str) -> bool:
         """Checks if a source exists in the user's connected sources."""
         sources = self.list_sources()
         for source in sources.get("sources", []):
@@ -53,7 +53,7 @@ class JulesClient:
                 return True
         return False
     
-    def get_session(self, session_id):
+    def get_session(self, session_id: str) -> dict:
         """Retrieves details for a specific session.
         
         Args:
@@ -62,59 +62,43 @@ class JulesClient:
         Returns:
             Session object with outputs if complete
         """
-        url = f"{self.base_url}/sessions/{session_id}"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        return self._request("GET", f"sessions/{session_id}")
     
-    def list_sessions(self, page_size=10):
+    def list_sessions(self, page_size: int = 10) -> dict:
         """Lists recent sessions.
         
         Args:
             page_size: Number of sessions to return (default: 10)
         """
-        url = f"{self.base_url}/sessions?pageSize={page_size}"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        return self._request("GET", "sessions", params={"pageSize": page_size})
     
-    def list_activities(self, session_id, page_size=30):
+    def list_activities(self, session_id: str, page_size: int = 30) -> dict:
         """Lists activities (progress updates) for a session.
         
         Args:
             session_id: The session ID
             page_size: Number of activities to return (default: 30)
         """
-        url = f"{self.base_url}/sessions/{session_id}/activities?pageSize={page_size}"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        return self._request("GET", f"sessions/{session_id}/activities", params={"pageSize": page_size})
     
-    def send_message(self, session_id, prompt):
+    def send_message(self, session_id: str, prompt: str) -> dict:
         """Sends a follow-up message to an active session.
         
         Args:
             session_id: The session ID
             prompt: The message to send to the agent
         """
-        url = f"{self.base_url}/sessions/{session_id}:sendMessage"
-        payload = {"prompt": prompt}
-        response = requests.post(url, headers=self.headers, json=payload)
-        response.raise_for_status()
-        return response.json() if response.text else {}
+        return self._request("POST", f"sessions/{session_id}:sendMessage", json={"prompt": prompt})
     
-    def approve_plan(self, session_id):
+    def approve_plan(self, session_id: str) -> dict:
         """Approves the pending plan for a session.
         
         Args:
             session_id: The session ID
         """
-        url = f"{self.base_url}/sessions/{session_id}:approvePlan"
-        response = requests.post(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json() if response.text else {}
+        return self._request("POST", f"sessions/{session_id}:approvePlan")
     
-    def is_session_complete(self, session_id):
+    def is_session_complete(self, session_id: str) -> tuple[bool, Optional[str]]:
         """Checks if a session has completed and returns PR URL if available.
         
         Returns:
