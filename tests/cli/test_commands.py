@@ -1,7 +1,7 @@
 
 import pytest
 from unittest.mock import MagicMock, patch
-from src.cli.commands import handle_list_sources
+from src.cli.commands import handle_list_sources, watch_session
 from src.utils.reporter import Colors
 
 # Ensure module is loaded for patching
@@ -55,3 +55,48 @@ def test_print_sources_list_empty(capsys):
     captured = capsys.readouterr()
     assert "No sources found" in captured.out
     assert "Connect a GitHub repository" in captured.out
+
+@patch('src.cli.commands.Spinner')
+@patch('src.services.jules.JulesClient')
+@patch('src.cli.commands.print_watch_complete')
+@patch('src.cli.commands.print_watch_timeout')
+@patch('src.utils.polling.time.sleep')
+def test_watch_session_success(mock_sleep, mock_print_timeout, mock_print_complete, mock_jules_class, mock_spinner):
+    # Setup
+    mock_client = mock_jules_class.return_value
+    mock_client.is_session_complete.side_effect = [(False, None), (True, "http://pr.url")]
+    mock_client.list_activities.return_value = {
+        "activities": [{"progressUpdated": {"title": "Activity 1"}}]
+    }
+    mock_client.get_session.return_value = {"url": "http://session.url"}
+
+    # Execute
+    is_complete, pr_url = watch_session("session-123", timeout=60)
+
+    # Verify
+    assert is_complete is True
+    assert pr_url == "http://pr.url"
+    assert mock_client.is_session_complete.call_count == 2
+    mock_print_complete.assert_called_once()
+    mock_print_timeout.assert_not_called()
+    mock_spinner.assert_called_once()
+
+@patch('src.cli.commands.Spinner')
+@patch('src.services.jules.JulesClient')
+@patch('src.cli.commands.print_watch_complete')
+@patch('src.cli.commands.print_watch_timeout')
+@patch('src.utils.polling.time.sleep')
+def test_watch_session_timeout(mock_sleep, mock_print_timeout, mock_print_complete, mock_jules_class, mock_spinner):
+    # Setup
+    mock_client = mock_jules_class.return_value
+    mock_client.is_session_complete.return_value = (False, None)
+    mock_client.get_session.return_value = {"url": "http://session.url"}
+
+    # Execute
+    is_complete, pr_url = watch_session("session-123", timeout=60)
+
+    # Verify
+    assert is_complete is False
+    assert pr_url is None
+    mock_print_complete.assert_not_called()
+    mock_print_timeout.assert_called_once()
