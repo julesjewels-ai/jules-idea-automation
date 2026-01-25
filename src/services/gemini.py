@@ -1,10 +1,13 @@
 import os
 import json
 import logging
+from xml.sax.saxutils import escape
+from typing import Optional
+
 from google import genai
 from google.genai import types
 
-from src.core.models import IdeaResponse, ProjectScaffold
+from src.core.models import IdeaResponse, ProjectScaffold, TextContentInput
 from src.utils.errors import ConfigurationError, GenerationError
 
 
@@ -36,13 +39,13 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def generate_idea(self, category: str = None):
+    def generate_idea(self, category: Optional[str] = None):
         """Generates a unique software idea using Gemini 3.
         
         Args:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
         """
-        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
+        base_prompt = CATEGORY_PROMPTS.get(category or "default", CATEGORY_PROMPTS["default"])
         prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
         
         response = self.client.models.generate_content(
@@ -64,16 +67,23 @@ class GeminiClient:
 
     def extract_idea_from_text(self, text):
         """Extracts the core app idea from the provided text."""
-        # Truncate text if it's too long to avoid token limits
-        max_chars = 100000 
+        # Truncate text first to meet model constraints
+        max_chars = 100000
         truncated_text = text[:max_chars]
+
+        # Validate input using Pydantic
+        input_data = TextContentInput(text=truncated_text)
+
+        # Security: Escape and wrap input to prevent prompt injection
+        safe_text = escape(input_data.text)
         
         prompt = f"""
-        Analyze the following text from a website and extract the core software application idea or product concept described.
+        Analyze the following text from a website (inside <text_content> tags) and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
-        Text content:
-        {truncated_text}
+        <text_content>
+        {safe_text}
+        </text_content>
         """
         
         response = self.client.models.generate_content(
@@ -103,12 +113,21 @@ class GeminiClient:
         Returns:
             ProjectScaffold with files, requirements, and run command
         """
+        # Validate input using Pydantic
+        idea = IdeaResponse(**idea_data)
+
+        # Security: Escape inputs
+        safe_title = escape(idea.title)
+        safe_desc = escape(idea.description[:500])
+
         # Developer-ready MVP prompt
         prompt = f"""
 Generate a DEVELOPER-READY MVP project scaffold for:
 
-**Project:** {idea_data['title']}
-**Description:** {idea_data['description'][:500]}
+<project_context>
+**Project:** {safe_title}
+**Description:** {safe_desc}
+</project_context>
 
 Create a complete, immediately-runnable project with these files:
 
