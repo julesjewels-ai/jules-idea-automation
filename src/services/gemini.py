@@ -3,6 +3,7 @@ import json
 import logging
 from google import genai
 from google.genai import types
+from pydantic import ValidationError
 
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
@@ -36,6 +37,17 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
+    def _format_validation_error(self, e: ValidationError) -> str:
+        """Formats a Pydantic ValidationError into a user-friendly tip."""
+        errors = e.errors()
+        messages = []
+        for err in errors:
+            loc = " -> ".join(str(l) for l in err['loc'])
+            msg = err['msg']
+            messages.append(f"• {loc}: {msg}")
+
+        return "The AI model returned invalid data:\n" + "\n".join(messages)
+
     def generate_idea(self, category: str = None):
         """Generates a unique software idea using Gemini 3.
         
@@ -55,11 +67,18 @@ class GeminiClient:
             ),
         )
         try:
-            return json.loads(response.text)
+            data = json.loads(response.text)
+            model = IdeaResponse.model_validate(data)
+            return model.model_dump()
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
                 tip="The AI model returned invalid JSON. Please try again or try a different category."
+            )
+        except ValidationError as e:
+            raise GenerationError(
+                f"Validation failed for Gemini response: {e}",
+                tip=self._format_validation_error(e)
             )
 
     def extract_idea_from_text(self, text):
@@ -86,11 +105,18 @@ class GeminiClient:
             ),
         )
         try:
-            return json.loads(response.text)
+            data = json.loads(response.text)
+            model = IdeaResponse.model_validate(data)
+            return model.model_dump()
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
                 tip="The AI model returned invalid JSON while analyzing the website content."
+            )
+        except ValidationError as e:
+            raise GenerationError(
+                f"Validation failed for Gemini response: {e}",
+                tip=self._format_validation_error(e)
             )
 
     def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
@@ -148,7 +174,9 @@ Create a complete, immediately-runnable project with these files:
                         response_schema=ProjectScaffold
                     ),
                 )
-                return json.loads(response.text)
+                data = json.loads(response.text)
+                model = ProjectScaffold.model_validate(data)
+                return model.model_dump()
             except Exception as e:
                 if attempt < max_retries:
                     logger.warning(f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
@@ -308,4 +336,3 @@ def test_app_run(capsys) -> None:
             "requirements": ["pytest"],
             "run_command": "python main.py"
         }
-
