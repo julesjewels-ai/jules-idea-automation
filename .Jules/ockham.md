@@ -1,1 +1,3 @@
 ## 2025-05-26 - [Dead Code Removal] **Observation:** Found `tool.py` referencing non-existent modules (`src.jules_client`) and duplicate/transitional top-level service files (`src/gemini_client.py`, etc.) that were superseded by `src/services/`. This created confusion and potential security risks (`src/scraper.py` lacked SSRF protection). **Action:** Deleted `tool.py`, `src/gemini_client.py`, `src/github_client.py`, and `src/scraper.py`. Verified no usages in active codebase via grep and tests.
+
+## 2025-05-26 - [Refactor watch_session] **Observation:** watch_session re-implemented polling logic found in src.utils.polling. **Action:** Refactored to use poll_with_result to reduce duplication.
