@@ -3,6 +3,7 @@ import json
 import logging
 from google import genai
 from google.genai import types
+from pydantic import ValidationError
 
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
@@ -55,11 +56,18 @@ class GeminiClient:
             ),
         )
         try:
-            return json.loads(response.text)
+            data = json.loads(response.text)
+            return IdeaResponse.model_validate(data).model_dump()
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
                 tip="The AI model returned invalid JSON. Please try again or try a different category."
+            )
+        except ValidationError as e:
+            error_list = "\n".join([f"• {err['loc'][0] if err['loc'] else 'Root'}: {err['msg']}" for err in e.errors()])
+            raise GenerationError(
+                "The AI model returned data that doesn't match the expected format.",
+                tip=f"Validation errors:\n{error_list}"
             )
 
     def extract_idea_from_text(self, text):
@@ -86,11 +94,18 @@ class GeminiClient:
             ),
         )
         try:
-            return json.loads(response.text)
+            data = json.loads(response.text)
+            return IdeaResponse.model_validate(data).model_dump()
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
                 tip="The AI model returned invalid JSON while analyzing the website content."
+            )
+        except ValidationError as e:
+            error_list = "\n".join([f"• {err['loc'][0] if err['loc'] else 'Root'}: {err['msg']}" for err in e.errors()])
+            raise GenerationError(
+                "The AI model returned data that doesn't match the expected format.",
+                tip=f"Validation errors:\n{error_list}"
             )
 
     def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
@@ -148,7 +163,19 @@ Create a complete, immediately-runnable project with these files:
                         response_schema=ProjectScaffold
                     ),
                 )
-                return json.loads(response.text)
+                data = json.loads(response.text)
+                return ProjectScaffold.model_validate(data).model_dump()
+            except (json.JSONDecodeError, ValidationError) as e:
+                # If we run out of retries, we want to catch this.
+                # But inside the loop, we might want to log it and retry.
+                # The original code caught Exception.
+                if attempt < max_retries:
+                    logger.warning(f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
+                    continue
+                else:
+                    logger.error(f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
+                    # Return minimal fallback scaffold
+                    return self._get_fallback_scaffold(idea_data)
             except Exception as e:
                 if attempt < max_retries:
                     logger.warning(f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
@@ -308,4 +335,3 @@ def test_app_run(capsys) -> None:
             "requirements": ["pytest"],
             "run_command": "python main.py"
         }
-
