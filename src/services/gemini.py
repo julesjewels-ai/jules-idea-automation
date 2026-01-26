@@ -1,10 +1,11 @@
 import os
 import json
 import logging
+from xml.sax.saxutils import escape
 from google import genai
 from google.genai import types
 
-from src.core.models import IdeaResponse, ProjectScaffold
+from src.core.models import IdeaResponse, ProjectScaffold, TextContentInput
 from src.utils.errors import ConfigurationError, GenerationError
 
 
@@ -64,16 +65,30 @@ class GeminiClient:
 
     def extract_idea_from_text(self, text):
         """Extracts the core app idea from the provided text."""
-        # Truncate text if it's too long to avoid token limits
-        max_chars = 100000 
-        truncated_text = text[:max_chars]
+        # Validate input using Pydantic model
+        # Note: TextContentInput handles max_length=100000 validation
+        try:
+            validated_input = TextContentInput(text=text)
+        except Exception as e:
+            # If validation fails, we might want to truncate or raise error.
+            # For robustness, let's try to truncate if it's just length, but here we'll assume strictness.
+            # Or better, replicate the original truncation behavior but via the model or manual truncation before model.
+            # Original code: truncated_text = text[:max_chars]
+            # So let's truncate first to be friendly, then validate.
+            truncated_text = text[:100000]
+            validated_input = TextContentInput(text=truncated_text)
+
+        # Sanitize input to prevent prompt injection via XML tags
+        escaped_text = escape(validated_input.text)
         
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
         Text content:
-        {truncated_text}
+        <text_content>
+        {escaped_text}
+        </text_content>
         """
         
         response = self.client.models.generate_content(
@@ -103,12 +118,19 @@ class GeminiClient:
         Returns:
             ProjectScaffold with files, requirements, and run command
         """
+        # Sanitize inputs to prevent prompt injection
+        title = escape(idea_data.get('title', ''))
+        # Limit description length as in original code
+        description = escape(idea_data.get('description', '')[:500])
+
         # Developer-ready MVP prompt
         prompt = f"""
 Generate a DEVELOPER-READY MVP project scaffold for:
 
-**Project:** {idea_data['title']}
-**Description:** {idea_data['description'][:500]}
+<project_details>
+**Project:** {title}
+**Description:** {description}
+</project_details>
 
 Create a complete, immediately-runnable project with these files:
 
