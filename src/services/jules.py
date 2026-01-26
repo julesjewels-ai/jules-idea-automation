@@ -1,6 +1,7 @@
 import os
 import requests
-from src.utils.errors import ConfigurationError
+from src.utils.errors import ConfigurationError, AppError
+
 
 class JulesClient:
     def __init__(self, api_key=None):
@@ -16,17 +17,69 @@ class JulesClient:
             "Content-Type": "application/json"
         }
 
+    def _request(self, method: str, endpoint: str, **kwargs):
+        """Helper to make requests with error handling."""
+        url = f"{self.base_url}/{endpoint}"
+
+        try:
+            response = requests.request(method, url, headers=self.headers, **kwargs)
+            response.raise_for_status()
+
+            # Handle empty content (some endpoints might return 204 or empty body)
+            if not response.content:
+                return {}
+
+            return response.json()
+
+        except requests.exceptions.HTTPError as e:
+            status = e.response.status_code
+            if status == 401:
+                raise AppError(
+                    "Authentication failed",
+                    tip="Check your JULES_API_KEY in .env file."
+                ) from e
+            elif status == 403:
+                raise AppError(
+                    "Permission denied",
+                    tip="You may not have access to this resource."
+                ) from e
+            elif status == 404:
+                raise AppError(
+                    "Resource not found",
+                    tip=f"The requested endpoint '{endpoint}' does not exist."
+                ) from e
+            elif status >= 500:
+                 raise AppError(
+                    "Jules API Error",
+                    tip="The service is currently experiencing issues. Please try again later."
+                ) from e
+
+            raise AppError(f"API Request Failed ({status})", tip=str(e)) from e
+
+        except requests.exceptions.ConnectionError as e:
+            raise AppError(
+                "Connection failed",
+                tip="Check your internet connection and try again."
+            ) from e
+        except requests.exceptions.Timeout as e:
+             raise AppError(
+                "Request timed out",
+                tip="The server took too long to respond. Try increasing the timeout."
+            ) from e
+        except requests.exceptions.RequestException as e:
+            raise AppError(f"Network error: {e}", tip="An unexpected network error occurred.") from e
+        except ValueError as e:
+             raise AppError(
+                "Invalid API Response",
+                tip="The server returned an invalid response format."
+            ) from e
+
     def list_sources(self):
         """Lists available sources from Jules API."""
-        url = f"{self.base_url}/sources"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        return self._request("GET", "sources")
 
     def create_session(self, source_id, prompt):
         """Creates a new session with the given source and prompt."""
-        url = f"{self.base_url}/sessions"
-        
         # Based on official API documentation:
         # https://developers.google.com/jules/api
         payload = {
@@ -40,10 +93,7 @@ class JulesClient:
             "automationMode": "AUTO_CREATE_PR",
             "title": "Automated Idea Session"
         }
-        
-        response = requests.post(url, headers=self.headers, json=payload)
-        response.raise_for_status()
-        return response.json()
+        return self._request("POST", "sessions", json=payload)
     
     def source_exists(self, source_id):
         """Checks if a source exists in the user's connected sources."""
@@ -62,10 +112,7 @@ class JulesClient:
         Returns:
             Session object with outputs if complete
         """
-        url = f"{self.base_url}/sessions/{session_id}"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        return self._request("GET", f"sessions/{session_id}")
     
     def list_sessions(self, page_size=10):
         """Lists recent sessions.
@@ -73,10 +120,7 @@ class JulesClient:
         Args:
             page_size: Number of sessions to return (default: 10)
         """
-        url = f"{self.base_url}/sessions?pageSize={page_size}"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        return self._request("GET", "sessions", params={"pageSize": page_size})
     
     def list_activities(self, session_id, page_size=30):
         """Lists activities (progress updates) for a session.
@@ -85,10 +129,7 @@ class JulesClient:
             session_id: The session ID
             page_size: Number of activities to return (default: 30)
         """
-        url = f"{self.base_url}/sessions/{session_id}/activities?pageSize={page_size}"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        return self._request("GET", f"sessions/{session_id}/activities", params={"pageSize": page_size})
     
     def send_message(self, session_id, prompt):
         """Sends a follow-up message to an active session.
@@ -97,11 +138,8 @@ class JulesClient:
             session_id: The session ID
             prompt: The message to send to the agent
         """
-        url = f"{self.base_url}/sessions/{session_id}:sendMessage"
         payload = {"prompt": prompt}
-        response = requests.post(url, headers=self.headers, json=payload)
-        response.raise_for_status()
-        return response.json() if response.text else {}
+        return self._request("POST", f"sessions/{session_id}:sendMessage", json=payload)
     
     def approve_plan(self, session_id):
         """Approves the pending plan for a session.
@@ -109,10 +147,7 @@ class JulesClient:
         Args:
             session_id: The session ID
         """
-        url = f"{self.base_url}/sessions/{session_id}:approvePlan"
-        response = requests.post(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json() if response.text else {}
+        return self._request("POST", f"sessions/{session_id}:approvePlan")
     
     def is_session_complete(self, session_id):
         """Checks if a session has completed and returns PR URL if available.
