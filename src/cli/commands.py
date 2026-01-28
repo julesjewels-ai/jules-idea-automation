@@ -12,7 +12,6 @@ from src.utils.reporter import (
     print_sources_list,
     print_idea_summary,
     Spinner,
-    Colors,
     format_duration,
 )
 
@@ -45,20 +44,12 @@ def handle_agent(args: Namespace) -> None:
 def handle_website(args: Namespace) -> None:
     """Handle the website command."""
     from src.services.gemini import GeminiClient
-    from src.services.scraper import scrape_text, ScrapingError
+    from src.services.scraper import scrape_text
 
     print(f"Scraping {args.url}...")
     
-    try:
-        with Spinner(f"Scraping {args.url}..."):
-            text = scrape_text(args.url)
-    except ScrapingError as e:
-        print(f"\n{Colors.FAIL}❌ Scraping failed: {e}{Colors.ENDC}", file=sys.stderr)
-        print(f"\n{Colors.YELLOW}Tips:{Colors.ENDC}", file=sys.stderr)
-        print("  • Ensure the URL is publicly accessible (no login required)", file=sys.stderr)
-        print("  • Try a different URL that contains the idea description", file=sys.stderr)
-        print("  • Use 'python main.py agent' to generate a random idea instead", file=sys.stderr)
-        sys.exit(1)
+    with Spinner(f"Scraping {args.url}..."):
+        text = scrape_text(args.url)
     
     print(f"✓ Extracted {len(text)} characters of content")
     

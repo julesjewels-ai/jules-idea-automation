@@ -68,13 +68,24 @@ def scrape_text(url: str) -> str:
     except ScrapingError:
         raise
     except requests.exceptions.HTTPError as e:
-        raise ScrapingError(f"HTTP error accessing {url}: {e}")
+        tip = "Check if the URL is correct and accessible in your browser."
+        if e.response.status_code == 403:
+            tip = "The website is blocking automated access (403 Forbidden). Try a different source."
+        elif e.response.status_code == 404:
+            tip = "The page was not found (404). Check the URL for typos."
+        raise ScrapingError(f"HTTP error accessing {url}: {e}", tip=tip)
     except requests.exceptions.Timeout:
-        raise ScrapingError(f"Timeout accessing {url}")
+        raise ScrapingError(
+            f"Timeout accessing {url}",
+            tip="The website is taking too long to respond. It might be down or blocking connections."
+        )
     except requests.exceptions.RequestException as e:
-        raise ScrapingError(f"Network error accessing {url}: {e}")
+        raise ScrapingError(
+            f"Network error accessing {url}: {e}",
+            tip="Check your internet connection and DNS settings."
+        )
     except Exception as e:
-        raise ScrapingError(f"Failed to scrape {url}: {e}")
+        raise ScrapingError(f"Failed to scrape {url}: {e}", tip="An unexpected error occurred during scraping.")
 
 
 def _validate_content(text: str, url: str) -> None:
@@ -92,7 +103,8 @@ def _validate_content(text: str, url: str) -> None:
         raise ScrapingError(
             f"Insufficient content from {url}. "
             f"Only {len(text)} characters extracted (minimum: {MIN_CONTENT_LENGTH}). "
-            "The page may require authentication or JavaScript."
+            "The page may require authentication or JavaScript.",
+            tip="The page content is too short. Try a different URL or ensure the page doesn't require login/JS."
         )
     
     # Check for blocked/login indicators in first portion of text
@@ -102,5 +114,6 @@ def _validate_content(text: str, url: str) -> None:
         if text_lower.count(indicator) >= 2:
             raise ScrapingError(
                 f"Page at {url} appears to require authentication or is blocked. "
-                f"Detected '{indicator}' indicators."
+                f"Detected '{indicator}' indicators.",
+                tip="The website seems to require login or has blocked the scraper. Try a public, static page."
             )
