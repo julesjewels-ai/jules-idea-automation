@@ -1,6 +1,9 @@
 import os
 import json
 import logging
+from typing import Optional
+from xml.sax.saxutils import escape
+
 from google import genai
 from google.genai import types
 
@@ -36,13 +39,13 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def generate_idea(self, category: str = None):
+    def generate_idea(self, category: Optional[str] = None):
         """Generates a unique software idea using Gemini 3.
         
         Args:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
         """
-        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
+        base_prompt = CATEGORY_PROMPTS.get(category or "default", CATEGORY_PROMPTS["default"])
         prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
         
         response = self.client.models.generate_content(
@@ -62,18 +65,23 @@ class GeminiClient:
                 tip="The AI model returned invalid JSON. Please try again or try a different category."
             )
 
-    def extract_idea_from_text(self, text):
+    def extract_idea_from_text(self, text: str):
         """Extracts the core app idea from the provided text."""
         # Truncate text if it's too long to avoid token limits
         max_chars = 100000 
         truncated_text = text[:max_chars]
         
+        # Security: Escape and wrap input to prevent prompt injection
+        safe_text = escape(truncated_text)
+
         prompt = f"""
-        Analyze the following text from a website and extract the core software application idea or product concept described.
+        Analyze the text content enclosed in <text_content> tags.
+        Extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
-        Text content:
-        {truncated_text}
+        <text_content>
+        {safe_text}
+        </text_content>
         """
         
         response = self.client.models.generate_content(
@@ -93,22 +101,37 @@ class GeminiClient:
                 tip="The AI model returned invalid JSON while analyzing the website content."
             )
 
-    def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
+    def generate_project_scaffold(self, idea_data: dict | IdeaResponse, max_retries: int = 2):
         """Generates a complete MVP project scaffold for the given idea.
         
         Args:
-            idea_data: Dict with title, description, slug, tech_stack, features
+            idea_data: IdeaResponse object or dict with title, description, etc.
             max_retries: Number of retries on failure (default: 2)
         
         Returns:
             ProjectScaffold with files, requirements, and run command
         """
+        # Validate input
+        if isinstance(idea_data, dict):
+            idea = IdeaResponse.model_validate(idea_data)
+        else:
+            idea = idea_data
+
+        # Security: Escape inputs
+        safe_title = escape(idea.title)
+        safe_description = escape(idea.description[:500])
+
         # Developer-ready MVP prompt
         prompt = f"""
-Generate a DEVELOPER-READY MVP project scaffold for:
+Generate a DEVELOPER-READY MVP project scaffold based on the project details below.
 
-**Project:** {idea_data['title']}
-**Description:** {idea_data['description'][:500]}
+<project_title>
+{safe_title}
+</project_title>
+
+<project_description>
+{safe_description}
+</project_description>
 
 Create a complete, immediately-runnable project with these files:
 
@@ -156,12 +179,12 @@ Create a complete, immediately-runnable project with these files:
                 else:
                     logger.error(f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
                     # Return minimal fallback scaffold
-                    return self._get_fallback_scaffold(idea_data)
+                    return self._get_fallback_scaffold(idea)
     
-    def _get_fallback_scaffold(self, idea_data: dict) -> dict:
+    def _get_fallback_scaffold(self, idea: IdeaResponse) -> dict:
         """Returns a developer-ready fallback scaffold when generation fails."""
-        title = idea_data['title']
-        desc = idea_data['description'][:200]
+        title = idea.title
+        desc = idea.description[:200]
         
         return {
             "files": [
