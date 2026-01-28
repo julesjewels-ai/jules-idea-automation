@@ -25,47 +25,40 @@ def strip_ansi(text: str) -> str:
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     return ansi_escape.sub('', text)
 
-def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: int = 60) -> None:
-    """Prints content inside a bordered panel."""
-
+def _create_top_border(title: str, width: int, color: str) -> str:
     # Box drawing characters
     H_LINE = "─"
-    V_LINE = "│"
     TL_CORNER = "╭"
     TR_CORNER = "╮"
-    BL_CORNER = "╰"
-    BR_CORNER = "╯"
 
-    # Calculate title placement
-    if title:
-        title_text = f" {title} "
+    if not title:
+        return f"{TL_CORNER}{H_LINE * (width - 2)}{TR_CORNER}"
 
-        # Check for emojis to adjust padding for visual consistency (best effort)
-        # Assuming common emojis are 2 chars wide but length 1
-        # This is not perfect but improves the most common case in this app (✨)
-        visual_offset = 0
-        if "✨" in title:
-            visual_offset += 1
+    title_text = f" {title} "
 
-        # Ensure title fits
-        if len(title_text) > width - 4:
-            title_text = title_text[:width-5] + "…"
+    # Check for emojis to adjust padding for visual consistency (best effort)
+    # Assuming common emojis are 2 chars wide but length 1
+    # This is not perfect but improves the most common case in this app (✨)
+    visual_offset = 0
+    if "✨" in title:
+        visual_offset += 1
 
-        left_pad = 2
-        # Adjust right pad calculation by subtracting visual offset from the available space
-        # (wait, if visual length is longer, we need LESS padding characters to reach the same width)
-        right_pad = width - 2 - len(title_text) - left_pad - visual_offset
+    # Ensure title fits
+    if len(title_text) > width - 4:
+        title_text = title_text[:width-5] + "…"
 
-        if right_pad < 0:
-            right_pad = 0
+    left_pad = 2
+    # Adjust right pad calculation by subtracting visual offset from the available space
+    # (wait, if visual length is longer, we need LESS padding characters to reach the same width)
+    right_pad = width - 2 - len(title_text) - left_pad - visual_offset
 
-        top_border = f"{TL_CORNER}{H_LINE * left_pad}{Colors.BOLD}{title_text}{Colors.ENDC}{color}{H_LINE * right_pad}{TR_CORNER}"
-    else:
-        top_border = f"{TL_CORNER}{H_LINE * (width - 2)}{TR_CORNER}"
+    if right_pad < 0:
+        right_pad = 0
 
-    print(f"{color}{top_border}{Colors.ENDC}")
+    return f"{TL_CORNER}{H_LINE * left_pad}{Colors.BOLD}{title_text}{Colors.ENDC}{color}{H_LINE * right_pad}{TR_CORNER}"
 
-    # Process content
+
+def _wrap_content(content: str, width: int) -> list[str]:
     lines = content.split('\n')
     wrapped_lines = []
 
@@ -99,6 +92,21 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
                     current_len += word_len + 1
             if current_line:
                 wrapped_lines.append(" ".join(current_line))
+    return wrapped_lines
+
+
+def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: int = 60) -> None:
+    """Prints content inside a bordered panel."""
+    # Box drawing characters
+    H_LINE = "─"
+    V_LINE = "│"
+    BL_CORNER = "╰"
+    BR_CORNER = "╯"
+
+    top_border = _create_top_border(title, width, color)
+    print(f"{color}{top_border}{Colors.ENDC}")
+
+    wrapped_lines = _wrap_content(content, width)
 
     for line in wrapped_lines:
         visible_len = len(strip_ansi(line))
