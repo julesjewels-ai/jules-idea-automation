@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+from typing import Optional
 from google import genai
 from google.genai import types
 
@@ -36,13 +37,13 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def generate_idea(self, category: str = None):
+    def generate_idea(self, category: Optional[str] = None):
         """Generates a unique software idea using Gemini 3.
         
         Args:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
         """
-        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
+        base_prompt = CATEGORY_PROMPTS.get(category or "default", CATEGORY_PROMPTS["default"])
         prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
         
         response = self.client.models.generate_content(
