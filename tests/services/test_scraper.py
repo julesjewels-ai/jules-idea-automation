@@ -1,6 +1,5 @@
 
 import pytest
-import socket
 from src.services.scraper import scrape_text, ScrapingError
 
 def test_validate_url_local_blocked():
@@ -23,7 +22,11 @@ def test_validate_url_no_hostname():
     with pytest.raises(ScrapingError, match="Invalid URL"):
         scrape_text("http://")
 
-# We can't easily test valid external URLs without internet access or mocking requests.
-# But we can verify that validation passes for a valid-looking public IP if we mock socket.gethostbyname
-# or if we trust the logic.
-# For now, let's stick to negative tests which are most important for security.
+def test_scraping_error_has_tip():
+    """Test that ScrapingError includes a tip."""
+    with pytest.raises(ScrapingError) as excinfo:
+        # Trigger an error known to have a tip (e.g. invalid scheme)
+        scrape_text("ftp://example.com")
+
+    assert excinfo.value.tip is not None
+    assert "Please provide a URL starting with http:// or https://" in excinfo.value.tip
