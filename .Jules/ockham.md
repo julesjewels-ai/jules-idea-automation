@@ -4,3 +4,8 @@
 **Target:** `print_panel` in `src/utils/reporter.py`
 **Delta:** Complexity Score 13 -> 3
 **Summary:** Extracted border creation and text wrapping logic into `_create_top_border` and `_wrap_content` helper functions. This simplified the main `print_panel` function significantly while maintaining identical output behavior.
+
+## 2026-02-04 - [Duplication Removal]
+**Target:** `GeminiClient` in `src/services/gemini.py`
+**Observation:** `generate_idea`, `extract_idea_from_text`, and `generate_project_scaffold` contained identical logic for API call configuration, error handling, and JSON parsing.
+**Action:** Extracted `_generate_content` helper method. Reduced code duplication and enforced consistent error handling (DRY).
