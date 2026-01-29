@@ -23,6 +23,46 @@ BLOCKED_INDICATORS = [
 ]
 
 
+def _fetch_url(url: str) -> requests.Response:
+    """Fetches the content of a URL with error handling.
+
+    Args:
+        url: The URL to fetch
+
+    Returns:
+        The response object
+
+    Raises:
+        ScrapingError: If the request fails
+    """
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        }
+        response = requests.get(url, timeout=15, headers=headers)
+        response.raise_for_status()
+        return response
+    except requests.exceptions.HTTPError as e:
+        tip = "Check if the URL is correct and accessible in your browser."
+        if e.response.status_code == 403:
+            tip = "The website is blocking automated access (403 Forbidden). Try a different source."
+        elif e.response.status_code == 404:
+            tip = "The page was not found (404). Check the URL for typos."
+        raise ScrapingError(f"HTTP error accessing {url}: {e}", tip=tip)
+    except requests.exceptions.Timeout:
+        raise ScrapingError(
+            f"Timeout accessing {url}",
+            tip="The website is taking too long to respond. It might be down or blocking connections."
+        )
+    except requests.exceptions.RequestException as e:
+        raise ScrapingError(
+            f"Network error accessing {url}: {e}",
+            tip="Check your internet connection and DNS settings."
+        )
+    except Exception as e:
+        raise ScrapingError(f"Failed to scrape {url}: {e}", tip="An unexpected error occurred during scraping.")
+
+
 def scrape_text(url: str) -> str:
     """Fetches the content of a URL and extracts validated text.
     
@@ -37,12 +77,7 @@ def scrape_text(url: str) -> str:
     """
     try:
         validate_url(url)
-
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-        }
-        response = requests.get(url, timeout=15, headers=headers)
-        response.raise_for_status()
+        response = _fetch_url(url)
         
         soup = BeautifulSoup(response.content, 'html.parser')
         
@@ -67,23 +102,6 @@ def scrape_text(url: str) -> str:
         
     except ScrapingError:
         raise
-    except requests.exceptions.HTTPError as e:
-        tip = "Check if the URL is correct and accessible in your browser."
-        if e.response.status_code == 403:
-            tip = "The website is blocking automated access (403 Forbidden). Try a different source."
-        elif e.response.status_code == 404:
-            tip = "The page was not found (404). Check the URL for typos."
-        raise ScrapingError(f"HTTP error accessing {url}: {e}", tip=tip)
-    except requests.exceptions.Timeout:
-        raise ScrapingError(
-            f"Timeout accessing {url}",
-            tip="The website is taking too long to respond. It might be down or blocking connections."
-        )
-    except requests.exceptions.RequestException as e:
-        raise ScrapingError(
-            f"Network error accessing {url}: {e}",
-            tip="Check your internet connection and DNS settings."
-        )
     except Exception as e:
         raise ScrapingError(f"Failed to scrape {url}: {e}", tip="An unexpected error occurred during scraping.")
 
