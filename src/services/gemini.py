@@ -4,7 +4,8 @@ import logging
 from google import genai
 from google.genai import types
 
-from src.core.models import IdeaResponse, ProjectScaffold
+import xml.sax.saxutils
+from src.core.models import IdeaResponse, ProjectScaffold, TextContentInput
 from src.utils.errors import ConfigurationError, GenerationError
 
 
@@ -36,13 +37,14 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def generate_idea(self, category: str = None):
+    def generate_idea(self, category: str | None = None):
         """Generates a unique software idea using Gemini 3.
         
         Args:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
         """
-        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
+        category_key = category or "default"
+        base_prompt = CATEGORY_PROMPTS.get(category_key, CATEGORY_PROMPTS["default"])
         prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
         
         response = self.client.models.generate_content(
@@ -62,18 +64,18 @@ class GeminiClient:
                 tip="The AI model returned invalid JSON. Please try again or try a different category."
             )
 
-    def extract_idea_from_text(self, text):
+    def extract_idea_from_text(self, text_input: TextContentInput):
         """Extracts the core app idea from the provided text."""
-        # Truncate text if it's too long to avoid token limits
-        max_chars = 100000 
-        truncated_text = text[:max_chars]
+        # Sanitize input to prevent XML injection
+        escaped_text = xml.sax.saxutils.escape(text_input.content)
         
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
-        Text content:
-        {truncated_text}
+        <text_content>
+        {escaped_text}
+        </text_content>
         """
         
         response = self.client.models.generate_content(

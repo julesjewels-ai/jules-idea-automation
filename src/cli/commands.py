@@ -45,6 +45,7 @@ def handle_website(args: Namespace) -> None:
     """Handle the website command."""
     from src.services.gemini import GeminiClient
     from src.services.scraper import scrape_text
+    from src.core.models import TextContentInput
 
     print(f"Scraping {args.url}...")
     
@@ -53,9 +54,12 @@ def handle_website(args: Namespace) -> None:
     
     print(f"✓ Extracted {len(text)} characters of content")
     
+    # Validate and wrap content
+    text_input = TextContentInput(content=text)
+
     gemini = GeminiClient()
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
-        idea_data = gemini.extract_idea_from_text(text)
+        idea_data = gemini.extract_idea_from_text(text_input)
     
     _execute_and_watch(args, idea_data)
 
