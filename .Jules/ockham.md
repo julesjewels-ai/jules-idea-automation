@@ -4,3 +4,8 @@
 **Target:** `print_panel` in `src/utils/reporter.py`
 **Delta:** Complexity Score 13 -> 3
 **Summary:** Extracted border creation and text wrapping logic into `_create_top_border` and `_wrap_content` helper functions. This simplified the main `print_panel` function significantly while maintaining identical output behavior.
+
+## 2026-05-28 - [Consolidated Polling]
+**Target:** `watch_session` in `src/cli/commands.py`
+**Delta:** Complexity Score 5 -> 2
+**Summary:** Replaced custom polling loop with `poll_with_result` from `src.utils.polling`. Updated `poll_with_result` to return elapsed time, allowing `watch_session` to delegate loop management and timing logic. Added dedicated tests in `tests/cli/test_watch_session.py`.
