@@ -37,36 +37,35 @@ def scrape_text(url: str) -> str:
     """
     try:
         validate_url(url)
+        content = _fetch_url(url)
+        text = _extract_text(content)
+        _validate_content(text, url)
+        return text
+    except ScrapingError:
+        raise
+    except Exception as e:
+        raise ScrapingError(f"Failed to scrape {url}: {e}", tip="An unexpected error occurred during scraping.")
 
+
+def _fetch_url(url: str) -> bytes:
+    """Fetches the content of a URL handling errors.
+
+    Args:
+        url: The URL to fetch
+
+    Returns:
+        The raw response content
+
+    Raises:
+        ScrapingError: If the request fails
+    """
+    try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
         }
         response = requests.get(url, timeout=15, headers=headers)
         response.raise_for_status()
-        
-        soup = BeautifulSoup(response.content, 'html.parser')
-        
-        # Remove script, style, nav, header, footer elements
-        for element in soup(["script", "style", "nav", "header", "footer", "aside"]):
-            element.decompose()
-            
-        # Get text
-        text = soup.get_text()
-        
-        # Break into lines and remove leading/trailing space on each
-        lines = (line.strip() for line in text.splitlines())
-        # Break multi-headlines into a line each
-        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-        # Drop blank lines
-        text = '\n'.join(chunk for chunk in chunks if chunk)
-        
-        # Validate content
-        _validate_content(text, url)
-        
-        return text
-        
-    except ScrapingError:
-        raise
+        return response.content
     except requests.exceptions.HTTPError as e:
         tip = "Check if the URL is correct and accessible in your browser."
         if e.response.status_code == 403:
@@ -86,6 +85,32 @@ def scrape_text(url: str) -> str:
         )
     except Exception as e:
         raise ScrapingError(f"Failed to scrape {url}: {e}", tip="An unexpected error occurred during scraping.")
+
+
+def _extract_text(html_content: bytes) -> str:
+    """Parses HTML and extracts clean text.
+
+    Args:
+        html_content: The raw HTML content
+
+    Returns:
+        Cleaned text content
+    """
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    # Remove script, style, nav, header, footer elements
+    for element in soup(["script", "style", "nav", "header", "footer", "aside"]):
+        element.decompose()
+
+    # Get text
+    text = soup.get_text()
+
+    # Break into lines and remove leading/trailing space on each
+    lines = (line.strip() for line in text.splitlines())
+    # Break multi-headlines into a line each
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+    # Drop blank lines
+    return '\n'.join(chunk for chunk in chunks if chunk)
 
 
 def _validate_content(text: str, url: str) -> None:
