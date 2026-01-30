@@ -15,3 +15,7 @@ class ConfigurationError(AppError):
 class GenerationError(AppError):
     """Raised when GenAI generation fails or returns invalid output."""
     pass
+
+class JulesApiError(AppError):
+    """Raised when the Jules API request fails."""
+    pass
