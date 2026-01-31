@@ -8,7 +8,6 @@ from src.utils.reporter import (
     print_session_status,
     print_watch_complete,
     print_watch_timeout,
-    print_progress,
     print_sources_list,
     print_idea_summary,
     Spinner,
@@ -45,6 +44,7 @@ def handle_website(args: Namespace) -> None:
     """Handle the website command."""
     from src.services.gemini import GeminiClient
     from src.services.scraper import scrape_text
+    from src.core.models import TextContentInput
 
     print(f"Scraping {args.url}...")
     
@@ -53,9 +53,12 @@ def handle_website(args: Namespace) -> None:
     
     print(f"✓ Extracted {len(text)} characters of content")
     
+    # Wrap in Pydantic model for validation
+    text_input = TextContentInput(content=text)
+
     gemini = GeminiClient()
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
-        idea_data = gemini.extract_idea_from_text(text)
+        idea_data = gemini.extract_idea_from_text(text_input)
     
     _execute_and_watch(args, idea_data)
 

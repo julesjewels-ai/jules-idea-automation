@@ -4,6 +4,15 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 
+class TextContentInput(BaseModel):
+    """Input model for text content validation."""
+    content: str = Field(
+        min_length=10,
+        max_length=100_000,
+        description="The text content to process."
+    )
+
+
 class IdeaResponse(BaseModel):
     """Represents a generated software idea."""
     title: str = Field(description="The name of the software idea.")
