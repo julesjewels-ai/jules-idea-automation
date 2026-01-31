@@ -1,1 +1,2 @@
 src/utils/reporter.py:print_panel
+src/services/scraper.py:scrape_text
