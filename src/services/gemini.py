@@ -1,10 +1,11 @@
 import os
 import json
 import logging
+from xml.sax.saxutils import escape
 from google import genai
 from google.genai import types
 
-from src.core.models import IdeaResponse, ProjectScaffold
+from src.core.models import IdeaResponse, ProjectScaffold, TextContentInput
 from src.utils.errors import ConfigurationError, GenerationError
 
 
@@ -62,18 +63,18 @@ class GeminiClient:
                 tip="The AI model returned invalid JSON. Please try again or try a different category."
             )
 
-    def extract_idea_from_text(self, text):
+    def extract_idea_from_text(self, input_data: TextContentInput):
         """Extracts the core app idea from the provided text."""
-        # Truncate text if it's too long to avoid token limits
-        max_chars = 100000 
-        truncated_text = text[:max_chars]
+        # Escape content to prevent prompt injection
+        safe_text = escape(input_data.content)
         
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
-        Text content:
-        {truncated_text}
+        <text_content>
+        {safe_text}
+        </text_content>
         """
         
         response = self.client.models.generate_content(
@@ -103,12 +104,16 @@ class GeminiClient:
         Returns:
             ProjectScaffold with files, requirements, and run command
         """
+        # Sanitize inputs
+        safe_title = escape(idea_data['title'])
+        safe_desc = escape(idea_data['description'][:500])
+
         # Developer-ready MVP prompt
         prompt = f"""
 Generate a DEVELOPER-READY MVP project scaffold for:
 
-**Project:** {idea_data['title']}
-**Description:** {idea_data['description'][:500]}
+<project_title>{safe_title}</project_title>
+<project_description>{safe_desc}</project_description>
 
 Create a complete, immediately-runnable project with these files:
 

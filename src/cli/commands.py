@@ -4,6 +4,7 @@ import sys
 import time
 from argparse import Namespace
 
+from src.core.models import TextContentInput
 from src.utils.reporter import (
     print_session_status,
     print_watch_complete,
@@ -55,7 +56,8 @@ def handle_website(args: Namespace) -> None:
     
     gemini = GeminiClient()
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
-        idea_data = gemini.extract_idea_from_text(text)
+        input_data = TextContentInput(content=text)
+        idea_data = gemini.extract_idea_from_text(input_data)
     
     _execute_and_watch(args, idea_data)
 

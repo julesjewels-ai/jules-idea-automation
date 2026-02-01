@@ -34,3 +34,8 @@ class WorkflowResult(BaseModel):
     session_id: Optional[str] = None
     session_url: Optional[str] = None
     pr_url: Optional[str] = None
+
+
+class TextContentInput(BaseModel):
+    """Input model for text content validation."""
+    content: str = Field(min_length=10, max_length=100000, description="The text content to process.")
