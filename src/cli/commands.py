@@ -1,14 +1,12 @@
 """Command handlers for the CLI."""
 
 import sys
-import time
 from argparse import Namespace
 
 from src.utils.reporter import (
     print_session_status,
     print_watch_complete,
     print_watch_timeout,
-    print_progress,
     print_sources_list,
     print_idea_summary,
     Spinner,
@@ -32,12 +30,12 @@ def handle_agent(args: Namespace) -> None:
     from src.services.gemini import GeminiClient
 
     category = getattr(args, 'category', None)
-    
+
     gemini = GeminiClient()
     msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
     with Spinner(msg, success_message="Idea generated"):
         idea_data = gemini.generate_idea(category=category)
-    
+
     _execute_and_watch(args, idea_data)
 
 
@@ -47,16 +45,16 @@ def handle_website(args: Namespace) -> None:
     from src.services.scraper import scrape_text
 
     print(f"Scraping {args.url}...")
-    
+
     with Spinner(f"Scraping {args.url}..."):
         text = scrape_text(args.url)
-    
+
     print(f"✓ Extracted {len(text)} characters of content")
-    
+
     gemini = GeminiClient()
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
         idea_data = gemini.extract_idea_from_text(text)
-    
+
     _execute_and_watch(args, idea_data)
 
 
@@ -66,13 +64,13 @@ def handle_status(args: Namespace) -> None:
 
     client = JulesClient()
     session_id = args.session_id
-    
+
     if args.watch:
         watch_session(session_id, timeout=args.timeout)
     else:
         session = client.get_session(session_id)
         is_complete, pr_url = client.is_session_complete(session_id)
-        
+
         # Get recent activity titles
         activities = client.list_activities(session_id, page_size=3)
         activity_titles = []
@@ -80,7 +78,7 @@ def handle_status(args: Namespace) -> None:
             title = act.get("progressUpdated", {}).get("title", "")
             if title:
                 activity_titles.append(title)
-        
+
         print_session_status(
             session_id=session_id,
             title=session.get('title', 'N/A'),
@@ -115,45 +113,46 @@ def _execute_and_watch(args: Namespace, idea_data: dict) -> None:
 
 def watch_session(session_id: str, timeout: int = 1800) -> tuple:
     """Watch a Jules session until completion or timeout.
-    
+
     Args:
         session_id: The session ID to watch
         timeout: Max seconds to wait
-    
+
     Returns:
         Tuple of (is_complete, pr_url or None)
     """
     from src.services.jules import JulesClient
+    from src.utils.polling import poll_with_result
 
     jules = JulesClient()
     poll_interval = 30
-    elapsed = 0
-    is_complete = False
-    pr_url = None
-    
-    with Spinner(f"[{format_duration(elapsed)}] Watching session {session_id}...") as spinner:
-        while elapsed < timeout:
-            is_complete, pr_url = jules.is_session_complete(session_id)
 
-            if is_complete:
-                break
+    with Spinner(f"[{format_duration(0)}] Watching session {session_id}...") as spinner:
 
-            # Show latest activity
-            duration = format_duration(elapsed)
+        def check():
+            return jules.is_session_complete(session_id)
+
+        def status_extractor():
             try:
                 activities = jules.list_activities(session_id, page_size=1)
                 if activities.get("activities"):
                     latest = activities["activities"][0]
-                    title = latest.get("progressUpdated", {}).get("title", "Working...")
-                    spinner.update(f"[{duration}] {title}")
-                else:
-                    spinner.update(f"[{duration}] Working...")
+                    return latest.get("progressUpdated", {}).get("title", "Working...")
+                return "Working..."
             except Exception:
-                spinner.update(f"[{duration}] Polling...")
+                return "Polling..."
 
-            time.sleep(poll_interval)
-            elapsed += poll_interval
-    
+        def on_poll(elapsed, status):
+            spinner.update(f"[{format_duration(elapsed)}] {status}")
+
+        is_complete, pr_url, elapsed = poll_with_result(
+            check=check,
+            timeout=timeout,
+            interval=poll_interval,
+            on_poll=on_poll,
+            status_extractor=status_extractor
+        )
+
     if is_complete:
         print_watch_complete(elapsed, pr_url)
         return is_complete, pr_url
@@ -172,9 +171,9 @@ def handle_guide(args: Namespace) -> None:
         print_manual_guide,
         print_examples
     )
-    
+
     workflow = getattr(args, 'workflow', None)
-    
+
     if workflow == 'agent':
         print_agent_guide()
     elif workflow == 'website':
@@ -190,9 +189,9 @@ def handle_guide(args: Namespace) -> None:
 def handle_manual(args: Namespace) -> None:
     """Handle the manual command."""
     from src.utils.slugify import slugify
-    
+
     raw_title = args.title
-    
+
     # Handle very long titles gracefully (Description-as-Title pattern)
     if len(raw_title) > 100:
         # If the title is too long, it's likely a full description
@@ -202,19 +201,19 @@ def handle_manual(args: Namespace) -> None:
     else:
         title = raw_title
         description = args.description or raw_title
-    
+
     # Generate slug from title if not provided
     slug = args.slug or slugify(title)
-    
+
     # Parse comma-separated lists
     tech_stack = []
     if args.tech_stack:
         tech_stack = [item.strip() for item in args.tech_stack.split(',')]
-    
+
     features = []
     if args.features:
         features = [item.strip() for item in args.features.split(',')]
-    
+
     # Construct idea_data dictionary compatible with IdeaResponse
     idea_data = {
         "title": title,
@@ -223,7 +222,7 @@ def handle_manual(args: Namespace) -> None:
         "tech_stack": tech_stack,
         "features": features
     }
-    
+
     _execute_and_watch(args, idea_data)
 
 
@@ -237,7 +236,7 @@ def dispatch_command(args: Namespace) -> None:
         "guide": lambda: handle_guide(args),
         "manual": lambda: handle_manual(args),
     }
-    
+
     handler = handlers.get(args.command)
     if handler:
         handler()
