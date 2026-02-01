@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+from typing import Any
 from google import genai
 from google.genai import types
 
@@ -36,22 +37,27 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def generate_idea(self, category: str = None):
-        """Generates a unique software idea using Gemini 3.
+    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict:
+        """Helper to generate content with JSON validation.
         
         Args:
-            category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
+            prompt: The prompt to send to the model.
+            schema: The Pydantic model class for response validation.
+            error_tip: The user-facing tip to display on error.
+
+        Returns:
+            Parsed JSON dictionary.
+
+        Raises:
+            GenerationError: If API call fails or JSON parsing fails.
         """
-        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
-        prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
-        
         response = self.client.models.generate_content(
             model=self.model_name,
             contents=prompt,
             config=types.GenerateContentConfig(
                 thinking_config=types.ThinkingConfig(include_thoughts=True),
                 response_mime_type="application/json",
-                response_schema=IdeaResponse
+                response_schema=schema
             ),
         )
         try:
@@ -59,8 +65,23 @@ class GeminiClient:
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
-                tip="The AI model returned invalid JSON. Please try again or try a different category."
+                tip=error_tip
             )
+
+    def generate_idea(self, category: str = None):
+        """Generates a unique software idea using Gemini 3.
+
+        Args:
+            category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
+        """
+        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
+        prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
+
+        return self._generate_content(
+            prompt,
+            IdeaResponse,
+            "The AI model returned invalid JSON. Please try again or try a different category."
+        )
 
     def extract_idea_from_text(self, text):
         """Extracts the core app idea from the provided text."""
@@ -76,22 +97,11 @@ class GeminiClient:
         {truncated_text}
         """
         
-        response = self.client.models.generate_content(
-            model=self.model_name,
-            contents=prompt,
-             config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(include_thoughts=True),
-                response_mime_type="application/json",
-                response_schema=IdeaResponse
-            ),
+        return self._generate_content(
+            prompt,
+            IdeaResponse,
+            "The AI model returned invalid JSON while analyzing the website content."
         )
-        try:
-            return json.loads(response.text)
-        except json.JSONDecodeError as e:
-            raise GenerationError(
-                f"Failed to parse Gemini response: {e}",
-                tip="The AI model returned invalid JSON while analyzing the website content."
-            )
 
     def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
         """Generates a complete MVP project scaffold for the given idea.
@@ -139,16 +149,11 @@ Create a complete, immediately-runnable project with these files:
         
         for attempt in range(max_retries + 1):
             try:
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        thinking_config=types.ThinkingConfig(include_thoughts=True),
-                        response_mime_type="application/json",
-                        response_schema=ProjectScaffold
-                    ),
+                return self._generate_content(
+                    prompt,
+                    ProjectScaffold,
+                    "Scaffold generation failed."
                 )
-                return json.loads(response.text)
             except Exception as e:
                 if attempt < max_retries:
                     logger.warning(f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
@@ -308,4 +313,3 @@ def test_app_run(capsys) -> None:
             "requirements": ["pytest"],
             "run_command": "python main.py"
         }
-
