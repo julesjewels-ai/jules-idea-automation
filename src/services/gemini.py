@@ -3,6 +3,7 @@ import json
 import logging
 from google import genai
 from google.genai import types
+from pydantic import ValidationError
 
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
@@ -36,31 +37,54 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def generate_idea(self, category: str = None):
-        """Generates a unique software idea using Gemini 3.
-        
-        Args:
-            category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
-        """
-        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
-        prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
-        
+    def _generate_content(self, prompt: str, schema_class, error_tip: str):
+        """Helper to generate content, parse JSON, and validate against schema."""
         response = self.client.models.generate_content(
             model=self.model_name,
             contents=prompt,
             config=types.GenerateContentConfig(
                 thinking_config=types.ThinkingConfig(include_thoughts=True),
                 response_mime_type="application/json",
-                response_schema=IdeaResponse
+                response_schema=schema_class
             ),
         )
         try:
-            return json.loads(response.text)
+            data = json.loads(response.text)
+            validated = schema_class.model_validate(data)
+            return validated.model_dump()
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
-                tip="The AI model returned invalid JSON. Please try again or try a different category."
+                tip=error_tip
             )
+        except ValidationError as e:
+            # Format validation errors for better UX
+            error_list = []
+            for err in e.errors():
+                loc = ".".join(str(l) for l in err['loc'])
+                msg = err['msg']
+                error_list.append(f"• {loc}: {msg}")
+
+            error_msg = "\n".join(error_list)
+            raise GenerationError(
+                f"Gemini response validation failed:\n{error_msg}",
+                tip=f"{error_tip}\nThe model output did not match the required schema."
+            )
+
+    def generate_idea(self, category: str = None):
+        """Generates a unique software idea using Gemini 3.
+
+        Args:
+            category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
+        """
+        base_prompt = CATEGORY_PROMPTS.get(category, CATEGORY_PROMPTS["default"])
+        prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
+
+        return self._generate_content(
+            prompt,
+            IdeaResponse,
+            "The AI model returned invalid JSON. Please try again or try a different category."
+        )
 
     def extract_idea_from_text(self, text):
         """Extracts the core app idea from the provided text."""
@@ -76,22 +100,11 @@ class GeminiClient:
         {truncated_text}
         """
         
-        response = self.client.models.generate_content(
-            model=self.model_name,
-            contents=prompt,
-             config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(include_thoughts=True),
-                response_mime_type="application/json",
-                response_schema=IdeaResponse
-            ),
+        return self._generate_content(
+            prompt,
+            IdeaResponse,
+            "The AI model returned invalid JSON while analyzing the website content."
         )
-        try:
-            return json.loads(response.text)
-        except json.JSONDecodeError as e:
-            raise GenerationError(
-                f"Failed to parse Gemini response: {e}",
-                tip="The AI model returned invalid JSON while analyzing the website content."
-            )
 
     def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
         """Generates a complete MVP project scaffold for the given idea.
@@ -139,16 +152,12 @@ Create a complete, immediately-runnable project with these files:
         
         for attempt in range(max_retries + 1):
             try:
-                response = self.client.models.generate_content(
-                    model=self.model_name,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        thinking_config=types.ThinkingConfig(include_thoughts=True),
-                        response_mime_type="application/json",
-                        response_schema=ProjectScaffold
-                    ),
+                # Use the helper which now handles validation
+                return self._generate_content(
+                    prompt,
+                    ProjectScaffold,
+                    "Failed to generate valid project scaffold."
                 )
-                return json.loads(response.text)
             except Exception as e:
                 if attempt < max_retries:
                     logger.warning(f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
@@ -308,4 +317,3 @@ def test_app_run(capsys) -> None:
             "requirements": ["pytest"],
             "run_command": "python main.py"
         }
-
