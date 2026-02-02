@@ -37,6 +37,11 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Watch the session until completion and show PR URL"
     )
+    agent_parser.add_argument(
+        "--no-agent-setup",
+        action="store_true",
+        help="Skip adding agent-ready template files (PRD, guardrails, prompts, etc.)"
+    )
 
     # Command: website
     website_parser = subparsers.add_parser(
@@ -59,6 +64,11 @@ def create_parser() -> argparse.ArgumentParser:
         "--watch",
         action="store_true",
         help="Watch the session until completion and show PR URL"
+    )
+    website_parser.add_argument(
+        "--no-agent-setup",
+        action="store_true",
+        help="Skip adding agent-ready template files (PRD, guardrails, prompts, etc.)"
     )
 
     # Command: status
@@ -130,6 +140,11 @@ def create_parser() -> argparse.ArgumentParser:
         "--watch",
         action="store_true",
         help="Watch the session until completion and show PR URL"
+    )
+    manual_parser.add_argument(
+        "--no-agent-setup",
+        action="store_true",
+        help="Skip adding agent-ready template files (PRD, guardrails, prompts, etc.)"
     )
 
     return parser

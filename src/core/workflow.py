@@ -9,6 +9,7 @@ from src.core.readme_builder import build_readme
 from src.core.models import WorkflowResult
 from src.utils.polling import poll_until
 from src.utils.reporter import print_workflow_report
+from src.templates.agent_ready import get_agent_template_files
 
 
 class IdeaWorkflow:
@@ -39,7 +40,8 @@ class IdeaWorkflow:
         idea_data: dict,
         private: bool = False,
         timeout: int = 1800,
-        verbose: bool = True
+        verbose: bool = True,
+        agent_setup: bool = True
     ) -> WorkflowResult:
         """Execute the full workflow.
         
@@ -48,6 +50,7 @@ class IdeaWorkflow:
             private: Create private repository (default: public)
             timeout: Max seconds to wait for Jules indexing
             verbose: Print progress messages
+            agent_setup: Include agent-ready template files (default: True)
         
         Returns:
             WorkflowResult with repo_url, session info, etc.
@@ -62,7 +65,7 @@ class IdeaWorkflow:
         repo_url = f"https://github.com/{username}/{idea_data['slug']}"
         
         # Step 2: Generate and commit scaffold
-        self._generate_scaffold(username, idea_data, verbose)
+        self._generate_scaffold(username, idea_data, verbose, agent_setup)
         
         # Step 3: Wait for Jules indexing and create session
         session = self._create_jules_session(username, idea_data, timeout, verbose)
@@ -103,8 +106,15 @@ class IdeaWorkflow:
         
         return username
     
-    def _generate_scaffold(self, username: str, idea_data: dict, verbose: bool) -> None:
-        """Generate MVP scaffold and commit to repository."""
+    def _generate_scaffold(self, username: str, idea_data: dict, verbose: bool, agent_setup: bool = True) -> None:
+        """Generate MVP scaffold and commit to repository.
+        
+        Args:
+            username: GitHub username
+            idea_data: Idea data dictionary
+            verbose: Print progress messages
+            agent_setup: Include agent-ready template files
+        """
         if verbose:
             print("Generating MVP scaffold with Gemini (this may take a moment)...")
         
@@ -163,6 +173,23 @@ class IdeaWorkflow:
                 
                 if verbose:
                     print(f"  Created {result['files_created']} files in single commit")
+        
+        # Third commit: Agent-ready template files
+        if agent_setup:
+            agent_files = get_agent_template_files()
+            
+            if verbose:
+                print(f"Adding {len(agent_files)} agent-ready template files...")
+            
+            result = self.github.create_files(
+                owner=username,
+                repo=idea_data['slug'],
+                files=agent_files,
+                message="chore: Add agent-ready template structure"
+            )
+            
+            if verbose:
+                print(f"  Created {result['files_created']} agent template files")
     
     def _create_jules_session(
         self,

@@ -1,0 +1,25 @@
+{
+    "agent": "engineer",
+    "max_iterations": 50,
+    "timeout_seconds": 1800,
+    "success_marker": "<promise>SKELETON_VALID</promise>",
+    "failure_patterns": [
+        "CONTEXT_POLLUTED",
+        "DEPENDENCY_MISSING"
+    ],
+    "prompt_file": "agent/prompts/engineer_prompt.md",
+    "required_inputs": [
+        "ARCHITECTURE.md",
+        "src/core/interfaces.py"
+    ],
+    "expected_outputs": [
+        "src/core/domain.py",
+        "src/services/__init__.py",
+        "src/adapters/__init__.py",
+        "ENGINEER_PROGRESS.txt"
+    ],
+    "verification_commands": [
+        "python -m py_compile src/core/*.py",
+        "python -c 'import src; import src.core; import src.services'"
+    ]
+}

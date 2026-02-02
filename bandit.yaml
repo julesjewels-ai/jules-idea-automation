@@ -1,0 +1,52 @@
+# Bandit Security Scanner Configuration
+# https://bandit.readthedocs.io/en/latest/config.html
+
+# Exclude test files from security scanning
+exclude_dirs:
+  - tests
+  - venv
+  - .venv
+  - node_modules
+  - .git
+
+# Skip specific test IDs if needed
+# skips:
+#   - B101  # assert_used (common in tests)
+#   - B311  # random (not crypto)
+
+# Only report medium and higher severity issues
+severity: medium
+
+# Confidence level filter
+confidence: medium
+
+# Output format
+format: screen
+
+# Targets to scan
+targets:
+  - src/
+
+# Plugins configuration
+plugins:
+  # Blacklist dangerous functions
+  blacklist_calls:
+    bad_name_sets:
+      - pickle
+      - subprocess_shell
+
+  # Check for hardcoded passwords
+  hardcoded_password_funcarg:
+    word_list:
+      - password
+      - passwd
+      - secret
+      - token
+      - api_key
+
+  # Check for hardcoded SQL
+  hardcoded_sql_expressions:
+    enabled: true
+
+# Aggregate output by filename
+aggregate: filename

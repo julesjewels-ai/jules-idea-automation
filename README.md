@@ -109,9 +109,17 @@ python main.py guide --workflow agent
 
 ```
 main.py              # Entry point (orchestration only)
+docs/                # Project documentation & contracts
+├── PRD.md, ARCHITECTURE.md, GUARDRAILS.md...
 src/
 ├── cli/             # Argument parsing, command handlers
 ├── core/            # Workflow, models, README builder
 ├── services/        # Gemini, GitHub, Jules, Scraper
 └── utils/           # Polling, reporter
+agent/               # Agent configuration & automation
+├── config/          # Agent configs (architect, coder, etc.)
+├── prompts/         # Agent system prompts
+├── scripts/         # Automation scripts
+├── progress/        # Agent progress tracking
+└── reports/         # Agent completion reports
 ```

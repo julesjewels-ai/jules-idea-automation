@@ -155,7 +155,6 @@ Create a complete, immediately-runnable project with these files:
     def _get_fallback_scaffold(self, idea_data: dict) -> dict:
         """Returns a developer-ready fallback scaffold when generation fails."""
         title = idea_data['title']
-        slug = idea_data.get('slug', 'app')
         desc = idea_data['description'][:200]
         
         return {

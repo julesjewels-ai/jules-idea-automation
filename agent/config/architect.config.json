@@ -1,0 +1,24 @@
+{
+    "agent": "architect",
+    "max_iterations": 50,
+    "timeout_seconds": 1800,
+    "success_marker": "<promise>ARCHITECTURE_LOCKED</promise>",
+    "failure_patterns": [
+        "CONTEXT_POLLUTED",
+        "HUMAN_REVIEW_REQUIRED"
+    ],
+    "prompt_file": "agent/prompts/architect_prompt.md",
+    "required_inputs": [
+        "PRD.md",
+        "GUARDRAILS.md"
+    ],
+    "expected_outputs": [
+        "ARCHITECTURE.md",
+        "src/core/interfaces.py"
+    ],
+    "verification_commands": [
+        "test -f ARCHITECTURE.md",
+        "test -f src/core/interfaces.py",
+        "grep -q 'class.*ABC' src/core/interfaces.py"
+    ]
+}

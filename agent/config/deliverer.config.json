@@ -1,0 +1,24 @@
+{
+    "agent": "deliverer",
+    "max_iterations": 30,
+    "timeout_seconds": 1200,
+    "success_marker": "<promise>READY_FOR_DEPLOYMENT</promise>",
+    "failure_patterns": [
+        "CONTEXT_POLLUTED",
+        "HUMAN_REVIEW_REQUIRED"
+    ],
+    "prompt_file": "agent/prompts/deliverer_prompt.md",
+    "required_inputs": [
+        "src/",
+        "tests/",
+        "README.md"
+    ],
+    "expected_outputs": [
+        "DELIVERER_REPORT.md"
+    ],
+    "verification_commands": [
+        "make lint",
+        "make test",
+        "bandit -r src/ -ll -x tests/"
+    ]
+}

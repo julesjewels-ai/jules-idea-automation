@@ -1,0 +1,36 @@
+# Coder Progress
+
+## Session Info
+- Started: YYYY-MM-DD HH:MM:SS
+- Iteration: 0
+- Status: NOT_STARTED
+
+## Features Implemented
+<!-- List of PRD features completed -->
+
+| Feature ID | Description | Tests | Status |
+|------------|-------------|-------|--------|
+| | | ✓/✗ | Done/WIP |
+
+## Test Results Summary
+<!-- Latest pytest output summary -->
+
+```
+Tests: X passed, Y failed
+Coverage: Z%
+```
+
+## Completed
+<!-- Mark completed tasks with [x] -->
+
+## In Progress
+<!-- Current work items -->
+
+## Blockers
+<!-- Any issues preventing progress -->
+
+## Known Limitations
+<!-- Edge cases not handled, etc. -->
+
+## Next Steps
+<!-- Planned work for next iteration -->

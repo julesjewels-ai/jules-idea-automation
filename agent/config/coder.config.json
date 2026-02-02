@@ -1,0 +1,23 @@
+{
+    "agent": "coder",
+    "max_iterations": 100,
+    "timeout_seconds": 3600,
+    "success_marker": "<promise>TESTS_PASSING_ALL</promise>",
+    "failure_patterns": [
+        "CONTEXT_POLLUTED"
+    ],
+    "prompt_file": "agent/prompts/coder_prompt.md",
+    "required_inputs": [
+        "PRD.md",
+        "ARCHITECTURE.md",
+        "src/"
+    ],
+    "expected_outputs": [
+        "tests/unit/",
+        "CODER_PROGRESS.txt"
+    ],
+    "verification_commands": [
+        "pytest tests/ -v",
+        "pytest --cov=src --cov-fail-under=80"
+    ]
+}

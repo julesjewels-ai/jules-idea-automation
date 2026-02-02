@@ -103,18 +103,22 @@ def _execute_and_watch(args: Namespace, idea_data: dict) -> None:
     """Execute the workflow and watch the session if requested.
 
     Args:
-        args: Command line arguments containing private and timeout settings
+        args: Command line arguments containing private, timeout, and agent_setup settings
         idea_data: The idea data to process
     """
     from src.core.workflow import IdeaWorkflow
 
     print_idea_summary(idea_data)
 
+    # Check for --no-agent-setup flag (default: include agent setup)
+    agent_setup = not getattr(args, 'no_agent_setup', False)
+
     workflow = IdeaWorkflow()
     result = workflow.execute(
         idea_data,
         private=args.private,
-        timeout=args.timeout
+        timeout=args.timeout,
+        agent_setup=agent_setup
     )
 
     if result.session_id and args.watch:

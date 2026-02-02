@@ -2,8 +2,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from src.services.gemini import GeminiClient
-from src.core.models import TextAnalysisInput
-from pydantic import ValidationError
 
 class TestGeminiSecurity:
     @pytest.fixture
