@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+from xml.sax.saxutils import escape
 from google import genai
 from google.genai import types
 
@@ -66,14 +67,15 @@ class GeminiClient:
         """Extracts the core app idea from the provided text."""
         # Truncate text if it's too long to avoid token limits
         max_chars = 100000 
-        truncated_text = text[:max_chars]
+        truncated_text = escape(text[:max_chars])
         
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
-        Text content:
+        <text_content>
         {truncated_text}
+        </text_content>
         """
         
         response = self.client.models.generate_content(
@@ -104,11 +106,19 @@ class GeminiClient:
             ProjectScaffold with files, requirements, and run command
         """
         # Developer-ready MVP prompt
+        title_safe = escape(idea_data['title'])
+        description_safe = escape(idea_data['description'][:500])
+
         prompt = f"""
 Generate a DEVELOPER-READY MVP project scaffold for:
 
-**Project:** {idea_data['title']}
-**Description:** {idea_data['description'][:500]}
+<project_title>
+{title_safe}
+</project_title>
+
+<project_description>
+{description_safe}
+</project_description>
 
 Create a complete, immediately-runnable project with these files:
 
