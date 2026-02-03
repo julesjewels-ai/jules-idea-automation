@@ -6,3 +6,5 @@
 **Summary:** Extracted border creation and text wrapping logic into `_create_top_border` and `_wrap_content` helper functions. This simplified the main `print_panel` function significantly while maintaining identical output behavior.
 
 ## 2026-02-01 - [Refactor] **Observation:** `watch_session` in `src/cli/commands.py` duplicated polling logic found in `src/utils/polling.py`. `poll_with_result` was unused and lacked elapsed time tracking. **Action:** Refactored `poll_with_result` to return elapsed time and updated `watch_session` to use it, removing manual loop management. Added unit tests for `watch_session`.
+
+## 2026-02-03 - [Refactor] **Observation:** `GeminiClient` in `src/services/gemini.py` contained duplicated logic for API call configuration and JSON parsing across three methods (`generate_idea`, `extract_idea_from_text`, `generate_project_scaffold`). **Action:** Extracted `_generate_content` helper method to consolidate logic, reducing duplication and enforcing consistent error handling. Added comprehensive unit tests in `tests/services/test_gemini.py`.
