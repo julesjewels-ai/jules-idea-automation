@@ -1,6 +1,6 @@
 import os
 import requests
-from src.utils.errors import ConfigurationError
+from src.utils.errors import ConfigurationError, JulesApiError
 
 class JulesClient:
     def __init__(self, api_key=None):
@@ -16,12 +16,45 @@ class JulesClient:
             "Content-Type": "application/json"
         }
 
+    def _request(self, method: str, url: str, **kwargs):
+        """Internal helper to handle API requests and errors."""
+        try:
+            response = requests.request(method, url, headers=self.headers, **kwargs)
+            response.raise_for_status()
+
+            # Some endpoints might not return content (e.g. 204), but current usage suggests JSON
+            if not response.text:
+                return {}
+            return response.json()
+
+        except requests.exceptions.HTTPError as e:
+            tip = None
+            if e.response.status_code == 401:
+                tip = "Your Jules API key seems invalid. Check your .env file."
+            elif e.response.status_code == 403:
+                tip = "You don't have permission to access this resource."
+            elif e.response.status_code == 404:
+                tip = "The requested resource was not found."
+            else:
+                try:
+                    # Try to parse Google-style error
+                    error_data = e.response.json()
+                    error_msg = error_data.get('error', {}).get('message')
+                    if error_msg:
+                        tip = f"API Message: {error_msg}"
+                except Exception:
+                    pass
+
+                if not tip:
+                    tip = f"API returned status {e.response.status_code}."
+
+            raise JulesApiError(f"Jules API Error: {e}", tip=tip)
+        except requests.exceptions.RequestException as e:
+            raise JulesApiError(f"Network error: {e}", tip="Check your internet connection.")
+
     def list_sources(self):
         """Lists available sources from Jules API."""
-        url = f"{self.base_url}/sources"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        return self._request("GET", f"{self.base_url}/sources")
 
     def create_session(self, source_id, prompt):
         """Creates a new session with the given source and prompt."""
@@ -41,9 +74,7 @@ class JulesClient:
             "title": "Automated Idea Session"
         }
         
-        response = requests.post(url, headers=self.headers, json=payload)
-        response.raise_for_status()
-        return response.json()
+        return self._request("POST", url, json=payload)
     
     def source_exists(self, source_id):
         """Checks if a source exists in the user's connected sources."""
@@ -62,10 +93,7 @@ class JulesClient:
         Returns:
             Session object with outputs if complete
         """
-        url = f"{self.base_url}/sessions/{session_id}"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        return self._request("GET", f"{self.base_url}/sessions/{session_id}")
     
     def list_sessions(self, page_size=10):
         """Lists recent sessions.
@@ -73,10 +101,11 @@ class JulesClient:
         Args:
             page_size: Number of sessions to return (default: 10)
         """
-        url = f"{self.base_url}/sessions?pageSize={page_size}"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        return self._request(
+            "GET",
+            f"{self.base_url}/sessions",
+            params={"pageSize": page_size}
+        )
     
     def list_activities(self, session_id, page_size=30):
         """Lists activities (progress updates) for a session.
@@ -85,10 +114,11 @@ class JulesClient:
             session_id: The session ID
             page_size: Number of activities to return (default: 30)
         """
-        url = f"{self.base_url}/sessions/{session_id}/activities?pageSize={page_size}"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        return self._request(
+            "GET",
+            f"{self.base_url}/sessions/{session_id}/activities",
+            params={"pageSize": page_size}
+        )
     
     def send_message(self, session_id, prompt):
         """Sends a follow-up message to an active session.
@@ -97,11 +127,11 @@ class JulesClient:
             session_id: The session ID
             prompt: The message to send to the agent
         """
-        url = f"{self.base_url}/sessions/{session_id}:sendMessage"
-        payload = {"prompt": prompt}
-        response = requests.post(url, headers=self.headers, json=payload)
-        response.raise_for_status()
-        return response.json() if response.text else {}
+        return self._request(
+            "POST",
+            f"{self.base_url}/sessions/{session_id}:sendMessage",
+            json={"prompt": prompt}
+        )
     
     def approve_plan(self, session_id):
         """Approves the pending plan for a session.
@@ -109,10 +139,7 @@ class JulesClient:
         Args:
             session_id: The session ID
         """
-        url = f"{self.base_url}/sessions/{session_id}:approvePlan"
-        response = requests.post(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json() if response.text else {}
+        return self._request("POST", f"{self.base_url}/sessions/{session_id}:approvePlan")
     
     def is_session_complete(self, session_id):
         """Checks if a session has completed and returns PR URL if available.
