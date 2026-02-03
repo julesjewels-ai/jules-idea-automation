@@ -133,36 +133,44 @@ class IdeaWorkflow:
         )
         
         # Second commit: Scaffold files
-        if scaffold.get('files'):
-            files_to_create = []
+        files_to_create = self._prepare_scaffold_files(scaffold)
+
+        if files_to_create:
+            if verbose:
+                print(f"Adding {len(files_to_create)} MVP files...")
             
-            for file_info in scaffold['files']:
-                if file_info['path'].lower() == 'readme.md':
-                    continue
-                files_to_create.append({
-                    'path': file_info['path'],
-                    'content': file_info['content']
-                })
+            result = self.github.create_files(
+                owner=username,
+                repo=idea_data['slug'],
+                files=files_to_create,
+                message="feat: Add MVP scaffold with SOLID structure"
+            )
             
-            if scaffold.get('requirements'):
-                files_to_create.append({
-                    'path': 'requirements.txt',
-                    'content': '\n'.join(scaffold['requirements'])
-                })
+            if verbose:
+                print(f"  Created {result['files_created']} files in single commit")
+
+    def _prepare_scaffold_files(self, scaffold: dict) -> list[dict]:
+        """Prepare list of files to create from scaffold data."""
+        files_to_create = []
+
+        if not scaffold.get('files'):
+            return files_to_create
+
+        for file_info in scaffold['files']:
+            if file_info['path'].lower() == 'readme.md':
+                continue
+            files_to_create.append({
+                'path': file_info['path'],
+                'content': file_info['content']
+            })
+
+        if scaffold.get('requirements'):
+            files_to_create.append({
+                'path': 'requirements.txt',
+                'content': '\n'.join(scaffold['requirements'])
+            })
             
-            if files_to_create:
-                if verbose:
-                    print(f"Adding {len(files_to_create)} MVP files...")
-                
-                result = self.github.create_files(
-                    owner=username,
-                    repo=idea_data['slug'],
-                    files=files_to_create,
-                    message="feat: Add MVP scaffold with SOLID structure"
-                )
-                
-                if verbose:
-                    print(f"  Created {result['files_created']} files in single commit")
+        return files_to_create
     
     def _create_jules_session(
         self,

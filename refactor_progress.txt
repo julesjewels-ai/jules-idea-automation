@@ -1,2 +1,3 @@
 src/utils/reporter.py:print_panel
 src/services/scraper.py:scrape_text
+src/core/workflow.py:IdeaWorkflow._generate_scaffold
