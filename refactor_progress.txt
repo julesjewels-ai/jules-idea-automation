@@ -1,3 +1,4 @@
 src/utils/reporter.py:print_panel
 src/services/scraper.py:scrape_text
 src/services/gemini.py:GeminiClient
+src/utils/security.py:validate_url
