@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+from xml.sax.saxutils import escape
 from google import genai
 from google.genai import types
 
@@ -20,6 +21,7 @@ CATEGORY_PROMPTS = {
     "ai_ml": "Generate an AI/ML application idea. Focus on practical use cases and accessible interfaces.",
     "default": "Generate a creative, unique, and useful software application idea."
 }
+
 
 class GeminiClient:
     def __init__(self, api_key=None):
@@ -65,21 +67,26 @@ class GeminiClient:
     def extract_idea_from_text(self, text):
         """Extracts the core app idea from the provided text."""
         # Truncate text if it's too long to avoid token limits
-        max_chars = 100000 
+        max_chars = 100000
         truncated_text = text[:max_chars]
         
+        # Escape and wrap content to prevent prompt injection
+        safe_text = escape(truncated_text)
+
         prompt = f"""
         Analyze the following text from a website and extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
         
-        Text content:
-        {truncated_text}
+        Analyze the content inside the <text_content> XML tags:
+        <text_content>
+        {safe_text}
+        </text_content>
         """
         
         response = self.client.models.generate_content(
             model=self.model_name,
             contents=prompt,
-             config=types.GenerateContentConfig(
+            config=types.GenerateContentConfig(
                 thinking_config=types.ThinkingConfig(include_thoughts=True),
                 response_mime_type="application/json",
                 response_schema=IdeaResponse
@@ -104,11 +111,14 @@ class GeminiClient:
             ProjectScaffold with files, requirements, and run command
         """
         # Developer-ready MVP prompt
-        prompt = f"""
-Generate a DEVELOPER-READY MVP project scaffold for:
+        safe_title = escape(idea_data['title'])
+        safe_desc = escape(idea_data['description'][:500])
 
-**Project:** {idea_data['title']}
-**Description:** {idea_data['description'][:500]}
+        prompt = f"""
+Generate a DEVELOPER-READY MVP project scaffold for the project described in the XML tags below.
+
+<project_title>{safe_title}</project_title>
+<project_description>{safe_desc}</project_description>
 
 Create a complete, immediately-runnable project with these files:
 
