@@ -1,12 +1,14 @@
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
+
 from src.services.gemini import GeminiClient
+
 
 class TestGeminiSecurity:
     @pytest.fixture
     def mock_genai_client(self):
-        with patch('src.services.gemini.genai.Client') as mock:
+        with patch("src.services.gemini.genai.Client") as mock:
             yield mock
 
     def test_extract_idea_prompt_injection_mitigation(self, mock_genai_client):
@@ -16,7 +18,9 @@ class TestGeminiSecurity:
         # Setup
         client_instance = mock_genai_client.return_value
         mock_response = MagicMock()
-        mock_response.text = '{"title": "Test", "description": "Test", "slug": "test", "tech_stack": [], "features": []}'
+        mock_response.text = (
+            '{"title": "Test", "description": "Test", "slug": "test", "tech_stack": [], "features": []}'
+        )
         client_instance.models.generate_content.return_value = mock_response
 
         gemini = GeminiClient(api_key="fake_key")
@@ -28,7 +32,7 @@ class TestGeminiSecurity:
         # Verify
         # Get the call arguments
         call_args = client_instance.models.generate_content.call_args
-        prompt_content = call_args.kwargs['contents']
+        prompt_content = call_args.kwargs["contents"]
 
         # Check if user input is wrapped in <content> tags
         assert "<content>" in prompt_content

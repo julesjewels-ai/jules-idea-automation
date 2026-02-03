@@ -5,13 +5,13 @@ Embedded template files for agent-ready repository scaffolding.
 These are injected into new repositories during CLI creation.
 """
 
-from typing import List, Dict
+from typing import Dict, List
 
 # =============================================================================
 # PROJECT CONTRACTS
 # =============================================================================
 
-PRD_TEMPLATE = '''# Product Requirements Document (PRD)
+PRD_TEMPLATE = """# Product Requirements Document (PRD)
 
 > **Status:** `DRAFT` | `IN_REVIEW` | `APPROVED`  
 > **Last Updated:** YYYY-MM-DD  
@@ -73,9 +73,9 @@ PRD_TEMPLATE = '''# Product Requirements Document (PRD)
 - [ ] All V1 acceptance criteria pass
 - [ ] 80%+ test coverage
 - [ ] Security scan passes
-'''
+"""
 
-GUARDRAILS_TEMPLATE = '''# Agent Guardrails
+GUARDRAILS_TEMPLATE = """# Agent Guardrails
 
 > Hard constraints for automated agents operating on this repository.
 
@@ -140,9 +140,9 @@ Agents SHOULD rotate context when:
 | Security vulnerability | STOP, create issue, notify human |
 | Breaking change | STOP, request human review |
 | 3+ failed iterations | STOP, emit `CONTEXT_POLLUTED` |
-'''
+"""
 
-SUCCESS_CRITERIA_TEMPLATE = '''# Success Criteria
+SUCCESS_CRITERIA_TEMPLATE = """# Success Criteria
 
 > Machine-checkable signals for each development phase.  
 > Agents emit `<promise>PHASE_NAME</promise>` when criteria are met.
@@ -222,9 +222,9 @@ bandit -r src/ -ll -x tests/
 | `CONTEXT_POLLUTED` | Too many failed attempts |
 | `ITERATION_LIMIT` | Max iterations reached |
 | `HUMAN_REVIEW_REQUIRED` | Decision beyond agent authority |
-'''
+"""
 
-CONTEXT_HEALTH_TEMPLATE = '''# Context Health Policy
+CONTEXT_HEALTH_TEMPLATE = """# Context Health Policy
 
 > Guidelines for managing context pollution and agent productivity.
 
@@ -284,9 +284,9 @@ CONTEXT_HEALTH_TEMPLATE = '''# Context Health Policy
 1. Document attempts in progress file
 2. List remaining tasks
 3. Create GitHub Issue if needed
-'''
+"""
 
-ARCHITECTURE_TEMPLATE = '''# Architecture Document
+ARCHITECTURE_TEMPLATE = """# Architecture Document
 
 > **Status:** `DRAFT` | `REVIEW` | `LOCKED`  
 > **Last Updated:** YYYY-MM-DD
@@ -329,13 +329,13 @@ graph TB
 |----------|--------|-----------|
 | Language | Python 3.9+ | Team expertise |
 | Testing | pytest | Standard, good plugins |
-'''
+"""
 
 # =============================================================================
 # PROGRESS MARKERS
 # =============================================================================
 
-ENGINEER_PROGRESS_TEMPLATE = '''# Engineer Progress
+ENGINEER_PROGRESS_TEMPLATE = """# Engineer Progress
 
 ## Session Info
 - Started: YYYY-MM-DD HH:MM:SS
@@ -349,9 +349,9 @@ ENGINEER_PROGRESS_TEMPLATE = '''# Engineer Progress
 ## Blockers
 
 ## Next Steps
-'''
+"""
 
-MASON_REPORT_TEMPLATE = '''# Mason Report
+MASON_REPORT_TEMPLATE = """# Mason Report
 
 ## Session Info
 - Started: YYYY-MM-DD HH:MM:SS
@@ -369,9 +369,9 @@ MASON_REPORT_TEMPLATE = '''# Mason Report
 
 | ID | Description | Priority |
 |----|-------------|----------|
-'''
+"""
 
-CODER_PROGRESS_TEMPLATE = '''# Coder Progress
+CODER_PROGRESS_TEMPLATE = """# Coder Progress
 
 ## Session Info
 - Started: YYYY-MM-DD HH:MM:SS
@@ -393,9 +393,9 @@ Coverage: Z%
 ## Blockers
 
 ## Next Steps
-'''
+"""
 
-DELIVERER_REPORT_TEMPLATE = '''# Deliverer Report
+DELIVERER_REPORT_TEMPLATE = """# Deliverer Report
 
 ## Session Info
 - Started: YYYY-MM-DD HH:MM:SS
@@ -416,13 +416,13 @@ DELIVERER_REPORT_TEMPLATE = '''# Deliverer Report
 
 ## Final Status
 **READY_FOR_DEPLOYMENT:** YES / NO
-'''
+"""
 
 # =============================================================================
 # MAKEFILE
 # =============================================================================
 
-MAKEFILE_TEMPLATE = '''.PHONY: help install lint format test coverage build clean
+MAKEFILE_TEMPLATE = """.PHONY: help install lint format test coverage build clean
 
 help:
 \t@echo "Available targets:"
@@ -459,13 +459,13 @@ build:
 
 clean:
 \trm -rf build/ dist/ *.egg-info/ .pytest_cache/ .coverage htmlcov/
-'''
+"""
 
 # =============================================================================
 # AGENT PROMPTS
 # =============================================================================
 
-ARCHITECT_PROMPT = '''# Architect Agent Prompt
+ARCHITECT_PROMPT = """# Architect Agent Prompt
 
 ## Role
 You are the **Architect Agent**, responsible for designing the high-level system architecture.
@@ -491,9 +491,9 @@ Emit `<promise>ARCHITECTURE_LOCKED</promise>` when:
 Emit `CONTEXT_POLLUTED` if:
 - PRD.md is missing or has "DRAFT" status
 - Requirements are ambiguous after 3 attempts
-'''
+"""
 
-ENGINEER_PROMPT = '''# Engineer Agent Prompt
+ENGINEER_PROMPT = """# Engineer Agent Prompt
 
 ## Role
 You are the **Engineer Agent**, responsible for generating the code skeleton.
@@ -518,9 +518,9 @@ Emit `<promise>SKELETON_VALID</promise>` when:
 Emit `CONTEXT_POLLUTED` if:
 - ARCHITECTURE.md is missing
 - Circular import detected after 3 attempts
-'''
+"""
 
-MASON_PROMPT = '''# Mason Agent Prompt
+MASON_PROMPT = """# Mason Agent Prompt
 
 ## Role
 You are the **Mason Agent**, responsible for implementing SOLID patterns.
@@ -544,9 +544,9 @@ Emit `<promise>SOLID_COMPLETE</promise>` when:
 Emit `CONTEXT_POLLUTED` if:
 - Skeleton is invalid (syntax errors)
 - Cannot achieve 60% coverage after 5 attempts
-'''
+"""
 
-CODER_PROMPT = '''# Coder Agent Prompt
+CODER_PROMPT = """# Coder Agent Prompt
 
 ## Role
 You are the **Coder Agent**, responsible for implementing business logic.
@@ -569,9 +569,9 @@ Emit `<promise>TESTS_PASSING_ALL</promise>` when:
 ## Failure Conditions
 Emit `CONTEXT_POLLUTED` if:
 - Tests consistently fail after 5 fix attempts
-'''
+"""
 
-DELIVERER_PROMPT = '''# Deliverer Agent Prompt
+DELIVERER_PROMPT = """# Deliverer Agent Prompt
 
 ## Role
 You are the **Deliverer Agent**, responsible for final verification.
@@ -596,13 +596,13 @@ Emit `<promise>READY_FOR_DEPLOYMENT</promise>` when:
 ## Failure Conditions
 Emit `HUMAN_REVIEW_REQUIRED` if:
 - Security vulnerabilities detected
-'''
+"""
 
 # =============================================================================
 # AGENT CONFIGS
 # =============================================================================
 
-ARCHITECT_CONFIG = '''{
+ARCHITECT_CONFIG = """{
   "agent": "architect",
   "max_iterations": 50,
   "timeout_seconds": 1800,
@@ -613,9 +613,9 @@ ARCHITECT_CONFIG = '''{
     "test -f ARCHITECTURE.md",
     "test -f src/core/interfaces.py"
   ]
-}'''
+}"""
 
-ENGINEER_CONFIG = '''{
+ENGINEER_CONFIG = """{
   "agent": "engineer",
   "max_iterations": 50,
   "timeout_seconds": 1800,
@@ -626,9 +626,9 @@ ENGINEER_CONFIG = '''{
     "python -m py_compile src/core/*.py",
     "python -c 'import src'"
   ]
-}'''
+}"""
 
-MASON_CONFIG = '''{
+MASON_CONFIG = """{
   "agent": "mason",
   "max_iterations": 50,
   "timeout_seconds": 1800,
@@ -639,9 +639,9 @@ MASON_CONFIG = '''{
     "pytest tests/ -v",
     "pytest --cov=src/core --cov-fail-under=60"
   ]
-}'''
+}"""
 
-CODER_CONFIG = '''{
+CODER_CONFIG = """{
   "agent": "coder",
   "max_iterations": 100,
   "timeout_seconds": 3600,
@@ -652,9 +652,9 @@ CODER_CONFIG = '''{
     "pytest tests/ -v",
     "pytest --cov=src --cov-fail-under=80"
   ]
-}'''
+}"""
 
-DELIVERER_CONFIG = '''{
+DELIVERER_CONFIG = """{
   "agent": "deliverer",
   "max_iterations": 30,
   "timeout_seconds": 1200,
@@ -665,13 +665,13 @@ DELIVERER_CONFIG = '''{
     "make lint",
     "make test"
   ]
-}'''
+}"""
 
 # =============================================================================
 # RUN SCRIPTS
 # =============================================================================
 
-RUN_ARCHITECT_SCRIPT = '''#!/bin/bash
+RUN_ARCHITECT_SCRIPT = """#!/bin/bash
 # Run Architect Agent
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -687,9 +687,9 @@ echo "Started: $(date -Iseconds)" | tee -a "$LOG_FILE"
 # Add your agent runner command here
 
 echo "Completed: $(date -Iseconds)" | tee -a "$LOG_FILE"
-'''
+"""
 
-RUN_ENGINEER_SCRIPT = '''#!/bin/bash
+RUN_ENGINEER_SCRIPT = """#!/bin/bash
 # Run Engineer Agent
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -702,9 +702,9 @@ echo "Started: $(date -Iseconds)" | tee -a "$LOG_FILE"
 
 # Placeholder for agent invocation
 echo "Completed: $(date -Iseconds)" | tee -a "$LOG_FILE"
-'''
+"""
 
-RUN_MASON_SCRIPT = '''#!/bin/bash
+RUN_MASON_SCRIPT = """#!/bin/bash
 # Run Mason Agent
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -717,9 +717,9 @@ echo "Started: $(date -Iseconds)" | tee -a "$LOG_FILE"
 
 # Placeholder for agent invocation
 echo "Completed: $(date -Iseconds)" | tee -a "$LOG_FILE"
-'''
+"""
 
-RUN_CODER_SCRIPT = '''#!/bin/bash
+RUN_CODER_SCRIPT = """#!/bin/bash
 # Run Coder Agent
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -732,9 +732,9 @@ echo "Started: $(date -Iseconds)" | tee -a "$LOG_FILE"
 
 # Placeholder for agent invocation
 echo "Completed: $(date -Iseconds)" | tee -a "$LOG_FILE"
-'''
+"""
 
-RUN_DELIVERER_SCRIPT = '''#!/bin/bash
+RUN_DELIVERER_SCRIPT = """#!/bin/bash
 # Run Deliverer Agent
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -747,9 +747,9 @@ echo "Started: $(date -Iseconds)" | tee -a "$LOG_FILE"
 
 # Placeholder for agent invocation
 echo "Completed: $(date -Iseconds)" | tee -a "$LOG_FILE"
-'''
+"""
 
-RUN_PIPELINE_SCRIPT = '''#!/bin/bash
+RUN_PIPELINE_SCRIPT = """#!/bin/bash
 # Agent Pipeline Orchestrator
 set -euo pipefail
 
@@ -774,17 +774,17 @@ done
 echo "=========================================="
 echo "  Pipeline Complete!"
 echo "=========================================="
-'''
+"""
 
 # =============================================================================
 # PYTEST CONFIG
 # =============================================================================
 
-PYTEST_INI = '''[pytest]
+PYTEST_INI = """[pytest]
 pythonpath = .
 testpaths = tests
 addopts = -v --tb=short
-'''
+"""
 
 # =============================================================================
 # SMOKE TEST
@@ -809,7 +809,7 @@ class TestSmoke:
 # GITIGNORE ADDITIONS
 # =============================================================================
 
-GITIGNORE_ADDITIONS = '''
+GITIGNORE_ADDITIONS = """
 # Agent Run Artifacts
 logs/
 .cache/
@@ -829,7 +829,7 @@ build/
 # Type checking
 .mypy_cache/
 .ruff_cache/
-'''
+"""
 
 # =============================================================================
 # TEMPLATE REGISTRY
@@ -842,41 +842,34 @@ AGENT_TEMPLATES: Dict[str, str] = {
     "docs/SUCCESS_CRITERIA.md": SUCCESS_CRITERIA_TEMPLATE,
     "docs/CONTEXT_HEALTH.md": CONTEXT_HEALTH_TEMPLATE,
     "docs/ARCHITECTURE.md": ARCHITECTURE_TEMPLATE,
-    
     # Progress Markers → progress/
     "progress/ENGINEER_PROGRESS.txt": ENGINEER_PROGRESS_TEMPLATE,
     "progress/MASON_REPORT.md": MASON_REPORT_TEMPLATE,
     "progress/CODER_PROGRESS.txt": CODER_PROGRESS_TEMPLATE,
     "progress/DELIVERER_REPORT.md": DELIVERER_REPORT_TEMPLATE,
-    
     # Build Configuration (root level - standard locations)
     "Makefile": MAKEFILE_TEMPLATE,
     "pytest.ini": PYTEST_INI,
-    
     # Agent Prompts
     "agent/prompts/architect_prompt.md": ARCHITECT_PROMPT,
     "agent/prompts/engineer_prompt.md": ENGINEER_PROMPT,
     "agent/prompts/mason_prompt.md": MASON_PROMPT,
     "agent/prompts/coder_prompt.md": CODER_PROMPT,
     "agent/prompts/deliverer_prompt.md": DELIVERER_PROMPT,
-    
     # Agent Configs
     "agent/config/architect.config.json": ARCHITECT_CONFIG,
     "agent/config/engineer.config.json": ENGINEER_CONFIG,
     "agent/config/mason.config.json": MASON_CONFIG,
     "agent/config/coder.config.json": CODER_CONFIG,
     "agent/config/deliverer.config.json": DELIVERER_CONFIG,
-    
     # Run Scripts
     "agent/scripts/run_architect.sh": RUN_ARCHITECT_SCRIPT,
     "agent/scripts/run_engineer.sh": RUN_ENGINEER_SCRIPT,
     "agent/scripts/run_mason.sh": RUN_MASON_SCRIPT,
     "agent/scripts/run_coder.sh": RUN_CODER_SCRIPT,
     "agent/scripts/run_deliverer.sh": RUN_DELIVERER_SCRIPT,
-    
     # Pipeline Orchestrator (root level)
     "run_pipeline.sh": RUN_PIPELINE_SCRIPT,
-    
     # Smoke Test
     "tests/test_smoke.py": SMOKE_TEST,
 }
@@ -885,7 +878,7 @@ AGENT_TEMPLATES: Dict[str, str] = {
 def get_agent_template_files() -> List[Dict[str, str]]:
     """
     Returns list of agent template files for GitHub API.
-    
+
     Returns:
         List of dicts with 'path' and 'content' keys.
     """

@@ -1,0 +1,21 @@
+agent/scripts/repro_injection.py:12:121: E501 line too long (124 > 120 characters)
+src/services/gemini.py:65:121: E501 line too long (126 > 120 characters)
+src/services/gemini.py:67:1: W293 blank line contains whitespace
+src/services/gemini.py:114:24: W291 trailing whitespace
+src/services/gemini.py:183:1: W293 blank line contains whitespace
+src/services/gemini.py:210:1: W293 blank line contains whitespace
+src/services/gemini.py:214:1: W293 blank line contains whitespace
+src/templates/agent_ready.py:16:49: W291 trailing whitespace
+src/templates/agent_ready.py:17:31: W291 trailing whitespace
+src/templates/agent_ready.py:147:56: W291 trailing whitespace
+src/templates/agent_ready.py:291:44: W291 trailing whitespace
+src/templates/agent_ready.py:309:1: W293 blank line contains whitespace
+src/templates/agent_ready.py:314:1: W293 blank line contains whitespace
+src/templates/agent_ready.py:318:1: W293 blank line contains whitespace
+src/templates/agent_ready.py:801:1: W293 blank line contains whitespace
+src/utils/guide.py:17:82: W291 trailing whitespace
+src/utils/guide.py:87:71: W291 trailing whitespace
+src/utils/guide.py:125:68: W291 trailing whitespace
+src/utils/guide.py:164:69: W291 trailing whitespace
+src/utils/reporter.py:67:121: E501 line too long (130 > 120 characters)
+tests/test_gemini_security_fix.py:21:121: E501 line too long (121 > 120 characters)

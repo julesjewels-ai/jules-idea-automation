@@ -1,7 +1,7 @@
 # Makefile for Agent-Ready Repository
 # Standard targets for quality checks and build automation
 
-.PHONY: help install lint format typecheck test coverage build clean security
+.PHONY: help install lint format typecheck test coverage build clean security quality quality-fix
 
 # Default target
 help:
@@ -13,6 +13,8 @@ help:
 	@echo "  make test       - Run tests (pytest)"
 	@echo "  make coverage   - Run tests with coverage"
 	@echo "  make security   - Run security scan (bandit)"
+	@echo "  make quality    - Check code quality (flake8, black, isort)"
+	@echo "  make quality-fix - Auto-fix code quality issues (black, isort)"
 	@echo "  make build      - Build package"
 	@echo "  make clean      - Clean build artifacts"
 	@echo "  make all        - Run lint, test, and build"
@@ -93,3 +95,21 @@ all: lint test build
 # Pre-commit hook equivalent
 check: lint typecheck test security
 	@echo "All pre-commit checks passed ✓"
+
+# Code quality check (flake8, black, isort)
+quality:
+	@echo "Running code quality checks..."
+	@echo "Checking flake8..."
+	flake8 src/ agent/ main.py tests/ --max-line-length=120 --extend-ignore=E203,W503
+	@echo "Checking black formatting..."
+	black --check src/ agent/ main.py tests/
+	@echo "Checking isort..."
+	isort --check-only src/ agent/ main.py tests/
+	@echo "Quality checks complete ✓"
+
+# Auto-fix code quality issues
+quality-fix:
+	@echo "Auto-fixing code quality issues..."
+	black src/ agent/ main.py tests/
+	isort src/ agent/ main.py tests/
+	@echo "✓ Auto-fixes complete. Run 'make quality' to verify."

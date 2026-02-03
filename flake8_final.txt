@@ -1,0 +1,19 @@
+src/services/gemini.py:63:121: E501 line too long (126 > 120 characters)
+src/services/gemini.py:65:1: W293 blank line contains whitespace
+src/services/gemini.py:112:24: W291 trailing whitespace
+src/services/gemini.py:177:1: W293 blank line contains whitespace
+src/services/gemini.py:204:1: W293 blank line contains whitespace
+src/services/gemini.py:208:1: W293 blank line contains whitespace
+src/templates/agent_ready.py:16:49: W291 trailing whitespace
+src/templates/agent_ready.py:17:31: W291 trailing whitespace
+src/templates/agent_ready.py:147:56: W291 trailing whitespace
+src/templates/agent_ready.py:291:44: W291 trailing whitespace
+src/templates/agent_ready.py:309:1: W293 blank line contains whitespace
+src/templates/agent_ready.py:314:1: W293 blank line contains whitespace
+src/templates/agent_ready.py:318:1: W293 blank line contains whitespace
+src/templates/agent_ready.py:801:1: W293 blank line contains whitespace
+src/utils/guide.py:15:82: W291 trailing whitespace
+src/utils/guide.py:83:71: W291 trailing whitespace
+src/utils/guide.py:121:68: W291 trailing whitespace
+src/utils/guide.py:160:69: W291 trailing whitespace
+src/utils/reporter.py:65:121: E501 line too long (130 > 120 characters)

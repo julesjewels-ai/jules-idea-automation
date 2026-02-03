@@ -1,12 +1,15 @@
 """Security utilities."""
 
-import socket
 import ipaddress
+import socket
 from urllib.parse import urlparse
+
 
 class ScrapingError(Exception):
     """Raised when scraping fails or returns insufficient content."""
+
     pass
+
 
 def validate_url(url: str) -> None:
     """Validate that the URL is safe to scrape.
@@ -21,7 +24,7 @@ def validate_url(url: str) -> None:
     """
     try:
         parsed = urlparse(url)
-        if parsed.scheme not in ('http', 'https'):
+        if parsed.scheme not in ("http", "https"):
             raise ScrapingError(f"Invalid scheme: {parsed.scheme}. Only http/https allowed.")
 
         hostname = parsed.hostname
@@ -38,7 +41,7 @@ def validate_url(url: str) -> None:
 
         # Check for private/local IPs
         if ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_reserved:
-             raise ScrapingError(f"Access to private/local address {hostname} ({ip_str}) is blocked for security.")
+            raise ScrapingError(f"Access to private/local address {hostname} ({ip_str}) is blocked for security.")
 
     except ValueError:
         raise ScrapingError(f"Invalid URL format: {url}")

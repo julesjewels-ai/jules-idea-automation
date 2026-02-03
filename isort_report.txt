@@ -1,0 +1,265 @@
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/core/models.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/core/workflow.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/utils/security.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/utils/reporter.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/utils/polling.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/cli/commands.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/templates/agent_ready.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/scraper.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/jules.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/gemini.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/github.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/main.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/test_smoke.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/test_gemini_security_fix.py Imports are incorrectly sorted and/or formatted.
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/core/models.py:before	2026-01-13 12:12:35.785156
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/core/models.py:after	2026-02-03 03:44:52.788533
+@@ -1,7 +1,8 @@
+ """Pydantic models for the Jules Automation Tool."""
+ 
++from typing import Optional
++
+ from pydantic import BaseModel, Field
+-from typing import Optional
+ 
+ 
+ class TextAnalysisInput(BaseModel):
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/core/workflow.py:before	2026-01-19 11:29:47.316261
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/core/workflow.py:after	2026-02-03 03:44:52.799083
+@@ -2,14 +2,14 @@
+ 
+ from typing import Optional
+ 
++from src.core.models import WorkflowResult
++from src.core.readme_builder import build_readme
+ from src.services.gemini import GeminiClient
+ from src.services.github import GitHubClient
+ from src.services.jules import JulesClient
+-from src.core.readme_builder import build_readme
+-from src.core.models import WorkflowResult
++from src.templates.agent_ready import get_agent_template_files
+ from src.utils.polling import poll_until
+ from src.utils.reporter import print_workflow_report
+-from src.templates.agent_ready import get_agent_template_files
+ 
+ 
+ class IdeaWorkflow:
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/utils/security.py:before	2026-01-11 09:12:51.415358
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/utils/security.py:after	2026-02-03 03:44:52.809259
+@@ -1,8 +1,9 @@
+ """Security utilities."""
+ 
++import ipaddress
+ import socket
+-import ipaddress
+ from urllib.parse import urlparse
++
+ 
+ class ScrapingError(Exception):
+     """Raised when scraping fails or returns insufficient content."""
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/utils/reporter.py:before	2026-01-13 12:12:35.786525
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/utils/reporter.py:after	2026-02-03 03:44:52.813715
+@@ -1,9 +1,9 @@
+ """Console reporting utilities."""
+ 
++import re
+ import sys
++import threading
+ import time
+-import threading
+-import re
+ from typing import Optional
+ 
+ 
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/utils/polling.py:before	2025-12-29 23:53:47.706746
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/utils/polling.py:after	2026-02-03 03:44:52.815278
+@@ -1,7 +1,7 @@
+ """Polling utilities for waiting on external services."""
+ 
+ import time
+-from typing import Callable, TypeVar, Optional
++from typing import Callable, Optional, TypeVar
+ 
+ T = TypeVar('T')
+ 
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/cli/commands.py:before	2026-01-19 11:28:54.260161
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/cli/commands.py:after	2026-02-03 03:44:52.827018
+@@ -4,16 +4,10 @@
+ import time
+ from argparse import Namespace
+ 
+-from src.utils.reporter import (
+-    print_session_status,
+-    print_watch_complete,
+-    print_watch_timeout,
+-    print_sources_list,
+-    print_idea_summary,
+-    Spinner,
+-    Colors,
+-    format_duration,
+-)
++from src.utils.reporter import (Colors, Spinner, format_duration,
++                                print_idea_summary, print_session_status,
++                                print_sources_list, print_watch_complete,
++                                print_watch_timeout)
+ 
+ 
+ def handle_list_sources() -> None:
+@@ -44,7 +38,7 @@
+ def handle_website(args: Namespace) -> None:
+     """Handle the website command."""
+     from src.services.gemini import GeminiClient
+-    from src.services.scraper import scrape_text, ScrapingError
++    from src.services.scraper import ScrapingError, scrape_text
+ 
+     print(f"Scraping {args.url}...")
+     
+@@ -177,13 +171,9 @@
+ 
+ def handle_guide(args: Namespace) -> None:
+     """Handle the guide command."""
+-    from src.utils.guide import (
+-        print_welcome_guide,
+-        print_agent_guide,
+-        print_website_guide,
+-        print_manual_guide,
+-        print_examples
+-    )
++    from src.utils.guide import (print_agent_guide, print_examples,
++                                 print_manual_guide, print_website_guide,
++                                 print_welcome_guide)
+     
+     workflow = getattr(args, 'workflow', None)
+     
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/templates/agent_ready.py:before	2026-01-19 11:52:08.758386
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/templates/agent_ready.py:after	2026-02-03 03:44:52.834547
+@@ -5,7 +5,7 @@
+ These are injected into new repositories during CLI creation.
+ """
+ 
+-from typing import List, Dict
++from typing import Dict, List
+ 
+ # =============================================================================
+ # PROJECT CONTRACTS
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/scraper.py:before	2026-01-11 09:12:51.414711
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/scraper.py:after	2026-02-03 03:44:52.840074
+@@ -2,8 +2,8 @@
+ 
+ import requests
+ from bs4 import BeautifulSoup
+-from src.utils.security import validate_url, ScrapingError
+ 
++from src.utils.security import ScrapingError, validate_url
+ 
+ # Minimum characters required to consider the page has meaningful content
+ MIN_CONTENT_LENGTH = 200
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/jules.py:before	2026-02-03 00:36:20.204532
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/jules.py:after	2026-02-03 03:44:52.842613
+@@ -1,4 +1,5 @@
+ import os
++
+ import requests
+ 
+ # Default timeout for HTTP requests (seconds)
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/gemini.py:before	2026-01-19 10:10:30.643622
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/gemini.py:after	2026-02-03 03:44:52.846515
+@@ -1,13 +1,12 @@
++import json
+ import os
+-import json
+ from typing import Optional
++
+ from google import genai
+ from google.genai import types
+-
+ from pydantic import ValidationError
++
+ from src.core.models import IdeaResponse, ProjectScaffold, TextAnalysisInput
+-
+-
+ 
+ # Category-specific prompt templates
+ CATEGORY_PROMPTS = {
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/github.py:before	2026-02-03 00:36:18.423224
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/src/services/github.py:after	2026-02-03 03:44:52.848975
+@@ -1,6 +1,7 @@
++import base64
+ import os
++
+ import requests
+-import base64
+ 
+ # Default timeout for HTTP requests (seconds)
+ DEFAULT_TIMEOUT = 30
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/main.py:before	2026-01-11 15:45:42.139117
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/main.py:after	2026-02-03 03:44:52.859088
+@@ -7,13 +7,14 @@
+ """
+ 
+ import sys
++
+ from dotenv import load_dotenv
+ 
+ # Load environment variables
+ load_dotenv()
+ 
++from src.cli.commands import dispatch_command
+ from src.cli.parser import create_parser
+-from src.cli.commands import dispatch_command
+ 
+ 
+ def main() -> None:
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/test_smoke.py:before	2026-01-19 00:46:10.146723
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/test_smoke.py:after	2026-02-03 03:44:52.864331
+@@ -26,10 +26,11 @@
+     
+     def test_interfaces_defined(self):
+         """Verify interfaces module has expected ABCs."""
+-        from src.core.interfaces import IdeaSource, RepositoryCreator, SessionManager
+-        
+         # Verify they are abstract
+         from abc import ABC
++
++        from src.core.interfaces import (IdeaSource, RepositoryCreator,
++                                         SessionManager)
+         assert issubclass(IdeaSource, ABC)
+         assert issubclass(RepositoryCreator, ABC)
+         assert issubclass(SessionManager, ABC)
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/cli/test_commands.py Imports are incorrectly sorted and/or formatted.
+ERROR: /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/services/test_scraper.py Imports are incorrectly sorted and/or formatted.
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/test_gemini_security_fix.py:before	2026-01-19 00:46:46.779332
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/test_gemini_security_fix.py:after	2026-02-03 03:44:52.865716
+@@ -1,7 +1,10 @@
++
++from unittest.mock import MagicMock, patch
+ 
+ import pytest
+-from unittest.mock import MagicMock, patch
++
+ from src.services.gemini import GeminiClient
++
+ 
+ class TestGeminiSecurity:
+     @pytest.fixture
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/cli/test_commands.py:before	2026-01-19 10:21:52.293278
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/cli/test_commands.py:after	2026-02-03 03:44:52.868501
+@@ -1,5 +1,6 @@
+ 
+ from unittest.mock import patch
++
+ from src.cli.commands import handle_list_sources
+ from src.utils.reporter import print_sources_list
+ 
+--- /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/services/test_scraper.py:before	2026-01-13 12:12:35.787529
++++ /Users/tutorsam/Documents/Business/Github/jules-idea-automation/tests/services/test_scraper.py:after	2026-02-03 03:44:52.870901
+@@ -1,6 +1,8 @@
+ 
+ import pytest
+-from src.services.scraper import scrape_text, ScrapingError
++
++from src.services.scraper import ScrapingError, scrape_text
++
+ 
+ def test_validate_url_local_blocked():
+     with pytest.raises(ScrapingError, match="Access to private/local address"):

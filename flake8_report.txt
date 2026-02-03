@@ -1,0 +1,259 @@
+./agent/scripts/repro_injection.py:2:1: F401 'os' imported but unused
+./agent/scripts/repro_injection.py:3:1: F401 'sys' imported but unused
+./agent/scripts/repro_injection.py:10:1: E302 expected 2 blank lines, found 1
+./agent/scripts/repro_injection.py:12:1: W293 blank line contains whitespace
+./agent/scripts/repro_injection.py:14:121: E501 line too long (124 > 120 characters)
+./agent/scripts/repro_injection.py:15:1: W293 blank line contains whitespace
+./agent/scripts/repro_injection.py:20:1: W293 blank line contains whitespace
+./agent/scripts/repro_injection.py:22:1: W293 blank line contains whitespace
+./agent/scripts/repro_injection.py:30:1: E305 expected 2 blank lines after class or function definition, found 1
+./main.py:15:1: E402 module level import not at top of file
+./main.py:16:1: E402 module level import not at top of file
+./main.py:23:1: W293 blank line contains whitespace
+./main.py:28:1: W293 blank line contains whitespace
+./src/cli/commands.py:35:1: W293 blank line contains whitespace
+./src/cli/commands.py:40:1: W293 blank line contains whitespace
+./src/cli/commands.py:50:1: W293 blank line contains whitespace
+./src/cli/commands.py:61:1: W293 blank line contains whitespace
+./src/cli/commands.py:63:1: W293 blank line contains whitespace
+./src/cli/commands.py:67:1: W293 blank line contains whitespace
+./src/cli/commands.py:77:1: W293 blank line contains whitespace
+./src/cli/commands.py:83:1: W293 blank line contains whitespace
+./src/cli/commands.py:91:1: W293 blank line contains whitespace
+./src/cli/commands.py:130:1: W293 blank line contains whitespace
+./src/cli/commands.py:134:1: W293 blank line contains whitespace
+./src/cli/commands.py:145:1: W293 blank line contains whitespace
+./src/cli/commands.py:168:1: W293 blank line contains whitespace
+./src/cli/commands.py:187:1: W293 blank line contains whitespace
+./src/cli/commands.py:189:1: W293 blank line contains whitespace
+./src/cli/commands.py:205:1: W293 blank line contains whitespace
+./src/cli/commands.py:207:1: W293 blank line contains whitespace
+./src/cli/commands.py:217:1: W293 blank line contains whitespace
+./src/cli/commands.py:220:1: W293 blank line contains whitespace
+./src/cli/commands.py:225:1: W293 blank line contains whitespace
+./src/cli/commands.py:229:1: W293 blank line contains whitespace
+./src/cli/commands.py:238:1: W293 blank line contains whitespace
+./src/cli/commands.py:252:1: W293 blank line contains whitespace
+./src/cli/parser.py:16:17: W291 trailing whitespace
+./src/cli/parser.py:20:22: W291 trailing whitespace
+./src/cli/parser.py:48:19: W291 trailing whitespace
+./src/cli/parser.py:76:18: W291 trailing whitespace
+./src/cli/parser.py:151:1: W391 blank line at end of file
+./src/core/interfaces.py:14:1: W293 blank line contains whitespace
+./src/core/interfaces.py:19:1: W293 blank line contains whitespace
+./src/core/interfaces.py:22:1: W293 blank line contains whitespace
+./src/core/interfaces.py:31:1: W293 blank line contains whitespace
+./src/core/interfaces.py:36:1: W293 blank line contains whitespace
+./src/core/interfaces.py:41:1: W293 blank line contains whitespace
+./src/core/interfaces.py:50:1: W293 blank line contains whitespace
+./src/core/interfaces.py:55:1: W293 blank line contains whitespace
+./src/core/interfaces.py:59:1: W293 blank line contains whitespace
+./src/core/interfaces.py:64:1: W293 blank line contains whitespace
+./src/core/interfaces.py:69:1: W293 blank line contains whitespace
+./src/core/interfaces.py:72:1: W293 blank line contains whitespace
+./src/core/interfaces.py:81:1: W293 blank line contains whitespace
+./src/core/interfaces.py:86:1: W293 blank line contains whitespace
+./src/core/interfaces.py:89:1: W293 blank line contains whitespace
+./src/core/readme_builder.py:15:1: W293 blank line contains whitespace
+./src/core/readme_builder.py:23:1: W293 blank line contains whitespace
+./src/core/readme_builder.py:33:1: W293 blank line contains whitespace
+./src/core/readme_builder.py:41:1: W293 blank line contains whitespace
+./src/core/readme_builder.py:49:1: W293 blank line contains whitespace
+./src/core/readme_builder.py:65:1: W293 blank line contains whitespace
+./src/core/readme_builder.py:75:1: W293 blank line contains whitespace
+./src/core/readme_builder.py:85:1: W293 blank line contains whitespace
+./src/core/readme_builder.py:98:1: W293 blank line contains whitespace
+./src/core/readme_builder.py:108:1: W293 blank line contains whitespace
+./src/core/readme_builder.py:110:1: W391 blank line at end of file
+./src/core/workflow.py:17:1: W293 blank line contains whitespace
+./src/core/workflow.py:20:1: W293 blank line contains whitespace
+./src/core/workflow.py:28:1: W293 blank line contains whitespace
+./src/core/workflow.py:37:1: W293 blank line contains whitespace
+./src/core/workflow.py:47:1: W293 blank line contains whitespace
+./src/core/workflow.py:54:1: W293 blank line contains whitespace
+./src/core/workflow.py:62:1: W293 blank line contains whitespace
+./src/core/workflow.py:66:1: W293 blank line contains whitespace
+./src/core/workflow.py:69:1: W293 blank line contains whitespace
+./src/core/workflow.py:72:1: W293 blank line contains whitespace
+./src/core/workflow.py:80:1: W293 blank line contains whitespace
+./src/core/workflow.py:89:1: W293 blank line contains whitespace
+./src/core/workflow.py:91:1: W293 blank line contains whitespace
+./src/core/workflow.py:96:1: W293 blank line contains whitespace
+./src/core/workflow.py:100:1: W293 blank line contains whitespace
+./src/core/workflow.py:106:1: W293 blank line contains whitespace
+./src/core/workflow.py:108:1: W293 blank line contains whitespace
+./src/core/workflow.py:111:1: W293 blank line contains whitespace
+./src/core/workflow.py:120:1: W293 blank line contains whitespace
+./src/core/workflow.py:122:1: W293 blank line contains whitespace
+./src/core/workflow.py:132:1: W293 blank line contains whitespace
+./src/core/workflow.py:136:1: W293 blank line contains whitespace
+./src/core/workflow.py:144:1: W293 blank line contains whitespace
+./src/core/workflow.py:148:1: W293 blank line contains whitespace
+./src/core/workflow.py:156:1: W293 blank line contains whitespace
+./src/core/workflow.py:162:1: W293 blank line contains whitespace
+./src/core/workflow.py:166:1: W293 blank line contains whitespace
+./src/core/workflow.py:173:1: W293 blank line contains whitespace
+./src/core/workflow.py:176:1: W293 blank line contains whitespace
+./src/core/workflow.py:180:1: W293 blank line contains whitespace
+./src/core/workflow.py:183:1: W293 blank line contains whitespace
+./src/core/workflow.py:190:1: W293 blank line contains whitespace
+./src/core/workflow.py:193:1: W293 blank line contains whitespace
+./src/core/workflow.py:203:1: W293 blank line contains whitespace
+./src/core/workflow.py:207:1: W293 blank line contains whitespace
+./src/core/workflow.py:212:1: W293 blank line contains whitespace
+./src/core/workflow.py:219:1: W293 blank line contains whitespace
+./src/core/workflow.py:225:1: W293 blank line contains whitespace
+./src/core/workflow.py:228:1: W293 blank line contains whitespace
+./src/services/gemini.py:12:1: E303 too many blank lines (3)
+./src/services/gemini.py:23:1: E302 expected 2 blank lines, found 1
+./src/services/gemini.py:28:1: W293 blank line contains whitespace
+./src/services/gemini.py:37:1: W293 blank line contains whitespace
+./src/services/gemini.py:44:1: W293 blank line contains whitespace
+./src/services/gemini.py:66:121: E501 line too long (126 > 120 characters)
+./src/services/gemini.py:68:1: W293 blank line contains whitespace
+./src/services/gemini.py:78:1: W293 blank line contains whitespace
+./src/services/gemini.py:82:14: E131 continuation line unaligned for hanging indent
+./src/services/gemini.py:86:13: E122 continuation line missing indentation or outdented
+./src/services/gemini.py:92:1: W293 blank line contains whitespace
+./src/services/gemini.py:96:1: W293 blank line contains whitespace
+./src/services/gemini.py:115:24: W291 trailing whitespace
+./src/services/gemini.py:133:1: W293 blank line contains whitespace
+./src/services/gemini.py:154:1: W293 blank line contains whitespace
+./src/services/gemini.py:159:1: W293 blank line contains whitespace
+./src/services/gemini.py:180:1: W293 blank line contains whitespace
+./src/services/gemini.py:207:1: W293 blank line contains whitespace
+./src/services/gemini.py:211:1: W293 blank line contains whitespace
+./src/services/gemini.py:305:1: W391 blank line at end of file
+./src/services/github.py:8:1: E302 expected 2 blank lines, found 1
+./src/services/github.py:32:31: E261 at least two spaces before inline comment
+./src/services/github.py:34:121: E501 line too long (124 > 120 characters)
+./src/services/github.py:41:1: W293 blank line contains whitespace
+./src/services/github.py:44:1: W293 blank line contains whitespace
+./src/services/github.py:49:1: W293 blank line contains whitespace
+./src/services/github.py:56:1: W293 blank line contains whitespace
+./src/services/github.py:69:1: W293 blank line contains whitespace
+./src/services/github.py:75:1: W293 blank line contains whitespace
+./src/services/github.py:87:1: W293 blank line contains whitespace
+./src/services/github.py:94:1: W293 blank line contains whitespace
+./src/services/github.py:104:1: W293 blank line contains whitespace
+./src/services/github.py:112:121: E501 line too long (131 > 120 characters)
+./src/services/github.py:115:1: W293 blank line contains whitespace
+./src/services/github.py:120:121: E501 line too long (125 > 120 characters)
+./src/services/github.py:122:1: W293 blank line contains whitespace
+./src/services/jules.py:7:1: E302 expected 2 blank lines, found 1
+./src/services/jules.py:28:1: W293 blank line contains whitespace
+./src/services/jules.py:42:1: W293 blank line contains whitespace
+./src/services/jules.py:46:1: W293 blank line contains whitespace
+./src/services/jules.py:54:1: W293 blank line contains whitespace
+./src/services/jules.py:57:1: W293 blank line contains whitespace
+./src/services/jules.py:60:1: W293 blank line contains whitespace
+./src/services/jules.py:68:1: W293 blank line contains whitespace
+./src/services/jules.py:71:1: W293 blank line contains whitespace
+./src/services/jules.py:79:1: W293 blank line contains whitespace
+./src/services/jules.py:82:1: W293 blank line contains whitespace
+./src/services/jules.py:91:1: W293 blank line contains whitespace
+./src/services/jules.py:94:1: W293 blank line contains whitespace
+./src/services/jules.py:104:1: W293 blank line contains whitespace
+./src/services/jules.py:107:1: W293 blank line contains whitespace
+./src/services/jules.py:115:1: W293 blank line contains whitespace
+./src/services/jules.py:118:1: W293 blank line contains whitespace
+./src/services/jules.py:124:1: W293 blank line contains whitespace
+./src/services/jules.py:130:1: W293 blank line contains whitespace
+./src/services/jules.py:137:1: W293 blank line contains whitespace
+./src/services/scraper.py:14:14: W291 trailing whitespace
+./src/services/scraper.py:28:1: W293 blank line contains whitespace
+./src/services/scraper.py:31:1: W293 blank line contains whitespace
+./src/services/scraper.py:34:1: W293 blank line contains whitespace
+./src/services/scraper.py:46:1: W293 blank line contains whitespace
+./src/services/scraper.py:48:1: W293 blank line contains whitespace
+./src/services/scraper.py:52:1: W293 blank line contains whitespace
+./src/services/scraper.py:55:1: W293 blank line contains whitespace
+./src/services/scraper.py:62:1: W293 blank line contains whitespace
+./src/services/scraper.py:65:1: W293 blank line contains whitespace
+./src/services/scraper.py:67:1: W293 blank line contains whitespace
+./src/services/scraper.py:82:1: W293 blank line contains whitespace
+./src/services/scraper.py:86:1: W293 blank line contains whitespace
+./src/services/scraper.py:97:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:16:49: W291 trailing whitespace
+./src/templates/agent_ready.py:17:31: W291 trailing whitespace
+./src/templates/agent_ready.py:147:56: W291 trailing whitespace
+./src/templates/agent_ready.py:291:44: W291 trailing whitespace
+./src/templates/agent_ready.py:309:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:314:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:318:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:801:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:845:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:851:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:855:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:862:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:869:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:876:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:879:1: W293 blank line contains whitespace
+./src/templates/agent_ready.py:888:1: W293 blank line contains whitespace
+./src/utils/guide.py:8:1: W293 blank line contains whitespace
+./src/utils/guide.py:14:1: W293 blank line contains whitespace
+./src/utils/guide.py:15:82: W291 trailing whitespace
+./src/utils/guide.py:23:1: W293 blank line contains whitespace
+./src/utils/guide.py:26:1: W293 blank line contains whitespace
+./src/utils/guide.py:29:1: W293 blank line contains whitespace
+./src/utils/guide.py:37:1: W293 blank line contains whitespace
+./src/utils/guide.py:45:1: W293 blank line contains whitespace
+./src/utils/guide.py:53:1: W293 blank line contains whitespace
+./src/utils/guide.py:55:1: W293 blank line contains whitespace
+./src/utils/guide.py:66:1: W293 blank line contains whitespace
+./src/utils/guide.py:81:1: W293 blank line contains whitespace
+./src/utils/guide.py:83:71: W291 trailing whitespace
+./src/utils/guide.py:111:1: W293 blank line contains whitespace
+./src/utils/guide.py:119:1: W293 blank line contains whitespace
+./src/utils/guide.py:121:68: W291 trailing whitespace
+./src/utils/guide.py:150:1: W293 blank line contains whitespace
+./src/utils/guide.py:158:1: W293 blank line contains whitespace
+./src/utils/guide.py:160:69: W291 trailing whitespace
+./src/utils/guide.py:196:1: W293 blank line contains whitespace
+./src/utils/guide.py:204:1: W293 blank line contains whitespace
+./src/utils/guide.py:232:1: W293 blank line contains whitespace
+./src/utils/polling.py:16:1: W293 blank line contains whitespace
+./src/utils/polling.py:22:1: W293 blank line contains whitespace
+./src/utils/polling.py:45:1: W293 blank line contains whitespace
+./src/utils/polling.py:52:1: W293 blank line contains whitespace
+./src/utils/polling.py:61:1: W293 blank line contains whitespace
+./src/utils/polling.py:65:1: W293 blank line contains whitespace
+./src/utils/polling.py:68:1: W293 blank line contains whitespace
+./src/utils/reporter.py:23:1: E302 expected 2 blank lines, found 1
+./src/utils/reporter.py:28:1: E302 expected 2 blank lines, found 1
+./src/utils/reporter.py:62:121: E501 line too long (130 > 120 characters)
+./src/utils/reporter.py:107:14: E111 indentation is not a multiple of 4
+./src/utils/reporter.py:107:14: E117 over-indented
+./src/utils/reporter.py:192:1: W293 blank line contains whitespace
+./src/utils/reporter.py:200:1: W293 blank line contains whitespace
+./src/utils/reporter.py:218:1: W293 blank line contains whitespace
+./src/utils/reporter.py:221:1: W293 blank line contains whitespace
+./src/utils/reporter.py:314:14: E261 at least two spaces before inline comment
+./src/utils/reporter.py:321:14: E261 at least two spaces before inline comment
+./src/utils/security.py:7:1: E302 expected 2 blank lines, found 1
+./src/utils/security.py:11:1: E302 expected 2 blank lines, found 1
+./src/utils/security.py:41:14: E111 indentation is not a multiple of 4
+./src/utils/security.py:41:14: E117 over-indented
+./src/utils/slugify.py:9:1: W293 blank line contains whitespace
+./src/utils/slugify.py:13:1: W293 blank line contains whitespace
+./src/utils/slugify.py:16:1: W293 blank line contains whitespace
+./src/utils/slugify.py:27:1: W293 blank line contains whitespace
+./src/utils/slugify.py:30:1: W293 blank line contains whitespace
+./src/utils/slugify.py:33:1: W293 blank line contains whitespace
+./src/utils/slugify.py:39:1: W293 blank line contains whitespace
+./tests/cli/test_commands.py:8:1: E302 expected 2 blank lines, found 1
+./tests/cli/test_commands.py:26:1: E302 expected 2 blank lines, found 1
+./tests/cli/test_commands.py:49:1: E302 expected 2 blank lines, found 1
+./tests/services/test_scraper.py:5:1: E302 expected 2 blank lines, found 1
+./tests/services/test_scraper.py:9:1: E302 expected 2 blank lines, found 1
+./tests/services/test_scraper.py:13:1: E302 expected 2 blank lines, found 1
+./tests/services/test_scraper.py:17:1: E302 expected 2 blank lines, found 1
+./tests/services/test_scraper.py:21:1: E302 expected 2 blank lines, found 1
+./tests/test_gemini_security_fix.py:6:1: E302 expected 2 blank lines, found 1
+./tests/test_gemini_security_fix.py:19:121: E501 line too long (121 > 120 characters)
+./tests/test_smoke.py:15:1: W293 blank line contains whitespace
+./tests/test_smoke.py:19:1: W293 blank line contains whitespace
+./tests/test_smoke.py:26:1: W293 blank line contains whitespace
+./tests/test_smoke.py:30:1: W293 blank line contains whitespace
+./tests/test_smoke.py:40:1: W293 blank line contains whitespace
+./tests/test_smoke.py:45:1: W293 blank line contains whitespace
