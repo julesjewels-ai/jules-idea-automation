@@ -34,3 +34,8 @@
 **Target:** `GitHubClient.create_files` in `src/services/github.py`
 **Delta:** Decomposed 1 long function (approx 60 lines) into 7 smaller, single-responsibility methods.
 **Summary:** The `create_files` method was a complex procedural block handling a multi-step Git Data API workflow. Refactored it by extracting helper methods (`_get_latest_commit_sha`, `_get_tree_sha`, `_create_blobs`, `_create_tree`, `_create_commit`, `_update_ref`). Crucially, added missing test coverage (`tests/services/test_github.py`) to verify the behavior before and after refactoring.
+
+## 2026-02-04 - [Complexity Reduction]
+- **Target:** `JulesClient._request` in `src/services/jules.py`
+- **Delta:** Complexity Score 10 -> 4
+- **Summary:** Extracted `_handle_http_error` and `_extract_api_error_message` helpers to separate HTTP error handling and JSON parsing from the main request logic. This flattened the nested error handling and improved readability while maintaining existing error mapping behavior.

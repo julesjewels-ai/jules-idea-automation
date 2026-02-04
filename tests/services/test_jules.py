@@ -39,3 +39,13 @@ def test_jules_client_generic_error(requests_mock):
         client.list_sources()
 
     assert "API returned status 500" in excinfo.value.tip
+
+def test_jules_client_json_error(requests_mock):
+    client = JulesClient(api_key="test-key")
+    error_json = {"error": {"message": "Custom API Error"}}
+    requests_mock.get("https://jules.googleapis.com/v1alpha/sources", status_code=400, json=error_json)
+
+    with pytest.raises(JulesApiError) as excinfo:
+        client.list_sources()
+
+    assert "API Message: Custom API Error" in excinfo.value.tip
