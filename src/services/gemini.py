@@ -2,7 +2,7 @@ import os
 import json
 import logging
 from google import genai
-from google.genai import types
+from google.genai import types, errors
 
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
@@ -55,6 +55,23 @@ class GeminiClient:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
                 tip=error_tip
+            )
+        except errors.APIError as e:
+            tip = "Check your internet connection and API status."
+            err_msg = str(e)
+
+            if "API key not valid" in err_msg or "400" in err_msg:
+                tip = "Your GEMINI_API_KEY seems invalid. Check your .env file."
+            elif "429" in err_msg or "quota" in err_msg.lower():
+                tip = "You have exceeded your API quota. Try again later."
+            elif "403" in err_msg:
+                tip = "You don't have permission to access this model."
+
+            raise GenerationError(f"Gemini API Error: {e}", tip=tip)
+        except Exception as e:
+            raise GenerationError(
+                f"Unexpected error during generation: {e}",
+                tip="Check your network connection and configuration."
             )
 
     def generate_idea(self, category: str = None):

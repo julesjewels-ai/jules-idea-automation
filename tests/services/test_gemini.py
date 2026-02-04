@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 import json
 import os
+from google.genai import errors
 from src.services.gemini import GeminiClient
 from src.utils.errors import ConfigurationError, GenerationError
 
@@ -49,6 +50,20 @@ def test_generate_idea_json_error(client):
 
     with pytest.raises(GenerationError):
         client.generate_idea()
+
+def test_generate_idea_api_error(client):
+    # Simulate an API error (e.g., invalid key)
+    error = errors.ClientError(
+        code=400,
+        response_json={"message": "API key not valid"}
+    )
+    client.client.models.generate_content.side_effect = error
+
+    with pytest.raises(GenerationError) as excinfo:
+        client.generate_idea()
+
+    assert "Gemini API Error" in str(excinfo.value)
+    assert "Your GEMINI_API_KEY seems invalid" in excinfo.value.tip
 
 def test_extract_idea_from_text_success(client):
     mock_response = MagicMock()
