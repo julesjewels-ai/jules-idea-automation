@@ -1,5 +1,6 @@
 import os
 import requests
+from typing import Optional
 from src.utils.errors import ConfigurationError, JulesApiError
 
 class JulesClient:
@@ -28,29 +29,33 @@ class JulesClient:
             return response.json()
 
         except requests.exceptions.HTTPError as e:
-            tip = None
-            if e.response.status_code == 401:
-                tip = "Your Jules API key seems invalid. Check your .env file."
-            elif e.response.status_code == 403:
-                tip = "You don't have permission to access this resource."
-            elif e.response.status_code == 404:
-                tip = "The requested resource was not found."
-            else:
-                try:
-                    # Try to parse Google-style error
-                    error_data = e.response.json()
-                    error_msg = error_data.get('error', {}).get('message')
-                    if error_msg:
-                        tip = f"API Message: {error_msg}"
-                except Exception:
-                    pass
-
-                if not tip:
-                    tip = f"API returned status {e.response.status_code}."
-
+            tip = self._handle_http_error(e)
             raise JulesApiError(f"Jules API Error: {e}", tip=tip)
         except requests.exceptions.RequestException as e:
             raise JulesApiError(f"Network error: {e}", tip="Check your internet connection.")
+
+    def _handle_http_error(self, e: requests.exceptions.HTTPError) -> str:
+        """Determines the appropriate user tip for an HTTP error."""
+        status_code = e.response.status_code
+        if status_code == 401:
+            return "Your Jules API key seems invalid. Check your .env file."
+        if status_code == 403:
+            return "You don't have permission to access this resource."
+        if status_code == 404:
+            return "The requested resource was not found."
+
+        return self._extract_api_error_message(e) or f"API returned status {status_code}."
+
+    def _extract_api_error_message(self, e: requests.exceptions.HTTPError) -> Optional[str]:
+        """Attempts to parse a Google-style JSON error message."""
+        try:
+            error_data = e.response.json()
+            error_msg = error_data.get('error', {}).get('message')
+            if error_msg:
+                return f"API Message: {error_msg}"
+        except Exception:
+            pass
+        return None
 
     def list_sources(self):
         """Lists available sources from Jules API."""

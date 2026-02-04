@@ -29,3 +29,8 @@
 - **Target:** `IdeaWorkflow._generate_scaffold` in `src/core/workflow.py`
 - **Delta:** Complexity Score 10 -> 6
 - **Summary:** Extracted `_prepare_scaffold_files` helper method to encapsulate the logic for filtering and preparing the list of files to be created on GitHub. This flattened the nested conditional structure in the main workflow method.
+
+## 2026-02-04 - [Complexity Reduction]
+- **Target:** `JulesClient._request` in `src/services/jules.py`
+- **Delta:** Complexity Score 10 -> 4
+- **Summary:** Extracted `_handle_http_error` and `_extract_api_error_message` helpers to separate HTTP error handling and JSON parsing from the main request logic. This flattened the nested error handling and improved readability while maintaining existing error mapping behavior.
