@@ -62,66 +62,72 @@ class GitHubClient:
             message: Commit message
             branch: Target branch (default: main)
         """
-        # Step 1: Get the latest commit SHA for the branch
-        ref_url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
-        ref_response = requests.get(ref_url, headers=self.headers)
-        ref_response.raise_for_status()
-        latest_commit_sha = ref_response.json()["object"]["sha"]
-        
-        # Step 2: Get the tree SHA from that commit
-        commit_url = f"{self.base_url}/repos/{owner}/{repo}/git/commits/{latest_commit_sha}"
-        commit_response = requests.get(commit_url, headers=self.headers)
-        commit_response.raise_for_status()
-        base_tree_sha = commit_response.json()["tree"]["sha"]
-        
-        # Step 3: Create blobs for each file
-        tree_items = []
-        for file_info in files:
-            blob_url = f"{self.base_url}/repos/{owner}/{repo}/git/blobs"
-            blob_payload = {
-                "content": file_info["content"],
-                "encoding": "utf-8"
-            }
-            blob_response = requests.post(blob_url, headers=self.headers, json=blob_payload)
-            blob_response.raise_for_status()
-            blob_sha = blob_response.json()["sha"]
-            
-            tree_items.append({
-                "path": file_info["path"],
-                "mode": "100644",  # Regular file
-                "type": "blob",
-                "sha": blob_sha
-            })
-        
-        # Step 4: Create a new tree with all files
-        tree_url = f"{self.base_url}/repos/{owner}/{repo}/git/trees"
-        tree_payload = {
-            "base_tree": base_tree_sha,
-            "tree": tree_items
-        }
-        tree_response = requests.post(tree_url, headers=self.headers, json=tree_payload)
-        tree_response.raise_for_status()
-        new_tree_sha = tree_response.json()["sha"]
-        
-        # Step 5: Create a new commit pointing to the new tree
-        new_commit_url = f"{self.base_url}/repos/{owner}/{repo}/git/commits"
-        new_commit_payload = {
-            "message": message,
-            "tree": new_tree_sha,
-            "parents": [latest_commit_sha]
-        }
-        new_commit_response = requests.post(new_commit_url, headers=self.headers, json=new_commit_payload)
-        new_commit_response.raise_for_status()
-        new_commit_sha = new_commit_response.json()["sha"]
-        
-        # Step 6: Update the branch reference to point to the new commit
-        update_ref_payload = {
-            "sha": new_commit_sha
-        }
-        update_ref_response = requests.patch(ref_url, headers=self.headers, json=update_ref_payload)
-        update_ref_response.raise_for_status()
+        latest_commit_sha = self._get_latest_commit_sha(owner, repo, branch)
+        base_tree_sha = self._get_tree_sha(owner, repo, latest_commit_sha)
+        tree_items = self._create_blobs(owner, repo, files)
+        new_tree_sha = self._create_tree(owner, repo, base_tree_sha, tree_items)
+        new_commit_sha = self._create_commit(owner, repo, message, new_tree_sha, [latest_commit_sha])
+        self._update_ref(owner, repo, branch, new_commit_sha)
         
         return {
             "commit_sha": new_commit_sha,
             "files_created": len(files)
         }
+
+    def _get_latest_commit_sha(self, owner, repo, branch):
+        url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
+        response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+        return response.json()["object"]["sha"]
+
+    def _get_tree_sha(self, owner, repo, commit_sha):
+        url = f"{self.base_url}/repos/{owner}/{repo}/git/commits/{commit_sha}"
+        response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+        return response.json()["tree"]["sha"]
+
+    def _create_blobs(self, owner, repo, files):
+        tree_items = []
+        url = f"{self.base_url}/repos/{owner}/{repo}/git/blobs"
+        for file_info in files:
+            payload = {
+                "content": file_info["content"],
+                "encoding": "utf-8"
+            }
+            response = requests.post(url, headers=self.headers, json=payload)
+            response.raise_for_status()
+            
+            tree_items.append({
+                "path": file_info["path"],
+                "mode": "100644",
+                "type": "blob",
+                "sha": response.json()["sha"]
+            })
+        return tree_items
+
+    def _create_tree(self, owner, repo, base_tree_sha, tree_items):
+        url = f"{self.base_url}/repos/{owner}/{repo}/git/trees"
+        payload = {
+            "base_tree": base_tree_sha,
+            "tree": tree_items
+        }
+        response = requests.post(url, headers=self.headers, json=payload)
+        response.raise_for_status()
+        return response.json()["sha"]
+
+    def _create_commit(self, owner, repo, message, tree_sha, parents):
+        url = f"{self.base_url}/repos/{owner}/{repo}/git/commits"
+        payload = {
+            "message": message,
+            "tree": tree_sha,
+            "parents": parents
+        }
+        response = requests.post(url, headers=self.headers, json=payload)
+        response.raise_for_status()
+        return response.json()["sha"]
+
+    def _update_ref(self, owner, repo, branch, commit_sha):
+        url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
+        payload = {"sha": commit_sha}
+        response = requests.patch(url, headers=self.headers, json=payload)
+        response.raise_for_status()
