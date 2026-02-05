@@ -186,13 +186,14 @@ def handle_guide(args: Namespace) -> None:
         print_examples()
 
 
-def handle_manual(args: Namespace) -> None:
-    """Handle the manual command."""
-    from src.utils.slugify import slugify
+def _parse_title_and_description(args: Namespace) -> tuple[str, str]:
+    """Parse title and description from arguments.
 
+    Handles the case where a long title is provided
+    (Description-as-Title pattern).
+    """
     raw_title = args.title
 
-    # Handle very long titles gracefully (Description-as-Title pattern)
     if len(raw_title) > 100:
         # If the title is too long, it's likely a full description
         description = raw_title
@@ -202,25 +203,32 @@ def handle_manual(args: Namespace) -> None:
         title = raw_title
         description = args.description or raw_title
 
+    return title, description
+
+
+def _parse_list_arg(arg_value: str | None) -> list[str]:
+    """Parse a comma-separated list argument."""
+    if not arg_value:
+        return []
+    return [item.strip() for item in arg_value.split(',')]
+
+
+def handle_manual(args: Namespace) -> None:
+    """Handle the manual command."""
+    from src.utils.slugify import slugify
+
+    title, description = _parse_title_and_description(args)
+
     # Generate slug from title if not provided
     slug = args.slug or slugify(title)
-
-    # Parse comma-separated lists
-    tech_stack = []
-    if args.tech_stack:
-        tech_stack = [item.strip() for item in args.tech_stack.split(',')]
-
-    features = []
-    if args.features:
-        features = [item.strip() for item in args.features.split(',')]
 
     # Construct idea_data dictionary compatible with IdeaResponse
     idea_data = {
         "title": title,
         "description": description,
         "slug": slug,
-        "tech_stack": tech_stack,
-        "features": features
+        "tech_stack": _parse_list_arg(args.tech_stack),
+        "features": _parse_list_arg(args.features)
     }
 
     _execute_and_watch(args, idea_data)

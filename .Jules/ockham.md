@@ -44,3 +44,8 @@
 - **Target:** `GeminiClient` in `src/services/gemini.py`
 - **Delta:** Moved large static data definition (~100 lines) to `ProjectScaffold` model.
 - **Summary:** Extracted `_get_fallback_scaffold` logic into `ProjectScaffold.create_fallback_scaffold`. This adheres to Information Expert pattern and significantly cleans up `GeminiClient`, separating data templates from API logic.
+
+## 2026-02-06 - [Complexity Reduction]
+- **Target:** `handle_manual` in `src/cli/commands.py`
+- **Delta:** Complexity Score 9 -> 2
+- **Summary:** Extracted argument parsing logic into `_parse_title_and_description` and `_parse_list_arg` helper functions to separate concerns and reduce complexity in the command handler.
