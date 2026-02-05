@@ -39,3 +39,8 @@
 - **Target:** `JulesClient._request` in `src/services/jules.py`
 - **Delta:** Complexity Score 10 -> 4
 - **Summary:** Extracted `_handle_http_error` and `_extract_api_error_message` helpers to separate HTTP error handling and JSON parsing from the main request logic. This flattened the nested error handling and improved readability while maintaining existing error mapping behavior.
+
+## 2026-02-05 - [Refactor]
+- **Target:** `GeminiClient` in `src/services/gemini.py`
+- **Delta:** Moved large static data definition (~100 lines) to `ProjectScaffold` model.
+- **Summary:** Extracted `_get_fallback_scaffold` logic into `ProjectScaffold.create_fallback_scaffold`. This adheres to Information Expert pattern and significantly cleans up `GeminiClient`, separating data templates from API logic.
