@@ -58,22 +58,26 @@ class GeminiClient:
                 tip=error_tip
             )
         except errors.APIError as e:
-            tip = "Check your internet connection and API status."
-            err_msg = str(e)
-
-            if "API key not valid" in err_msg or "400" in err_msg:
-                tip = "Your GEMINI_API_KEY seems invalid. Check your .env file."
-            elif "429" in err_msg or "quota" in err_msg.lower():
-                tip = "You have exceeded your API quota. Try again later."
-            elif "403" in err_msg:
-                tip = "You don't have permission to access this model."
-
-            raise GenerationError(f"Gemini API Error: {e}", tip=tip)
+            raise self._map_api_error(e)
         except Exception as e:
             raise GenerationError(
                 f"Unexpected error during generation: {e}",
                 tip="Check your network connection and configuration."
             )
+
+    def _map_api_error(self, e: errors.APIError) -> GenerationError:
+        """Maps Google GenAI API errors to application-specific GenerationError."""
+        tip = "Check your internet connection and API status."
+        err_msg = str(e)
+
+        if "API key not valid" in err_msg or "400" in err_msg:
+            tip = "Your GEMINI_API_KEY seems invalid. Check your .env file."
+        elif "429" in err_msg or "quota" in err_msg.lower():
+            tip = "You have exceeded your API quota. Try again later."
+        elif "403" in err_msg:
+            tip = "You don't have permission to access this model."
+
+        return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
     def generate_idea(self, category: str = None):
         """Generates a unique software idea using Gemini 3.

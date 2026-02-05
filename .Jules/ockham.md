@@ -39,3 +39,8 @@
 - **Target:** `JulesClient._request` in `src/services/jules.py`
 - **Delta:** Complexity Score 10 -> 4
 - **Summary:** Extracted `_handle_http_error` and `_extract_api_error_message` helpers to separate HTTP error handling and JSON parsing from the main request logic. This flattened the nested error handling and improved readability while maintaining existing error mapping behavior.
+
+## 2026-02-05 - [Complexity Reduction]
+- **Target:** `GeminiClient._generate_content` in `src/services/gemini.py`
+- **Delta:** Complexity Score 9 -> 4
+- **Summary:** Extracted `_map_api_error` helper method to encapsulate the API error handling logic. This reduced the cyclomatic complexity of `_generate_content` and isolated the error mapping responsibility, making the main generation flow cleaner.
