@@ -49,3 +49,8 @@
 - **Target:** `handle_manual` in `src/cli/commands.py`
 - **Delta:** Complexity Score 9 -> 2
 - **Summary:** Extracted argument parsing logic into `_parse_title_and_description` and `_parse_list_arg` helper functions to separate concerns and reduce complexity in the command handler.
+
+## 2026-02-07 - [Complexity Reduction]
+- **Target:** `GeminiClient._generate_content` in `src/services/gemini.py`
+- **Delta:** Complexity Score 9 -> 4
+- **Summary:** Extracted `_map_api_error` helper method to handle Google GenAI API error mapping. This reduced the cyclomatic complexity of the main generation method and improved readability by isolating error translation logic.
