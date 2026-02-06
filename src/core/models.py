@@ -1,6 +1,7 @@
 """Pydantic models for the Jules Automation Tool."""
 
-from pydantic import BaseModel, Field
+import os
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 
@@ -18,6 +19,26 @@ class ProjectFile(BaseModel):
     path: str = Field(description="Relative file path from project root.")
     content: str = Field(description="Complete file content.")
     description: str = Field(description="Brief description of the file.")
+
+    @field_validator('path')
+    @classmethod
+    def validate_path(cls, v: str) -> str:
+        """Validate that the path is safe and relative."""
+        if os.path.isabs(v):
+            raise ValueError("Absolute paths are not allowed")
+
+        normalized_path = os.path.normpath(v)
+
+        # Check if the path attempts to go above the root
+        if normalized_path.startswith(".."):
+            raise ValueError("Path traversal detected")
+
+        # Check for .git directory access
+        parts = normalized_path.split(os.sep)
+        if ".git" in parts:
+            raise ValueError("Access to .git directory is forbidden")
+
+        return normalized_path
 
 
 class ProjectScaffold(BaseModel):
