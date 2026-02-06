@@ -4,11 +4,13 @@ import sys
 import time
 import threading
 import re
-from typing import Optional
+from typing import Optional, List, Dict, Any, Type
+from types import TracebackType
 
 
 class Colors:
     """ANSI color codes for terminal output."""
+
     HEADER = '\033[95m'
     BLUE = '\033[94m'
     CYAN = '\033[96m'
@@ -20,10 +22,12 @@ class Colors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
 def strip_ansi(text: str) -> str:
-    """Removes ANSI escape codes from text."""
+    """Remove ANSI escape codes from text."""
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     return ansi_escape.sub('', text)
+
 
 def _create_top_border(title: str, width: int, color: str) -> str:
     # Box drawing characters
@@ -58,7 +62,7 @@ def _create_top_border(title: str, width: int, color: str) -> str:
     return f"{TL_CORNER}{H_LINE * left_pad}{Colors.BOLD}{title_text}{Colors.ENDC}{color}{H_LINE * right_pad}{TR_CORNER}"
 
 
-def _wrap_content(content: str, width: int) -> list[str]:
+def _wrap_content(content: str, width: int) -> List[str]:
     lines = content.split('\n')
     wrapped_lines = []
 
@@ -77,7 +81,7 @@ def _wrap_content(content: str, width: int) -> list[str]:
             wrapped_lines.append(line)
         else:
             # Simple word wrap
-            current_line = []
+            current_line: List[str] = []
             current_len = 0
             words = line.split(' ')
 
@@ -96,7 +100,7 @@ def _wrap_content(content: str, width: int) -> list[str]:
 
 
 def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: int = 60) -> None:
-    """Prints content inside a bordered panel."""
+    """Print content inside a bordered panel."""
     # Box drawing characters
     H_LINE = "─"
     V_LINE = "│"
@@ -125,7 +129,8 @@ class Spinner:
     success (✔) or failure (✖) state upon completion.
     """
 
-    def __init__(self, message: str = "Processing", success_message: str = None):
+    def __init__(self, message: str = "Processing", success_message: Optional[str] = None):
+        """Initialize the spinner with a message."""
         self.message = message
         self.success_message = success_message
         self._stop_event = threading.Event()
@@ -147,13 +152,20 @@ class Spinner:
         self.message = message + " " * padding
 
     def __enter__(self) -> 'Spinner':
+        """Start the spinner when entering the context."""
         if sys.stdout.isatty():
             sys.stdout.write("\033[?25l")  # Hide cursor
             sys.stdout.flush()
         self._thread.start()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType]
+    ) -> None:
+        """Stop the spinner when exiting the context."""
         self._stop_event.set()
         self._thread.join()
 
@@ -177,7 +189,7 @@ class Spinner:
 
 
 def print_header(title: str, char: str = "=", width: int = 50) -> None:
-    """Prints a formatted header."""
+    """Print a formatted header."""
     print("")
     print(f"{Colors.BOLD}{Colors.BLUE}{char * width}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.HEADER}{title}{Colors.ENDC}")
@@ -192,7 +204,7 @@ def print_workflow_report(
     session_url: Optional[str] = None,
     pr_url: Optional[str] = None
 ) -> None:
-    """Prints a summary report of the workflow results."""
+    """Print a summary report of the workflow results."""
     print_header("✨ WORKFLOW COMPLETE")
     print(f"{Colors.BOLD}📦 Project:{Colors.ENDC} {Colors.GREEN}{title}{Colors.ENDC}")
     print(f"{Colors.BOLD}📝 Slug:   {Colors.ENDC} {slug}")
@@ -215,9 +227,9 @@ def print_session_status(
     url: str,
     is_complete: bool,
     pr_url: Optional[str] = None,
-    activities: Optional[list[str]] = None
+    activities: Optional[List[str]] = None
 ) -> None:
-    """Prints status information for a Jules session."""
+    """Print status information for a Jules session."""
     print(f"\n{Colors.BOLD}📋 Session Status:{Colors.ENDC} {Colors.CYAN}{session_id}{Colors.ENDC}")
     print(f"   {Colors.BOLD}Title:   {Colors.ENDC} {title}")
     print(f"   {Colors.BOLD}URL:     {Colors.ENDC} {Colors.UNDERLINE}{url}{Colors.ENDC}")
@@ -234,7 +246,7 @@ def print_session_status(
 
 
 def format_duration(seconds: int) -> str:
-    """Formats a duration in seconds to a human-readable string."""
+    """Format a duration in seconds to a human-readable string."""
     if seconds < 60:
         return f"{seconds}s"
     minutes = seconds // 60
@@ -247,13 +259,13 @@ def format_duration(seconds: int) -> str:
 
 
 def print_progress(elapsed: int, message: str) -> None:
-    """Prints a progress update."""
+    """Print a progress update."""
     duration = format_duration(elapsed)
     print(f"  {Colors.CYAN}[{duration}]{Colors.ENDC} {message[:60]}...")
 
 
 def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
-    """Prints session completion message."""
+    """Print session completion message."""
     duration = format_duration(elapsed)
     print(f"\n{Colors.GREEN}✅ Session completed after {duration}!{Colors.ENDC}")
     if pr_url:
@@ -263,14 +275,14 @@ def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
 
 
 def print_watch_timeout(timeout: int, session_url: str) -> None:
-    """Prints timeout message."""
+    """Print timeout message."""
     duration = format_duration(timeout)
     print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {duration}. Session still running.{Colors.ENDC}")
     print(f"   Check status at: {Colors.UNDERLINE}{session_url}{Colors.ENDC}")
 
 
-def print_sources_list(response: dict) -> None:
-    """Prints a formatted list of sources."""
+def print_sources_list(response: Dict[str, Any]) -> None:
+    """Print a formatted list of sources."""
     sources = response.get("sources", [])
 
     print_header("📚 JULES SOURCES")
@@ -290,9 +302,8 @@ def print_sources_list(response: dict) -> None:
         print("")
 
 
-def print_idea_summary(idea_data: dict) -> None:
-    """Prints a summary of the generated idea."""
-
+def print_idea_summary(idea_data: Dict[str, Any]) -> None:
+    """Print a summary of the generated idea."""
     content_lines = []
 
     # Description

@@ -1,9 +1,13 @@
+"""Gemini API Client."""
+
 import os
 import json
 import logging
+from typing import Optional, Dict, Any, Type
 from xml.sax.saxutils import escape
 from google import genai
 from google.genai import types, errors
+from pydantic import BaseModel
 
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
@@ -24,7 +28,10 @@ CATEGORY_PROMPTS = {
 
 
 class GeminiClient:
-    def __init__(self, api_key=None):
+    """Client for interacting with Google's Gemini API."""
+
+    def __init__(self, api_key: Optional[str] = None):
+        """Initialize the Gemini client."""
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -38,8 +45,8 @@ class GeminiClient:
         )
         self.model_name = "gemini-3-pro-preview"
 
-    def _generate_content(self, prompt: str, schema: type, error_tip: str) -> dict:
-        """Helper to generate content with consistent configuration and error handling."""
+    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> Dict[str, Any]:
+        """Generate content with consistent configuration and error handling."""
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -51,7 +58,8 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            return json.loads(response.text)
+            text_content = response.text or "{}"
+            return json.loads(text_content)  # type: ignore[no-any-return]
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
@@ -75,14 +83,17 @@ class GeminiClient:
                 tip="Check your network connection and configuration."
             )
 
-    def generate_idea(self, category: str = None):
-        """Generates a unique software idea using Gemini 3.
+    def generate_idea(self, category: Optional[str] = None) -> Dict[str, Any]:
+        """Generate a unique software idea using Gemini 3.
 
         Args:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
+
+        Returns:
+            Dictionary containing the idea details
         """
         base_prompt = CATEGORY_PROMPTS.get(
-            category, CATEGORY_PROMPTS["default"])
+            category if category else "default", CATEGORY_PROMPTS["default"])
         prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
 
         return self._generate_content(
@@ -91,8 +102,15 @@ class GeminiClient:
             "The AI model returned invalid JSON. Please try again or try a different category."
         )
 
-    def extract_idea_from_text(self, text):
-        """Extracts the core app idea from the provided text."""
+    def extract_idea_from_text(self, text: str) -> Dict[str, Any]:
+        """Extract the core app idea from the provided text.
+
+        Args:
+            text: The raw text content to analyze
+
+        Returns:
+            Dictionary containing the extracted idea details
+        """
         # Truncate text if it's too long to avoid token limits
         max_chars = 100000
         truncated_text = text[:max_chars]
@@ -116,15 +134,15 @@ class GeminiClient:
             "The AI model returned invalid JSON while analyzing the website content."
         )
 
-    def generate_project_scaffold(self, idea_data: dict, max_retries: int = 2):
-        """Generates a complete MVP project scaffold for the given idea.
+    def generate_project_scaffold(self, idea_data: Dict[str, Any], max_retries: int = 2) -> Dict[str, Any]:
+        """Generate a complete MVP project scaffold for the given idea.
 
         Args:
             idea_data: Dict with title, description, slug, tech_stack, features
             max_retries: Number of retries on failure (default: 2)
 
         Returns:
-            ProjectScaffold with files, requirements, and run command
+            ProjectScaffold dict with files, requirements, and run command
         """
         # Sanitize inputs
         safe_title = escape(idea_data['title'])
@@ -184,3 +202,6 @@ Create a complete, immediately-runnable project with these files:
                         idea_data['title'],
                         idea_data['description']
                     ).model_dump()
+
+        # Should be unreachable given the logic above, but for type safety:
+        return {}

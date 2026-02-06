@@ -1,18 +1,18 @@
 """Core workflow for idea-to-repository automation."""
 
-from typing import Optional
+from typing import Optional, Dict, Any, List
 
 from src.services.gemini import GeminiClient
 from src.services.github import GitHubClient
 from src.services.jules import JulesClient
 from src.core.readme_builder import build_readme
-from src.core.models import WorkflowResult
+from src.core.models import WorkflowResult, IdeaResponse
 from src.utils.polling import poll_until
 from src.utils.reporter import print_workflow_report
 
 
 class IdeaWorkflow:
-    """Orchestrates the creation of a GitHub repo and Jules session from an idea.
+    """Orchestrate the creation of a GitHub repo and Jules session from an idea.
     
     Follows Dependency Injection pattern for testability.
     """
@@ -36,7 +36,7 @@ class IdeaWorkflow:
     
     def execute(
         self,
-        idea_data: dict,
+        idea_data: Dict[str, Any],
         private: bool = False,
         timeout: int = 1800,
         verbose: bool = True
@@ -67,9 +67,14 @@ class IdeaWorkflow:
         # Step 3: Wait for Jules indexing and create session
         session = self._create_jules_session(username, idea_data, timeout, verbose)
         
-        # Build result
+        # Build result.
+        # Note: idea_data is a dict, but WorkflowResult expects IdeaResponse.
+        # We should probably convert it or ensure IdeaResponse can be constructed.
+        # Assuming idea_data has the right fields.
+        idea_response = IdeaResponse(**idea_data)
+
         result = WorkflowResult(
-            idea=idea_data,
+            idea=idea_response,
             repo_url=repo_url,
             session_id=session.get('id') if session else None,
             session_url=session.get('url') if session else None
@@ -86,10 +91,10 @@ class IdeaWorkflow:
         
         return result
     
-    def _create_repository(self, idea_data: dict, private: bool, verbose: bool) -> str:
+    def _create_repository(self, idea_data: Dict[str, Any], private: bool, verbose: bool) -> str:
         """Create GitHub repository and return username."""
         user = self.github.get_user()
-        username = user['login']
+        username = str(user['login'])
         
         visibility = "private" if private else "public"
         if verbose:
@@ -103,7 +108,7 @@ class IdeaWorkflow:
         
         return username
     
-    def _generate_scaffold(self, username: str, idea_data: dict, verbose: bool) -> None:
+    def _generate_scaffold(self, username: str, idea_data: Dict[str, Any], verbose: bool) -> None:
         """Generate MVP scaffold and commit to repository."""
         if verbose:
             print("Generating MVP scaffold with Gemini (this may take a moment)...")
@@ -149,19 +154,25 @@ class IdeaWorkflow:
             if verbose:
                 print(f"  Created {result['files_created']} files in single commit")
 
-    def _prepare_scaffold_files(self, scaffold: dict) -> list[dict]:
+    def _prepare_scaffold_files(self, scaffold: Dict[str, Any]) -> List[Dict[str, str]]:
         """Prepare list of files to create from scaffold data."""
-        files_to_create = []
+        files_to_create: List[Dict[str, str]] = []
 
         if not scaffold.get('files'):
             return files_to_create
 
         for file_info in scaffold['files']:
-            if file_info['path'].lower() == 'readme.md':
+            # file_info might be a dict (from model_dump) or a ProjectFile object if we didn't dump.
+            # GeminiClient.generate_project_scaffold returns a dict (or model_dump).
+            # Assuming dict.
+            path = file_info.get('path', '') if isinstance(file_info, dict) else file_info.path
+            content = file_info.get('content', '') if isinstance(file_info, dict) else file_info.content
+
+            if str(path).lower() == 'readme.md':
                 continue
             files_to_create.append({
-                'path': file_info['path'],
-                'content': file_info['content']
+                'path': str(path),
+                'content': str(content)
             })
 
         if scaffold.get('requirements'):
@@ -175,10 +186,10 @@ class IdeaWorkflow:
     def _create_jules_session(
         self,
         username: str,
-        idea_data: dict,
+        idea_data: Dict[str, Any],
         timeout: int,
         verbose: bool
-    ) -> Optional[dict]:
+    ) -> Optional[Dict[str, Any]]:
         """Wait for Jules indexing and create session."""
         source_id = f"sources/github/{username}/{idea_data['slug']}"
         

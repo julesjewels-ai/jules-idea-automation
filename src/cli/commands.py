@@ -2,6 +2,7 @@
 
 import sys
 from argparse import Namespace
+from typing import Dict, Any, Tuple, Optional, List
 
 from src.utils.reporter import (
     print_session_status,
@@ -30,11 +31,13 @@ def handle_agent(args: Namespace) -> None:
     from src.services.gemini import GeminiClient
 
     category = getattr(args, 'category', None)
+    # Ensure category is None or str, but getattr returns Any.
+    category_str: Optional[str] = str(category) if category else None
 
     gemini = GeminiClient()
     msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
     with Spinner(msg, success_message="Idea generated"):
-        idea_data = gemini.generate_idea(category=category)
+        idea_data = gemini.generate_idea(category=category_str)
 
     _execute_and_watch(args, idea_data)
 
@@ -81,15 +84,15 @@ def handle_status(args: Namespace) -> None:
 
         print_session_status(
             session_id=session_id,
-            title=session.get('title', 'N/A'),
-            url=session.get('url', 'N/A'),
+            title=str(session.get('title', 'N/A')),
+            url=str(session.get('url', 'N/A')),
             is_complete=is_complete,
             pr_url=pr_url,
             activities=activity_titles
         )
 
 
-def _execute_and_watch(args: Namespace, idea_data: dict) -> None:
+def _execute_and_watch(args: Namespace, idea_data: Dict[str, Any]) -> None:
     """Execute the workflow and watch the session if requested.
 
     Args:
@@ -111,7 +114,7 @@ def _execute_and_watch(args: Namespace, idea_data: dict) -> None:
         watch_session(result.session_id, timeout=args.timeout)
 
 
-def watch_session(session_id: str, timeout: int = 1800) -> tuple:
+def watch_session(session_id: str, timeout: int = 1800) -> Tuple[bool, Optional[str]]:
     """Watch a Jules session until completion or timeout.
 
     Args:
@@ -129,20 +132,20 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
 
     with Spinner(f"[{format_duration(0)}] Watching session {session_id}...") as spinner:
 
-        def check():
+        def check() -> Tuple[bool, Optional[str]]:
             return jules.is_session_complete(session_id)
 
-        def status_extractor():
+        def status_extractor() -> str:
             try:
                 activities = jules.list_activities(session_id, page_size=1)
                 if activities.get("activities"):
                     latest = activities["activities"][0]
-                    return latest.get("progressUpdated", {}).get("title", "Working...")
+                    return str(latest.get("progressUpdated", {}).get("title", "Working..."))
                 return "Working..."
             except Exception:
                 return "Polling..."
 
-        def on_poll(elapsed, status):
+        def on_poll(elapsed: int, status: str) -> None:
             spinner.update(f"[{format_duration(elapsed)}] {status}")
 
         is_complete, pr_url, elapsed = poll_with_result(
@@ -158,7 +161,7 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
         return is_complete, pr_url
 
     session = jules.get_session(session_id)
-    print_watch_timeout(timeout, session.get('url', 'N/A'))
+    print_watch_timeout(timeout, str(session.get('url', 'N/A')))
     return False, None
 
 
@@ -186,7 +189,7 @@ def handle_guide(args: Namespace) -> None:
         print_examples()
 
 
-def _parse_title_and_description(args: Namespace) -> tuple[str, str]:
+def _parse_title_and_description(args: Namespace) -> Tuple[str, str]:
     """Parse title and description from arguments.
 
     Handles the case where a long title is provided
@@ -206,7 +209,7 @@ def _parse_title_and_description(args: Namespace) -> tuple[str, str]:
     return title, description
 
 
-def _parse_list_arg(arg_value: str | None) -> list[str]:
+def _parse_list_arg(arg_value: Optional[str]) -> List[str]:
     """Parse a comma-separated list argument."""
     if not arg_value:
         return []
@@ -223,7 +226,7 @@ def handle_manual(args: Namespace) -> None:
     slug = args.slug or slugify(title)
 
     # Construct idea_data dictionary compatible with IdeaResponse
-    idea_data = {
+    idea_data: Dict[str, Any] = {
         "title": title,
         "description": description,
         "slug": slug,
