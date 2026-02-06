@@ -188,3 +188,23 @@ def test_generate_project_scaffold_fallback(client):
     assert result["run_command"] == "python main.py"
     assert any(f["path"] == "main.py" for f in result["files"])
     assert client.client.models.generate_content.call_count == 2
+
+def test_generate_content_validation_error(client):
+    """Test that invalid schema raises GenerationError with helpful details."""
+    mock_response = MagicMock()
+    # Missing 'title' and 'slug'
+    mock_response.text = json.dumps({
+        "description": "App without title",
+        "tech_stack": [],
+        "features": []
+    })
+    client.client.models.generate_content.return_value = mock_response
+
+    with pytest.raises(GenerationError) as excinfo:
+        client.generate_idea()
+
+    error_msg = str(excinfo.value)
+    assert "Gemini returned data that doesn't match the expected format" in error_msg
+    assert "title" in error_msg
+    assert "slug" in error_msg
+    assert "Field required" in error_msg

@@ -2,6 +2,7 @@ import os
 import json
 import logging
 from xml.sax.saxutils import escape
+from pydantic import ValidationError
 from google import genai
 from google.genai import types, errors
 
@@ -51,10 +52,18 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            return json.loads(response.text)
+            data = json.loads(response.text)
+            validated_model = schema(**data)
+            return validated_model.model_dump()
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
+                tip=error_tip
+            )
+        except ValidationError as e:
+            error_details = "\n".join([f"- {err['loc'][0]}: {err['msg']}" for err in e.errors()])
+            raise GenerationError(
+                f"Gemini returned data that doesn't match the expected format:\n{error_details}",
                 tip=error_tip
             )
         except errors.APIError as e:
