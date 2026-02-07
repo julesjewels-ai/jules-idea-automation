@@ -1,10 +1,11 @@
 import os
 import requests
 import base64
+from typing import Optional, Any
 from src.utils.errors import ConfigurationError
 
 class GitHubClient:
-    def __init__(self, token=None):
+    def __init__(self, token: Optional[str] = None) -> None:
         self.token = token or os.environ.get("GITHUB_TOKEN")
         if not self.token:
             raise ConfigurationError(
@@ -18,13 +19,13 @@ class GitHubClient:
             "X-GitHub-Api-Version": "2022-11-28"
         }
 
-    def get_user(self):
+    def get_user(self) -> dict[str, Any]:
         """Returns the authenticated user's details."""
         response = requests.get(f"{self.base_url}/user", headers=self.headers)
         response.raise_for_status()
-        return response.json()
+        return response.json()  # type: ignore[no-any-return]
 
-    def create_repo(self, name, description, private=True):
+    def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
         """Creates a new repository."""
         payload = {
             "name": name,
@@ -34,9 +35,9 @@ class GitHubClient:
         }
         response = requests.post(f"{self.base_url}/user/repos", headers=self.headers, json=payload)
         response.raise_for_status()
-        return response.json()
+        return response.json()  # type: ignore[no-any-return]
 
-    def create_file(self, owner, repo, path, content, message):
+    def create_file(self, owner: str, repo: str, path: str, content: str, message: str) -> dict[str, Any]:
         """Creates or updates a file in the repository."""
         url = f"{self.base_url}/repos/{owner}/{repo}/contents/{path}"
         
@@ -50,9 +51,9 @@ class GitHubClient:
         
         response = requests.put(url, headers=self.headers, json=payload)
         response.raise_for_status()
-        return response.json()
+        return response.json()  # type: ignore[no-any-return]
 
-    def create_files(self, owner, repo, files, message, branch="main"):
+    def create_files(self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main") -> dict[str, Any]:
         """Creates multiple files in a single commit using the Git Data API.
         
         Args:
@@ -74,19 +75,19 @@ class GitHubClient:
             "files_created": len(files)
         }
 
-    def _get_latest_commit_sha(self, owner, repo, branch):
+    def _get_latest_commit_sha(self, owner: str, repo: str, branch: str) -> str:
         url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
-        return response.json()["object"]["sha"]
+        return response.json()["object"]["sha"]  # type: ignore[no-any-return]
 
-    def _get_tree_sha(self, owner, repo, commit_sha):
+    def _get_tree_sha(self, owner: str, repo: str, commit_sha: str) -> str:
         url = f"{self.base_url}/repos/{owner}/{repo}/git/commits/{commit_sha}"
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
-        return response.json()["tree"]["sha"]
+        return response.json()["tree"]["sha"]  # type: ignore[no-any-return]
 
-    def _create_blobs(self, owner, repo, files):
+    def _create_blobs(self, owner: str, repo: str, files: list[dict[str, str]]) -> list[dict[str, Any]]:
         tree_items = []
         url = f"{self.base_url}/repos/{owner}/{repo}/git/blobs"
         for file_info in files:
@@ -105,7 +106,7 @@ class GitHubClient:
             })
         return tree_items
 
-    def _create_tree(self, owner, repo, base_tree_sha, tree_items):
+    def _create_tree(self, owner: str, repo: str, base_tree_sha: str, tree_items: list[dict[str, Any]]) -> str:
         url = f"{self.base_url}/repos/{owner}/{repo}/git/trees"
         payload = {
             "base_tree": base_tree_sha,
@@ -113,9 +114,9 @@ class GitHubClient:
         }
         response = requests.post(url, headers=self.headers, json=payload)
         response.raise_for_status()
-        return response.json()["sha"]
+        return response.json()["sha"]  # type: ignore[no-any-return]
 
-    def _create_commit(self, owner, repo, message, tree_sha, parents):
+    def _create_commit(self, owner: str, repo: str, message: str, tree_sha: str, parents: list[str]) -> str:
         url = f"{self.base_url}/repos/{owner}/{repo}/git/commits"
         payload = {
             "message": message,
@@ -124,9 +125,9 @@ class GitHubClient:
         }
         response = requests.post(url, headers=self.headers, json=payload)
         response.raise_for_status()
-        return response.json()["sha"]
+        return response.json()["sha"]  # type: ignore[no-any-return]
 
-    def _update_ref(self, owner, repo, branch, commit_sha):
+    def _update_ref(self, owner: str, repo: str, branch: str, commit_sha: str) -> None:
         url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
         payload = {"sha": commit_sha}
         response = requests.patch(url, headers=self.headers, json=payload)
