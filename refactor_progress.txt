@@ -4,3 +4,4 @@ src/services/gemini.py:GeminiClient
 src/utils/security.py:validate_url
 src/core/workflow.py:IdeaWorkflow._generate_scaffold
 src/cli/commands.py:handle_manual
+src/services/gemini.py:GeminiClient._generate_content
