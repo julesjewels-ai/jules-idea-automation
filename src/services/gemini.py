@@ -7,6 +7,7 @@ from google import genai
 from google.genai import types, errors
 
 from src.core.models import IdeaResponse, ProjectScaffold
+from src.core.interfaces import CacheProvider
 from src.utils.errors import ConfigurationError, GenerationError
 
 
@@ -25,7 +26,11 @@ CATEGORY_PROMPTS = {
 
 
 class GeminiClient:
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        cache: Optional[CacheProvider] = None
+    ) -> None:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -38,6 +43,7 @@ class GeminiClient:
             http_options={'api_version': 'v1beta'}
         )
         self.model_name = "gemini-3-pro-preview"
+        self.cache = cache
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
         """Maps Gemini API errors to user-friendly GenerationError."""
@@ -53,8 +59,20 @@ class GeminiClient:
 
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
-    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
-        """Helper to generate content with consistent configuration and error handling."""
+    def _generate_content(
+        self,
+        prompt: str,
+        schema: Any,
+        error_tip: str
+    ) -> dict[str, Any]:
+        """Helper to generate content with consistent config and errors."""
+        # Check cache if enabled
+        if self.cache:
+            cached_result = self.cache.get(prompt)
+            if cached_result:
+                logger.info("Cache hit for Gemini generation.")
+                return cached_result  # type: ignore[no-any-return]
+
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -66,7 +84,13 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            return json.loads(response.text or "")  # type: ignore[no-any-return]
+            result = json.loads(response.text or "")
+
+            # Cache result if enabled (default TTL: 24h)
+            if self.cache:
+                self.cache.set(prompt, result, ttl=86400)
+
+            return result  # type: ignore[no-any-return]
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",

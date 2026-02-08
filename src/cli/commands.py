@@ -30,21 +30,24 @@ def handle_list_sources() -> None:
 def handle_agent(args: Namespace) -> None:
     """Handle the agent command."""
     from src.services.gemini import GeminiClient
+    from src.services.cache import FileCacheProvider
 
     category = getattr(args, 'category', None)
 
-    gemini = GeminiClient()
+    cache = FileCacheProvider()
+    gemini = GeminiClient(cache=cache)
     msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
     with Spinner(msg, success_message="Idea generated"):
         idea_data = gemini.generate_idea(category=category)
 
-    _execute_and_watch(args, idea_data)
+    _execute_and_watch(args, idea_data, gemini_client=gemini)
 
 
 def handle_website(args: Namespace) -> None:
     """Handle the website command."""
     from src.services.gemini import GeminiClient
     from src.services.scraper import scrape_text
+    from src.services.cache import FileCacheProvider
 
     print(f"Scraping {args.url}...")
 
@@ -53,11 +56,12 @@ def handle_website(args: Namespace) -> None:
 
     print(f"✓ Extracted {len(text)} characters of content")
 
-    gemini = GeminiClient()
+    cache = FileCacheProvider()
+    gemini = GeminiClient(cache=cache)
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
         idea_data = gemini.extract_idea_from_text(text)
 
-    _execute_and_watch(args, idea_data)
+    _execute_and_watch(args, idea_data, gemini_client=gemini)
 
 
 def handle_status(args: Namespace) -> None:
@@ -91,18 +95,30 @@ def handle_status(args: Namespace) -> None:
         )
 
 
-def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
+def _execute_and_watch(
+    args: Namespace,
+    idea_data: dict[str, Any],
+    gemini_client: Optional[Any] = None
+) -> None:
     """Execute the workflow and watch the session if requested.
 
     Args:
         args: Command line arguments containing private and timeout settings
         idea_data: The idea data to process
+        gemini_client: Optional pre-configured GeminiClient
     """
     from src.core.workflow import IdeaWorkflow
+    from src.services.gemini import GeminiClient
+    from src.services.cache import FileCacheProvider
 
     print_idea_summary(idea_data)
 
-    workflow = IdeaWorkflow()
+    if gemini_client is None:
+        # Create client with cache if not provided
+        cache = FileCacheProvider()
+        gemini_client = GeminiClient(cache=cache)
+
+    workflow = IdeaWorkflow(gemini=gemini_client)
     result = workflow.execute(
         idea_data,
         private=args.private,
