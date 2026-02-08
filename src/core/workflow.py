@@ -1,6 +1,6 @@
 """Core workflow for idea-to-repository automation."""
 
-from typing import Optional
+from typing import Optional, Any
 
 from src.services.gemini import GeminiClient
 from src.services.github import GitHubClient
@@ -36,7 +36,7 @@ class IdeaWorkflow:
     
     def execute(
         self,
-        idea_data: dict,
+        idea_data: dict[str, Any],
         private: bool = False,
         timeout: int = 1800,
         verbose: bool = True
@@ -68,8 +68,9 @@ class IdeaWorkflow:
         session = self._create_jules_session(username, idea_data, timeout, verbose)
         
         # Build result
+        from src.core.models import IdeaResponse
         result = WorkflowResult(
-            idea=idea_data,
+            idea=IdeaResponse(**idea_data),
             repo_url=repo_url,
             session_id=session.get('id') if session else None,
             session_url=session.get('url') if session else None
@@ -86,10 +87,10 @@ class IdeaWorkflow:
         
         return result
     
-    def _create_repository(self, idea_data: dict, private: bool, verbose: bool) -> str:
+    def _create_repository(self, idea_data: dict[str, Any], private: bool, verbose: bool) -> str:
         """Create GitHub repository and return username."""
         user = self.github.get_user()
-        username = user['login']
+        username = str(user['login'])
         
         visibility = "private" if private else "public"
         if verbose:
@@ -103,7 +104,7 @@ class IdeaWorkflow:
         
         return username
     
-    def _generate_scaffold(self, username: str, idea_data: dict, verbose: bool) -> None:
+    def _generate_scaffold(self, username: str, idea_data: dict[str, Any], verbose: bool) -> None:
         """Generate MVP scaffold and commit to repository."""
         if verbose:
             print("Generating MVP scaffold with Gemini (this may take a moment)...")
@@ -149,9 +150,9 @@ class IdeaWorkflow:
             if verbose:
                 print(f"  Created {result['files_created']} files in single commit")
 
-    def _prepare_scaffold_files(self, scaffold: dict) -> list[dict]:
+    def _prepare_scaffold_files(self, scaffold: dict[str, Any]) -> list[dict[str, str]]:
         """Prepare list of files to create from scaffold data."""
-        files_to_create = []
+        files_to_create: list[dict[str, str]] = []
 
         if not scaffold.get('files'):
             return files_to_create
@@ -175,10 +176,10 @@ class IdeaWorkflow:
     def _create_jules_session(
         self,
         username: str,
-        idea_data: dict,
+        idea_data: dict[str, Any],
         timeout: int,
         verbose: bool
-    ) -> Optional[dict]:
+    ) -> Optional[dict[str, Any]]:
         """Wait for Jules indexing and create session."""
         source_id = f"sources/github/{username}/{idea_data['slug']}"
         

@@ -4,7 +4,8 @@ import sys
 import time
 import threading
 import re
-from typing import Optional
+from types import TracebackType
+from typing import Optional, Any, Type
 
 
 class Colors:
@@ -77,7 +78,7 @@ def _wrap_content(content: str, width: int) -> list[str]:
             wrapped_lines.append(line)
         else:
             # Simple word wrap
-            current_line = []
+            current_line: list[str] = []
             current_len = 0
             words = line.split(' ')
 
@@ -125,7 +126,7 @@ class Spinner:
     success (✔) or failure (✖) state upon completion.
     """
 
-    def __init__(self, message: str = "Processing", success_message: str = None):
+    def __init__(self, message: str = "Processing", success_message: Optional[str] = None):
         self.message = message
         self.success_message = success_message
         self._stop_event = threading.Event()
@@ -153,7 +154,7 @@ class Spinner:
         self._thread.start()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
         self._stop_event.set()
         self._thread.join()
 
@@ -269,7 +270,7 @@ def print_watch_timeout(timeout: int, session_url: str) -> None:
     print(f"   Check status at: {Colors.UNDERLINE}{session_url}{Colors.ENDC}")
 
 
-def print_sources_list(response: dict) -> None:
+def print_sources_list(response: dict[str, Any]) -> None:
     """Prints a formatted list of sources."""
     sources = response.get("sources", [])
 
@@ -290,7 +291,7 @@ def print_sources_list(response: dict) -> None:
         print("")
 
 
-def print_idea_summary(idea_data: dict) -> None:
+def print_idea_summary(idea_data: dict[str, Any]) -> None:
     """Prints a summary of the generated idea."""
 
     content_lines = []

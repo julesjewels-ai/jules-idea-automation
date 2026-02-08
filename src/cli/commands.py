@@ -3,6 +3,7 @@
 from __future__ import annotations
 import sys
 from argparse import Namespace
+from typing import Any, Optional
 
 from src.utils.reporter import (
     print_session_status,
@@ -90,7 +91,7 @@ def handle_status(args: Namespace) -> None:
         )
 
 
-def _execute_and_watch(args: Namespace, idea_data: dict) -> None:
+def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
     """Execute the workflow and watch the session if requested.
 
     Args:
@@ -112,7 +113,7 @@ def _execute_and_watch(args: Namespace, idea_data: dict) -> None:
         watch_session(result.session_id, timeout=args.timeout)
 
 
-def watch_session(session_id: str, timeout: int = 1800) -> tuple:
+def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[str]]:
     """Watch a Jules session until completion or timeout.
 
     Args:
@@ -130,20 +131,20 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple:
 
     with Spinner(f"[{format_duration(0)}] Watching session {session_id}...") as spinner:
 
-        def check():
+        def check() -> tuple[bool, Optional[str]]:
             return jules.is_session_complete(session_id)
 
-        def status_extractor():
+        def status_extractor() -> str:
             try:
                 activities = jules.list_activities(session_id, page_size=1)
                 if activities.get("activities"):
                     latest = activities["activities"][0]
-                    return latest.get("progressUpdated", {}).get("title", "Working...")
+                    return str(latest.get("progressUpdated", {}).get("title", "Working..."))
                 return "Working..."
             except Exception:
                 return "Polling..."
 
-        def on_poll(elapsed, status):
+        def on_poll(elapsed: int, status: str) -> None:
             spinner.update(f"[{format_duration(elapsed)}] {status}")
 
         is_complete, pr_url, elapsed = poll_with_result(

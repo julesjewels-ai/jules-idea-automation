@@ -1,10 +1,10 @@
 import os
 import requests
-from typing import Optional
+from typing import Optional, Any
 from src.utils.errors import ConfigurationError, JulesApiError
 
 class JulesClient:
-    def __init__(self, api_key=None):
+    def __init__(self, api_key: Optional[str] = None) -> None:
         self.api_key = api_key or os.environ.get("JULES_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -17,7 +17,7 @@ class JulesClient:
             "Content-Type": "application/json"
         }
 
-    def _request(self, method: str, url: str, **kwargs):
+    def _request(self, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
         """Internal helper to handle API requests and errors."""
         try:
             response = requests.request(method, url, headers=self.headers, **kwargs)
@@ -26,7 +26,7 @@ class JulesClient:
             # Some endpoints might not return content (e.g. 204), but current usage suggests JSON
             if not response.text:
                 return {}
-            return response.json()
+            return response.json()  # type: ignore[no-any-return]
 
         except requests.exceptions.HTTPError as e:
             tip = self._handle_http_error(e)
@@ -57,11 +57,11 @@ class JulesClient:
             pass
         return None
 
-    def list_sources(self):
+    def list_sources(self) -> dict[str, Any]:
         """Lists available sources from Jules API."""
         return self._request("GET", f"{self.base_url}/sources")
 
-    def create_session(self, source_id, prompt):
+    def create_session(self, source_id: str, prompt: str) -> dict[str, Any]:
         """Creates a new session with the given source and prompt."""
         url = f"{self.base_url}/sessions"
         
@@ -81,7 +81,7 @@ class JulesClient:
         
         return self._request("POST", url, json=payload)
     
-    def source_exists(self, source_id):
+    def source_exists(self, source_id: str) -> bool:
         """Checks if a source exists in the user's connected sources."""
         sources = self.list_sources()
         for source in sources.get("sources", []):
@@ -89,7 +89,7 @@ class JulesClient:
                 return True
         return False
     
-    def get_session(self, session_id):
+    def get_session(self, session_id: str) -> dict[str, Any]:
         """Retrieves details for a specific session.
         
         Args:
@@ -100,7 +100,7 @@ class JulesClient:
         """
         return self._request("GET", f"{self.base_url}/sessions/{session_id}")
     
-    def list_sessions(self, page_size=10):
+    def list_sessions(self, page_size: int = 10) -> dict[str, Any]:
         """Lists recent sessions.
         
         Args:
@@ -112,7 +112,7 @@ class JulesClient:
             params={"pageSize": page_size}
         )
     
-    def list_activities(self, session_id, page_size=30):
+    def list_activities(self, session_id: str, page_size: int = 30) -> dict[str, Any]:
         """Lists activities (progress updates) for a session.
         
         Args:
@@ -125,7 +125,7 @@ class JulesClient:
             params={"pageSize": page_size}
         )
     
-    def send_message(self, session_id, prompt):
+    def send_message(self, session_id: str, prompt: str) -> dict[str, Any]:
         """Sends a follow-up message to an active session.
         
         Args:
@@ -138,7 +138,7 @@ class JulesClient:
             json={"prompt": prompt}
         )
     
-    def approve_plan(self, session_id):
+    def approve_plan(self, session_id: str) -> dict[str, Any]:
         """Approves the pending plan for a session.
         
         Args:
@@ -146,7 +146,7 @@ class JulesClient:
         """
         return self._request("POST", f"{self.base_url}/sessions/{session_id}:approvePlan")
     
-    def is_session_complete(self, session_id):
+    def is_session_complete(self, session_id: str) -> tuple[bool, Optional[str]]:
         """Checks if a session has completed and returns PR URL if available.
         
         Returns:
