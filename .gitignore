@@ -45,3 +45,6 @@ env/
 
 # Environment variables
 .env
+
+# Testing artifacts
+.coverage
