@@ -12,7 +12,7 @@ def poll_until(
     interval: int = 10,
     on_poll: Optional[Callable[[int], None]] = None
 ) -> bool:
-    """Polls until a condition is met or timeout is reached.
+    """Poll until a condition is met or timeout is reached.
 
     Args:
         condition: Callable that returns True when done
@@ -41,7 +41,7 @@ def poll_with_result(
     on_poll: Optional[Callable[[int, str], None]] = None,
     status_extractor: Optional[Callable[[], str]] = None
 ) -> tuple[bool, Optional[T], int]:
-    """Polls until completion, returning a result.
+    """Poll until completion, returning a result.
 
     Args:
         check: Callable that returns (is_complete, result)
