@@ -1,14 +1,20 @@
 """Core workflow for idea-to-repository automation."""
 
+import logging
 from typing import Optional, Any
 
 from src.services.gemini import GeminiClient
 from src.services.github import GitHubClient
 from src.services.jules import JulesClient
+from src.services.cache import FileCacheProvider
+from src.utils.errors import CacheError
 from src.core.readme_builder import build_readme
 from src.core.models import WorkflowResult
 from src.utils.polling import poll_until
 from src.utils.reporter import print_workflow_report
+
+
+logger = logging.getLogger(__name__)
 
 
 class IdeaWorkflow:
@@ -31,7 +37,17 @@ class IdeaWorkflow:
             jules: JulesClient instance (created if None)
         """
         self.github = github or GitHubClient()
-        self.gemini = gemini or GeminiClient()
+
+        if gemini:
+            self.gemini = gemini
+        else:
+            try:
+                cache = FileCacheProvider()
+            except CacheError as e:
+                logger.warning(f"Cache initialization failed: {e}. Proceeding without cache.")
+                cache = None
+            self.gemini = GeminiClient(cache_provider=cache)
+
         self.jules = jules or JulesClient()
     
     def execute(

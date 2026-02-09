@@ -19,3 +19,8 @@ class GenerationError(AppError):
 class JulesApiError(AppError):
     """Raised when the Jules API returns an error."""
     pass
+
+
+class CacheError(AppError):
+    """Raised when caching operations fail."""
+    pass

@@ -7,6 +7,7 @@ from google import genai
 from google.genai import types, errors
 
 from src.core.models import IdeaResponse, ProjectScaffold
+from src.core.interfaces import CacheProvider
 from src.utils.errors import ConfigurationError, GenerationError
 
 
@@ -25,8 +26,10 @@ CATEGORY_PROMPTS = {
 
 
 class GeminiClient:
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(self, api_key: Optional[str] = None, cache_provider: Optional[CacheProvider] = None) -> None:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        self.cache = cache_provider
+
         if not self.api_key:
             raise ConfigurationError(
                 "GEMINI_API_KEY environment variable is not set",
@@ -55,6 +58,17 @@ class GeminiClient:
 
     def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
         """Helper to generate content with consistent configuration and error handling."""
+        cache_key = ""
+        if self.cache:
+            # Create a unique key based on prompt and model to ensure cache correctness
+            # The provider handles hashing, so we pass the raw content key
+            cache_key = f"{self.model_name}:{prompt}"
+
+            cached_val = self.cache.get(cache_key)
+            if cached_val:
+                logger.info("Cache hit for Gemini generation.")
+                return cached_val  # type: ignore[no-any-return]
+
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -66,7 +80,12 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            return json.loads(response.text or "")  # type: ignore[no-any-return]
+            result = json.loads(response.text or "")
+
+            if self.cache:
+                self.cache.set(cache_key, result)
+
+            return result  # type: ignore[no-any-return]
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
