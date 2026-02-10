@@ -99,14 +99,21 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
         idea_data: The idea data to process
     """
     from src.core.workflow import IdeaWorkflow
+    from src.core.events import LocalEventBus
+    from src.services.reporting import ConsoleReporter
 
     print_idea_summary(idea_data)
 
-    workflow = IdeaWorkflow()
+    event_bus = LocalEventBus()
+    reporter = ConsoleReporter(verbose=True)
+    event_bus.subscribe(reporter)
+
+    workflow = IdeaWorkflow(event_bus=event_bus)
     result = workflow.execute(
         idea_data,
         private=args.private,
-        timeout=args.timeout
+        timeout=args.timeout,
+        verbose=False  # Handled by event listener
     )
 
     if result.session_id and args.watch:
