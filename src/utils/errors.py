@@ -4,18 +4,32 @@ from typing import Optional
 
 class AppError(Exception):
     """Base class for application errors."""
-    def __init__(self, message: str, tip: Optional[str] = None):
+
+    def __init__(self, message: str, tip: Optional[str] = None) -> None:
+        """Initialize the error."""
         super().__init__(message)
         self.tip = tip
 
+
 class ConfigurationError(AppError):
     """Raised when configuration is missing or invalid."""
+
     pass
+
 
 class GenerationError(AppError):
     """Raised when GenAI generation fails or returns invalid output."""
+
     pass
+
 
 class JulesApiError(AppError):
     """Raised when the Jules API returns an error."""
+
+    pass
+
+
+class CacheError(AppError):
+    """Raised when a caching operation fails."""
+
     pass

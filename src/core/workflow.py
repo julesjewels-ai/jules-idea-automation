@@ -2,6 +2,7 @@
 
 from typing import Optional, Any
 
+from src.services.cache import FileCacheProvider
 from src.services.gemini import GeminiClient
 from src.services.github import GitHubClient
 from src.services.jules import JulesClient
@@ -31,8 +32,13 @@ class IdeaWorkflow:
             jules: JulesClient instance (created if None)
         """
         self.github = github or GitHubClient()
-        self.gemini = gemini or GeminiClient()
         self.jules = jules or JulesClient()
+
+        if gemini:
+            self.gemini = gemini
+        else:
+            cache_provider = FileCacheProvider()
+            self.gemini = GeminiClient(cache_provider=cache_provider)
     
     def execute(
         self,
