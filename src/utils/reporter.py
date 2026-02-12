@@ -21,10 +21,12 @@ class Colors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
 def strip_ansi(text: str) -> str:
     """Removes ANSI escape codes from text."""
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     return ansi_escape.sub('', text)
+
 
 def _create_top_border(title: str, width: int, color: str) -> str:
     # Box drawing characters
@@ -49,14 +51,17 @@ def _create_top_border(title: str, width: int, color: str) -> str:
         title_text = title_text[:width-5] + "…"
 
     left_pad = 2
-    # Adjust right pad calculation by subtracting visual offset from the available space
-    # (wait, if visual length is longer, we need LESS padding characters to reach the same width)
+    # Adjust right pad calculation by subtracting visual offset from the
+    # available space
     right_pad = width - 2 - len(title_text) - left_pad - visual_offset
 
     if right_pad < 0:
         right_pad = 0
 
-    return f"{TL_CORNER}{H_LINE * left_pad}{Colors.BOLD}{title_text}{Colors.ENDC}{color}{H_LINE * right_pad}{TR_CORNER}"
+    return (
+        f"{TL_CORNER}{H_LINE * left_pad}{Colors.BOLD}{title_text}"
+        f"{Colors.ENDC}{color}{H_LINE * right_pad}{TR_CORNER}"
+    )
 
 
 def _wrap_content(content: str, width: int) -> list[str]:
@@ -68,7 +73,8 @@ def _wrap_content(content: str, width: int) -> list[str]:
             wrapped_lines.append("")
             continue
 
-        # We need to account for ANSI codes when wrapping, but textwrap doesn't ignore them.
+        # We need to account for ANSI codes when wrapping, but textwrap
+        # doesn't ignore them.
         # A simple approach for now:
         # 1. If line is short, just add it
         # 2. If line is long, wrap it based on visible length
@@ -96,7 +102,12 @@ def _wrap_content(content: str, width: int) -> list[str]:
     return wrapped_lines
 
 
-def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: int = 60) -> None:
+def print_panel(
+    content: str,
+    title: str = "",
+    color: str = Colors.CYAN,
+    width: int = 60
+) -> None:
     """Prints content inside a bordered panel."""
     # Box drawing characters
     H_LINE = "─"
@@ -113,8 +124,11 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
         visible_len = len(strip_ansi(line))
         padding = width - 4 - visible_len
         if padding < 0:
-             padding = 0
-        print(f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} {color}{V_LINE}{Colors.ENDC}")
+            padding = 0
+        print(
+            f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} "
+            f"{color}{V_LINE}{Colors.ENDC}"
+        )
 
     print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}")
 
@@ -126,7 +140,11 @@ class Spinner:
     success (✔) or failure (✖) state upon completion.
     """
 
-    def __init__(self, message: str = "Processing", success_message: Optional[str] = None):
+    def __init__(
+        self,
+        message: str = "Processing",
+        success_message: Optional[str] = None
+    ):
         self.message = message
         self.success_message = success_message
         self._stop_event = threading.Event()
@@ -136,7 +154,10 @@ class Spinner:
         chars = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
         i = 0
         while not self._stop_event.is_set():
-            sys.stdout.write(f"\r{Colors.CYAN}{chars[i % len(chars)]}{Colors.ENDC} {self.message}")
+            sys.stdout.write(
+                f"\r{Colors.CYAN}{chars[i % len(chars)]}{Colors.ENDC} "
+                f"{self.message}"
+            )
             sys.stdout.flush()
             time.sleep(0.1)
             i += 1
@@ -147,34 +168,71 @@ class Spinner:
         padding = max(0, len(self.message) - len(message))
         self.message = message + " " * padding
 
-    def __enter__(self) -> 'Spinner':
+    def start(self) -> None:
+        """Start the spinner."""
         if sys.stdout.isatty():
             sys.stdout.write("\033[?25l")  # Hide cursor
             sys.stdout.flush()
         self._thread.start()
-        return self
 
-    def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
+    def stop(self) -> None:
+        """Stop the spinner."""
         self._stop_event.set()
-        self._thread.join()
+        if self._thread.is_alive():
+            self._thread.join()
 
-        # Even if not TTY, we want to print the final status if possible,
-        # but the current implementation limits it to TTY.
-        # We will keep the TTY check for now to avoid breaking non-interactive logs.
         if sys.stdout.isatty():
             sys.stdout.write("\033[?25h")  # Show cursor
-
-            if exc_type:
-                symbol = f"{Colors.FAIL}✖{Colors.ENDC}"
-            else:
-                symbol = f"{Colors.GREEN}✔{Colors.ENDC}"
-                if self.success_message:
-                    self.message = self.success_message
-
-            # Overwrite the spinner with final status
             # Use ANSI clear line (K) to clear any previous longer message
+            sys.stdout.write(f"\r{self.message}\033[K\n")
+            sys.stdout.flush()
+
+    def succeed(self, message: Optional[str] = None) -> None:
+        """Stop the spinner and mark as success."""
+        if message:
+            self.message = message
+        elif self.success_message:
+            self.message = self.success_message
+
+        self._stop_event.set()
+        if self._thread.is_alive():
+            self._thread.join()
+
+        if sys.stdout.isatty():
+            sys.stdout.write("\033[?25h")  # Show cursor
+            symbol = f"{Colors.GREEN}✔{Colors.ENDC}"
             sys.stdout.write(f"\r{symbol} {self.message}\033[K\n")
             sys.stdout.flush()
+
+    def fail(self, message: Optional[str] = None) -> None:
+        """Stop the spinner and mark as failure."""
+        if message:
+            self.message = message
+
+        self._stop_event.set()
+        if self._thread.is_alive():
+            self._thread.join()
+
+        if sys.stdout.isatty():
+            sys.stdout.write("\033[?25h")  # Show cursor
+            symbol = f"{Colors.FAIL}✖{Colors.ENDC}"
+            sys.stdout.write(f"\r{symbol} {self.message}\033[K\n")
+            sys.stdout.flush()
+
+    def __enter__(self) -> 'Spinner':
+        self.start()
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType]
+    ) -> None:
+        if exc_type:
+            self.fail()
+        else:
+            self.succeed()
 
 
 def print_header(title: str, char: str = "=", width: int = 50) -> None:
@@ -195,18 +253,33 @@ def print_workflow_report(
 ) -> None:
     """Prints a summary report of the workflow results."""
     print_header("✨ WORKFLOW COMPLETE")
-    print(f"{Colors.BOLD}📦 Project:{Colors.ENDC} {Colors.GREEN}{title}{Colors.ENDC}")
+    print(
+        f"{Colors.BOLD}📦 Project:{Colors.ENDC} "
+        f"{Colors.GREEN}{title}{Colors.ENDC}"
+    )
     print(f"{Colors.BOLD}📝 Slug:   {Colors.ENDC} {slug}")
-    print(f"{Colors.BOLD}🔗 Repo:   {Colors.ENDC} {Colors.UNDERLINE}{repo_url}{Colors.ENDC}")
-    
+    print(
+        f"{Colors.BOLD}🔗 Repo:   {Colors.ENDC} "
+        f"{Colors.UNDERLINE}{repo_url}{Colors.ENDC}"
+    )
+
     if session_id:
-        print(f"{Colors.BOLD}🤖 Jules:  {Colors.ENDC} {Colors.UNDERLINE}{session_url or 'N/A'}{Colors.ENDC}")
+        print(
+            f"{Colors.BOLD}🤖 Jules:  {Colors.ENDC} "
+            f"{Colors.UNDERLINE}{session_url or 'N/A'}{Colors.ENDC}"
+        )
         print(f"{Colors.BOLD}   Session:{Colors.ENDC} {session_id}")
         if pr_url:
-            print(f"{Colors.BOLD}🎉 PR:     {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
+            print(
+                f"{Colors.BOLD}🎉 PR:     {Colors.ENDC} "
+                f"{Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}"
+            )
     else:
-        print(f"{Colors.YELLOW}⚠️  Jules session was not created (source not indexed){Colors.ENDC}")
-    
+        print(
+            f"{Colors.YELLOW}⚠️  Jules session was not created "
+            f"(source not indexed){Colors.ENDC}"
+        )
+
     print(f"{Colors.BOLD}{Colors.BLUE}{'=' * 50}{Colors.ENDC}")
 
 
@@ -219,15 +292,27 @@ def print_session_status(
     activities: Optional[list[str]] = None
 ) -> None:
     """Prints status information for a Jules session."""
-    print(f"\n{Colors.BOLD}📋 Session Status:{Colors.ENDC} {Colors.CYAN}{session_id}{Colors.ENDC}")
+    print(
+        f"\n{Colors.BOLD}📋 Session Status:{Colors.ENDC} "
+        f"{Colors.CYAN}{session_id}{Colors.ENDC}"
+    )
     print(f"   {Colors.BOLD}Title:   {Colors.ENDC} {title}")
-    print(f"   {Colors.BOLD}URL:     {Colors.ENDC} {Colors.UNDERLINE}{url}{Colors.ENDC}")
-    status_msg = f"{Colors.GREEN}✅ Yes{Colors.ENDC}" if is_complete else f"{Colors.YELLOW}⏳ In Progress{Colors.ENDC}"
+    print(
+        f"   {Colors.BOLD}URL:     {Colors.ENDC} "
+        f"{Colors.UNDERLINE}{url}{Colors.ENDC}"
+    )
+    status_msg = (
+        f"{Colors.GREEN}✅ Yes{Colors.ENDC}" if is_complete else
+        f"{Colors.YELLOW}⏳ In Progress{Colors.ENDC}"
+    )
     print(f"   {Colors.BOLD}Complete:{Colors.ENDC} {status_msg}")
-    
+
     if pr_url:
-        print(f"   {Colors.BOLD}PR:      {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
-    
+        print(
+            f"   {Colors.BOLD}PR:      {Colors.ENDC} "
+            f"{Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}"
+        )
+
     if activities:
         print(f"\n   {Colors.BOLD}Recent Activity:{Colors.ENDC}")
         for activity in activities[:3]:
@@ -256,17 +341,27 @@ def print_progress(elapsed: int, message: str) -> None:
 def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
     """Prints session completion message."""
     duration = format_duration(elapsed)
-    print(f"\n{Colors.GREEN}✅ Session completed after {duration}!{Colors.ENDC}")
+    msg = f"\n{Colors.GREEN}✅ Session completed after {duration}!{Colors.ENDC}"
+    print(msg)
     if pr_url:
-        print(f"{Colors.BOLD}🎉 Pull Request:{Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
+        print(
+            f"{Colors.BOLD}🎉 Pull Request:{Colors.ENDC} "
+            f"{Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}"
+        )
     else:
-        print(f"{Colors.YELLOW}ℹ️  Session completed but no PR was created.{Colors.ENDC}")
+        print(
+            f"{Colors.YELLOW}ℹ️  Session completed but no PR was created."
+            f"{Colors.ENDC}"
+        )
 
 
 def print_watch_timeout(timeout: int, session_url: str) -> None:
     """Prints timeout message."""
     duration = format_duration(timeout)
-    print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {duration}. Session still running.{Colors.ENDC}")
+    print(
+        f"\n{Colors.YELLOW}⏱️  Timeout reached after {duration}. "
+        f"Session still running.{Colors.ENDC}"
+    )
     print(f"   Check status at: {Colors.UNDERLINE}{session_url}{Colors.ENDC}")
 
 
@@ -293,7 +388,6 @@ def print_sources_list(response: dict[str, Any]) -> None:
 
 def print_idea_summary(idea_data: dict[str, Any]) -> None:
     """Prints a summary of the generated idea."""
-
     content_lines = []
 
     # Description
@@ -320,11 +414,11 @@ def print_idea_summary(idea_data: dict[str, Any]) -> None:
 
     full_content = "\n".join(content_lines)
 
-    print("") # spacing before
+    print("")  # spacing before
     print_panel(
         full_content,
         title=f"✨ {idea_data['title']}",
         color=Colors.HEADER,
         width=70
     )
-    print("") # spacing after
+    print("")  # spacing after

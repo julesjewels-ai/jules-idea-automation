@@ -34,7 +34,10 @@ def handle_agent(args: Namespace) -> None:
     category = getattr(args, 'category', None)
 
     gemini = GeminiClient()
-    msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
+    msg = (
+        f"Generating idea with Gemini"
+        f"{f' (category: {category})' if category else ''}..."
+    )
     with Spinner(msg, success_message="Idea generated"):
         idea_data = gemini.generate_idea(category=category)
 
@@ -54,7 +57,10 @@ def handle_website(args: Namespace) -> None:
     print(f"✓ Extracted {len(text)} characters of content")
 
     gemini = GeminiClient()
-    with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
+    with Spinner(
+        "Extracting idea with Gemini...",
+        success_message="Idea extracted"
+    ):
         idea_data = gemini.extract_idea_from_text(text)
 
     _execute_and_watch(args, idea_data)
@@ -99,21 +105,32 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
         idea_data: The idea data to process
     """
     from src.core.workflow import IdeaWorkflow
+    from src.core.events import LocalEventBus
+    from src.services.reporting import ConsoleReporter
 
     print_idea_summary(idea_data)
 
-    workflow = IdeaWorkflow()
+    # Setup Event System
+    bus = LocalEventBus()
+    reporter = ConsoleReporter()
+    bus.subscribe(reporter)
+
+    workflow = IdeaWorkflow(bus=bus)
     result = workflow.execute(
         idea_data,
         private=args.private,
-        timeout=args.timeout
+        timeout=args.timeout,
+        verbose=False  # Output handled by reporter
     )
 
     if result.session_id and args.watch:
         watch_session(result.session_id, timeout=args.timeout)
 
 
-def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[str]]:
+def watch_session(
+    session_id: str,
+    timeout: int = 1800
+) -> tuple[bool, Optional[str]]:
     """Watch a Jules session until completion or timeout.
 
     Args:
@@ -129,7 +146,9 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[
     jules = JulesClient()
     poll_interval = 30
 
-    with Spinner(f"[{format_duration(0)}] Watching session {session_id}...") as spinner:
+    with Spinner(
+        f"[{format_duration(0)}] Watching session {session_id}..."
+    ) as spinner:
 
         def check() -> tuple[bool, Optional[str]]:
             return jules.is_session_complete(session_id)
@@ -139,7 +158,11 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[
                 activities = jules.list_activities(session_id, page_size=1)
                 if activities.get("activities"):
                     latest = activities["activities"][0]
-                    return str(latest.get("progressUpdated", {}).get("title", "Working..."))
+                    return str(
+                        latest.get("progressUpdated", {}).get(
+                            "title", "Working..."
+                        )
+                    )
                 return "Working..."
             except Exception:
                 return "Polling..."
