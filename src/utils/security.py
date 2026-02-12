@@ -9,6 +9,7 @@ from src.utils.errors import AppError
 
 class ScrapingError(AppError):
     """Raised when scraping fails or returns insufficient content."""
+
     pass
 
 
