@@ -34,7 +34,8 @@ def handle_agent(args: Namespace) -> None:
     category = getattr(args, 'category', None)
 
     gemini = GeminiClient()
-    msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
+    category_str = f' (category: {category})' if category else ''
+    msg = f"Generating idea with Gemini{category_str}..."
     with Spinner(msg, success_message="Idea generated"):
         idea_data = gemini.generate_idea(category=category)
 
@@ -99,10 +100,17 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
         idea_data: The idea data to process
     """
     from src.core.workflow import IdeaWorkflow
+    from src.services.bus import LocalEventBus
+    from src.services.reporting import ConsoleReporter
 
     print_idea_summary(idea_data)
 
-    workflow = IdeaWorkflow()
+    # Initialize event bus and reporter
+    bus = LocalEventBus()
+    # reporter is automatically subscribed upon initialization
+    _ = ConsoleReporter(bus)
+
+    workflow = IdeaWorkflow(bus=bus)
     result = workflow.execute(
         idea_data,
         private=args.private,
@@ -113,7 +121,8 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
         watch_session(result.session_id, timeout=args.timeout)
 
 
-def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[str]]:
+def watch_session(
+        session_id: str, timeout: int = 1800) -> tuple[bool, Optional[str]]:
     """Watch a Jules session until completion or timeout.
 
     Args:
@@ -139,7 +148,8 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[
                 activities = jules.list_activities(session_id, page_size=1)
                 if activities.get("activities"):
                     latest = activities["activities"][0]
-                    return str(latest.get("progressUpdated", {}).get("title", "Working..."))
+                    progress = latest.get("progressUpdated", {})
+                    return str(progress.get("title", "Working..."))
                 return "Working..."
             except Exception:
                 return "Polling..."
