@@ -45,3 +45,10 @@ env/
 
 # Environment variables
 .env
+
+# Media
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
