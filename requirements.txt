@@ -28,11 +28,11 @@ pyasn1==0.6.2
     #   rsa
 pyasn1-modules==0.4.2
     # via google-auth
-pydantic==2.10.6
+pydantic==2.12.5
     # via
     #   -r requirements.in
     #   google-genai
-pydantic-core==2.27.2
+pydantic-core==2.41.5
     # via pydantic
 python-dotenv==1.2.1
     # via -r requirements.in
@@ -49,6 +49,9 @@ typing-extensions==4.15.0
     #   beautifulsoup4
     #   pydantic
     #   pydantic-core
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via pydantic
 urllib3==2.6.3
     # via requests
 websockets==14.2
