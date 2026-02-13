@@ -1,0 +1,45 @@
+name: Security Audit
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Weekly on Mondays at 8 AM
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  secrets:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+
+  sast:
+    name: Subprocess & Code Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Bandit
+        run: pip install bandit
+      - name: Run Bandit
+        # Focus strictly on high-severity issues and subprocess/os calls
+        run: bandit -r src/ -ll -ii -f json -o bandit-report.json || true
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+
+  deps:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pip-audit
+        run: pip install pip-audit
+      - name: Run pip-audit
+        run: pip-audit -r requirements.txt
