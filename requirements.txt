@@ -36,7 +36,7 @@ pydantic-core==2.27.2
     # via pydantic
 python-dotenv==1.2.1
     # via -r requirements.in
-requests==2.32.3
+requests==2.32.5
     # via
     #   -r requirements.in
     #   google-genai
