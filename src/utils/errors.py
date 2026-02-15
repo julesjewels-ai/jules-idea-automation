@@ -27,3 +27,9 @@ class JulesApiError(AppError):
     """Raised when the Jules API returns an error."""
 
     pass
+
+
+class CacheError(AppError):
+    """Raised when a cache operation fails."""
+
+    pass

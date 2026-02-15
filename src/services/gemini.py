@@ -8,6 +8,7 @@ from xml.sax.saxutils import escape
 from google import genai
 from google.genai import types, errors
 
+from src.core.interfaces import CacheProvider
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
 
@@ -16,25 +17,52 @@ logger = logging.getLogger(__name__)
 
 # Category-specific prompt templates
 CATEGORY_PROMPTS = {
-    "web_app": "Generate a creative web application idea. Focus on modern frontend frameworks and responsive design.",
-    "cli_tool": "Generate a useful command-line tool idea. Focus on developer productivity and Unix philosophy.",
-    "api_service": "Generate a RESTful API service idea. Focus on microservices architecture and scalability.",
-    "mobile_app": "Generate a mobile application idea. Focus on user experience and cross-platform compatibility.",
-    "automation": "Generate an automation tool idea. Focus on workflow optimization and integration capabilities.",
-    "ai_ml": "Generate an AI/ML application idea. Focus on practical use cases and accessible interfaces.",
-    "default": "Generate a creative, unique, and useful software application idea."
+    "web_app": (
+        "Generate a creative web application idea. "
+        "Focus on modern frontend frameworks and responsive design."
+    ),
+    "cli_tool": (
+        "Generate a useful command-line tool idea. "
+        "Focus on developer productivity and Unix philosophy."
+    ),
+    "api_service": (
+        "Generate a RESTful API service idea. "
+        "Focus on microservices architecture and scalability."
+    ),
+    "mobile_app": (
+        "Generate a mobile application idea. "
+        "Focus on user experience and cross-platform compatibility."
+    ),
+    "automation": (
+        "Generate an automation tool idea. "
+        "Focus on workflow optimization and integration capabilities."
+    ),
+    "ai_ml": (
+        "Generate an AI/ML application idea. "
+        "Focus on practical use cases and accessible interfaces."
+    ),
+    "default": (
+        "Generate a creative, unique, and useful software application idea."
+    )
 }
 
 
 class GeminiClient:
-    """Client for the Google Gemini API, handling idea generation and project scaffolding."""
+    """Client for the Google Gemini API."""
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        cache_provider: Optional[CacheProvider] = None
+    ) -> None:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
                 "GEMINI_API_KEY environment variable is not set",
-                tip="Get your API key from https://aistudio.google.com/app/apikey and add it to your .env file."
+                tip=(
+                    "Get your API key from https://aistudio.google.com/"
+                    "app/apikey and add it to your .env file."
+                )
             )
 
         self.client = genai.Client(
@@ -42,6 +70,7 @@ class GeminiClient:
             http_options={'api_version': 'v1beta'}
         )
         self.model_name = "gemini-3-pro-preview"
+        self.cache = cache_provider
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
         """Maps Gemini API errors to user-friendly GenerationError."""
@@ -57,8 +86,22 @@ class GeminiClient:
 
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
-    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
-        """Helper to generate content with consistent configuration and error handling."""
+    def _generate_content(
+        self,
+        prompt: str,
+        schema: Any,
+        error_tip: str
+    ) -> dict[str, Any]:
+        """Helper to generate content with consistent configuration."""
+        # Check cache
+        cache_key = ""
+        if self.cache:
+            cache_key = f"gemini:{self.model_name}:{prompt}"
+            cached_response = self.cache.get(cache_key)
+            if cached_response:
+                logger.info("Cache hit for Gemini request")
+                return cached_response  # type: ignore[no-any-return]
+
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -70,7 +113,13 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            return json.loads(response.text or "")  # type: ignore[no-any-return]
+            result = json.loads(response.text or "")
+
+            # Cache success result
+            if self.cache and cache_key:
+                self.cache.set(cache_key, result)
+
+            return result  # type: ignore[no-any-return]
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
@@ -88,16 +137,22 @@ class GeminiClient:
         """Generates a unique software idea using Gemini 3.
 
         Args:
-            category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
+            category: Optional category to target
         """
         base_prompt = CATEGORY_PROMPTS.get(
             category or "default", CATEGORY_PROMPTS["default"])
-        prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
+        prompt = (
+            f"{base_prompt} Include recommended "
+            "tech stack and key MVP features."
+        )
 
         return self._generate_content(
             prompt,
             IdeaResponse,
-            "The AI model returned invalid JSON. Please try again or try a different category."
+            (
+                "The AI model returned invalid JSON. "
+                "Please try again or try a different category."
+            )
         )
 
     def extract_idea_from_text(self, text: str) -> dict[str, Any]:
@@ -109,23 +164,31 @@ class GeminiClient:
         # Escape user content to prevent prompt injection
         safe_text = escape(truncated_text)
 
-        prompt = f"""
-        Analyze the following text provided in the <text_content> tags.
-        Extract the core software application idea or product concept described.
-        Summarize it into a clear, actionable project description suitable for a developer to start building.
-        
-        <text_content>
-        {safe_text}
-        </text_content>
-        """
+        prompt = (
+            "Analyze the following text provided in the <text_content> tags.\n"
+            "Extract the core software application idea or product concept "
+            "described.\n"
+            "Summarize it into a clear, actionable project description "
+            "suitable for a developer to start building.\n\n"
+            "<text_content>\n"
+            f"{safe_text}\n"
+            "</text_content>"
+        )
 
         return self._generate_content(
             prompt,
             IdeaResponse,
-            "The AI model returned invalid JSON while analyzing the website content."
+            (
+                "The AI model returned invalid JSON while "
+                "analyzing the website content."
+            )
         )
 
-    def generate_project_scaffold(self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
+    def generate_project_scaffold(
+        self,
+        idea_data: dict[str, Any],
+        max_retries: int = 2
+    ) -> dict[str, Any]:
         """Generates a complete MVP project scaffold for the given idea.
 
         Args:
@@ -154,7 +217,7 @@ Create a complete, immediately-runnable project with these files:
 3. src/core/__init__.py - Package marker
 4. src/core/app.py - Main business logic class with clear docstrings
 
-## Developer Experience  
+## Developer Experience
 5. Makefile - With targets: install, run, test, clean
 6. .env.example - Sample environment variables (if any needed)
 7. .gitignore - Python + venv + IDE + .env patterns
@@ -183,11 +246,15 @@ Create a complete, immediately-runnable project with these files:
             except Exception as e:
                 if attempt < max_retries:
                     logger.warning(
-                        f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
+                        f"Scaffold generation attempt {attempt + 1} failed: "
+                        f"{e}. Retrying..."
+                    )
                     continue
                 else:
                     logger.error(
-                        f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
+                        f"Scaffold generation failed after "
+                        f"{max_retries + 1} attempts: {e}"
+                    )
                     # Return minimal fallback scaffold
                     return ProjectScaffold.create_fallback_scaffold(
                         idea_data['title'],
