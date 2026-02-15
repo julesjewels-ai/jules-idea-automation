@@ -4,21 +4,27 @@ import argparse
 
 
 def create_parser() -> argparse.ArgumentParser:
-    """Creates and configures the argument parser."""
+    """Create and configure the argument parser.
+
+    Returns:
+        The configured ArgumentParser instance.
+    """
     parser = argparse.ArgumentParser(description="Jules Automation Tool")
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    subparsers = parser.add_subparsers(
+        dest="command", help="Available commands")
 
     # Command: list-sources
     subparsers.add_parser("list-sources", help="List available Jules sources")
 
     # Command: agent
     agent_parser = subparsers.add_parser(
-        "agent", 
+        "agent",
         help="Generate an idea using Gemini and send to Jules"
     )
     agent_parser.add_argument(
-        "--category", 
-        choices=["web_app", "cli_tool", "api_service", "mobile_app", "automation", "ai_ml"],
+        "--category",
+        choices=["web_app", "cli_tool", "api_service",
+                 "mobile_app", "automation", "ai_ml"],
         help="Target a specific category for idea generation"
     )
     agent_parser.add_argument(
@@ -40,7 +46,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Command: website
     website_parser = subparsers.add_parser(
-        "website", 
+        "website",
         help="Scrape a website for an idea and send to Jules"
     )
     website_parser.add_argument("--url", required=True, help="URL to scrape")
@@ -63,7 +69,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Command: status
     status_parser = subparsers.add_parser(
-        "status", 
+        "status",
         help="Check status of a Jules session"
     )
     status_parser.add_argument("session_id", help="The session ID to check")
@@ -133,4 +139,3 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     return parser
-

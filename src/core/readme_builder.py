@@ -11,8 +11,8 @@ def build_readme(
     requirements: Optional[list[str]] = None,
     run_command: Optional[str] = None
 ) -> str:
-    """Builds a README.md content string.
-    
+    """Build a README.md content string.
+
     Args:
         title: Project title
         description: Project description
@@ -20,7 +20,7 @@ def build_readme(
         features: List of MVP features
         requirements: List of pip dependencies
         run_command: Command to run the application
-    
+
     Returns:
         Complete README.md content as string
     """
@@ -30,7 +30,7 @@ def build_readme(
         description,
         "",
     ]
-    
+
     if tech_stack:
         lines.extend([
             "## Tech Stack",
@@ -38,7 +38,7 @@ def build_readme(
             *[f"- {tech}" for tech in tech_stack],
             "",
         ])
-    
+
     if features:
         lines.extend([
             "## Features",
@@ -46,7 +46,7 @@ def build_readme(
             *[f"- {feature}" for feature in features],
             "",
         ])
-    
+
     # Quick Start section
     lines.extend([
         "## Quick Start",
@@ -62,7 +62,7 @@ def build_readme(
         "```",
         "",
     ])
-    
+
     if requirements:
         lines.extend([
             "## Setup",
@@ -72,7 +72,7 @@ def build_readme(
             "```",
             "",
         ])
-    
+
     if run_command:
         lines.extend([
             "## Usage",
@@ -82,7 +82,7 @@ def build_readme(
             "```",
             "",
         ])
-    
+
     # Development section
     lines.extend([
         "## Development",
@@ -95,7 +95,7 @@ def build_readme(
         "```",
         "",
     ])
-    
+
     # Testing section
     lines.extend([
         "## Testing",
@@ -105,6 +105,5 @@ def build_readme(
         "```",
         "",
     ])
-    
-    return "\n".join(lines)
 
+    return "\n".join(lines)
