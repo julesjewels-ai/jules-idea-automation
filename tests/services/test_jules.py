@@ -1,51 +1,96 @@
 """Tests for JulesClient."""
 
 import pytest
+from unittest.mock import patch, MagicMock
+import requests
 from src.services.jules import JulesClient
 from src.utils.errors import JulesApiError
 
-def test_jules_client_api_error_401(requests_mock):
+
+def _make_http_error(status_code, text="", json_data=None):
+    """Helper to create a requests.exceptions.HTTPError with a mock response."""
+    response = MagicMock()
+    response.status_code = status_code
+    response.text = text
+    if json_data is not None:
+        response.json.return_value = json_data
+    else:
+        response.json.side_effect = ValueError("No JSON")
+    error = requests.exceptions.HTTPError(response=response)
+    return error
+
+
+def test_jules_client_api_error_401():
     client = JulesClient(api_key="test-key")
-    requests_mock.get("https://jules.googleapis.com/v1alpha/sources", status_code=401, text="Unauthorized")
 
-    with pytest.raises(JulesApiError) as excinfo:
-        client.list_sources()
+    with patch("src.services.jules.requests.request") as mock_request:
+        mock_request.side_effect = _make_http_error(401, "Unauthorized")
+        # The _request method catches HTTPError, so we need to simulate raise_for_status
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.side_effect = _make_http_error(401, "Unauthorized")
+        mock_request.side_effect = None
+        mock_request.return_value = mock_resp
 
-    assert "Your Jules API key seems invalid" in excinfo.value.tip
+        with pytest.raises(JulesApiError) as excinfo:
+            client.list_sources()
 
-def test_jules_client_api_error_403(requests_mock):
+        assert "Your Jules API key seems invalid" in excinfo.value.tip
+
+
+def test_jules_client_api_error_403():
     client = JulesClient(api_key="test-key")
-    requests_mock.get("https://jules.googleapis.com/v1alpha/sources", status_code=403, text="Forbidden")
 
-    with pytest.raises(JulesApiError) as excinfo:
-        client.list_sources()
+    with patch("src.services.jules.requests.request") as mock_request:
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.side_effect = _make_http_error(403, "Forbidden")
+        mock_request.return_value = mock_resp
 
-    assert "You don't have permission" in excinfo.value.tip
+        with pytest.raises(JulesApiError) as excinfo:
+            client.list_sources()
 
-def test_jules_client_api_error_404(requests_mock):
+        assert "You don't have permission" in excinfo.value.tip
+
+
+def test_jules_client_api_error_404():
     client = JulesClient(api_key="test-key")
-    requests_mock.get("https://jules.googleapis.com/v1alpha/sources", status_code=404, text="Not Found")
 
-    with pytest.raises(JulesApiError) as excinfo:
-        client.list_sources()
+    with patch("src.services.jules.requests.request") as mock_request:
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.side_effect = _make_http_error(404, "Not Found")
+        mock_request.return_value = mock_resp
 
-    assert "The requested resource was not found" in excinfo.value.tip
+        with pytest.raises(JulesApiError) as excinfo:
+            client.list_sources()
 
-def test_jules_client_generic_error(requests_mock):
+        assert "The requested resource was not found" in excinfo.value.tip
+
+
+def test_jules_client_generic_error():
     client = JulesClient(api_key="test-key")
-    requests_mock.get("https://jules.googleapis.com/v1alpha/sources", status_code=500, text="Internal Server Error")
 
-    with pytest.raises(JulesApiError) as excinfo:
-        client.list_sources()
+    with patch("src.services.jules.requests.request") as mock_request:
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.side_effect = _make_http_error(500, "Internal Server Error")
+        mock_request.return_value = mock_resp
 
-    assert "API returned status 500" in excinfo.value.tip
+        with pytest.raises(JulesApiError) as excinfo:
+            client.list_sources()
 
-def test_jules_client_json_error(requests_mock):
+        assert "API returned status 500" in excinfo.value.tip
+
+
+def test_jules_client_json_error():
     client = JulesClient(api_key="test-key")
-    error_json = {"error": {"message": "Custom API Error"}}
-    requests_mock.get("https://jules.googleapis.com/v1alpha/sources", status_code=400, json=error_json)
 
-    with pytest.raises(JulesApiError) as excinfo:
-        client.list_sources()
+    with patch("src.services.jules.requests.request") as mock_request:
+        error_json = {"error": {"message": "Custom API Error"}}
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.side_effect = _make_http_error(
+            400, "Bad Request", json_data=error_json
+        )
+        mock_request.return_value = mock_resp
 
-    assert "API Message: Custom API Error" in excinfo.value.tip
+        with pytest.raises(JulesApiError) as excinfo:
+            client.list_sources()
+
+        assert "API Message: Custom API Error" in excinfo.value.tip

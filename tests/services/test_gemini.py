@@ -53,15 +53,9 @@ def test_generate_idea_json_error(client):
 
 def test_generate_idea_api_error(client):
     # Simulate an API error (e.g., invalid key)
-    class MockClientError(errors.ClientError):
-        def __str__(self):
-            return "400 API key not valid"
-
-    error = MockClientError(
-        code=400,
-        response=MagicMock()
+    client.client.models.generate_content.side_effect = errors.APIError(
+        code=400, response_json={"error": {"message": "400 API key not valid"}}
     )
-    client.client.models.generate_content.side_effect = error
 
     with pytest.raises(GenerationError) as excinfo:
         client.generate_idea()

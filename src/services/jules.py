@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import requests
 from typing import Optional, Any

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import json
 import logging
@@ -25,6 +27,8 @@ CATEGORY_PROMPTS = {
 
 
 class GeminiClient:
+    """Client for the Google Gemini API, handling idea generation and project scaffolding."""
+
     def __init__(self, api_key: Optional[str] = None) -> None:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:

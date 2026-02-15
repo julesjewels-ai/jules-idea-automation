@@ -1,5 +1,7 @@
 """Core workflow for idea-to-repository automation."""
 
+from __future__ import annotations
+
 from typing import Optional, Any
 
 from src.services.gemini import GeminiClient
