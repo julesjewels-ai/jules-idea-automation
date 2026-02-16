@@ -101,9 +101,7 @@ class IdeaWorkflow:
 
         visibility = "private" if private else "public"
         if verbose:
-            print(
-                f"Creating {visibility} GitHub repository '{
-                    idea_data['slug']}'...")
+            print(f"Creating {visibility} GitHub repository '{idea_data['slug']}'...")
 
         self.github.create_repo(
             name=idea_data['slug'],
@@ -158,9 +156,7 @@ class IdeaWorkflow:
             )
 
             if verbose:
-                print(
-                    f"  Created {
-                        result['files_created']} files in single commit")
+                print(f"  Created {result['files_created']} files in single commit")
 
     def _prepare_scaffold_files(
             self, scaffold: dict[str, Any]) -> list[dict[str, str]]:

@@ -60,13 +60,9 @@ def _create_top_border(title: str, width: int, color: str) -> str:
     if right_pad < 0:
         right_pad = 0
 
-    return f"{TL_CORNER}{
-        H_LINE *
-        left_pad}{
-        Colors.BOLD}{title_text}{
-            Colors.ENDC}{color}{
-                H_LINE *
-        right_pad}{TR_CORNER}"
+    left_line = H_LINE * left_pad
+    right_line = H_LINE * right_pad
+    return f"{TL_CORNER}{left_line}{Colors.BOLD}{title_text}{Colors.ENDC}{color}{right_line}{TR_CORNER}"
 
 
 def _wrap_content(content: str, width: int) -> list[str]:
@@ -125,12 +121,9 @@ def print_panel(content: str, title: str = "",
         padding = width - 4 - visible_len
         if padding < 0:
             padding = 0
+        pad_str = ' ' * padding
         print(
-            f"{color}{V_LINE}{
-                Colors.ENDC} {line}{
-                ' ' *
-                padding} {color}{V_LINE}{
-                Colors.ENDC}")
+            f"{color}{V_LINE}{Colors.ENDC} {line}{pad_str} {color}{V_LINE}{Colors.ENDC}")
 
     print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}")
 
@@ -219,30 +212,16 @@ def print_workflow_report(
     print_header("✨ WORKFLOW COMPLETE")
     print(f"{Colors.BOLD}📦 Project:{Colors.ENDC} {Colors.GREEN}{title}{Colors.ENDC}")
     print(f"{Colors.BOLD}📝 Slug:   {Colors.ENDC} {slug}")
-    print(
-        f"{
-            Colors.BOLD}🔗 Repo:   {
-            Colors.ENDC} {
-                Colors.UNDERLINE}{repo_url}{
-                    Colors.ENDC}")
+    print(f"{Colors.BOLD}🔗 Repo:   {Colors.ENDC} {Colors.UNDERLINE}{repo_url}{Colors.ENDC}")
 
     if session_id:
+        session_link = session_url or 'N/A'
         print(
-            f"{
-                Colors.BOLD}🤖 Jules:  {
-                Colors.ENDC} {
-                Colors.UNDERLINE}{
-                    session_url or 'N/A'}{
-                        Colors.ENDC}")
+            f"{Colors.BOLD}🤖 Jules:  {Colors.ENDC} {Colors.UNDERLINE}{session_link}{Colors.ENDC}")
         print(f"{Colors.BOLD}   Session:{Colors.ENDC} {session_id}")
         if pr_url:
             print(
-                f"{
-                    Colors.BOLD}🎉 PR:     {
-                    Colors.ENDC} {
-                    Colors.UNDERLINE}{
-                    Colors.GREEN}{pr_url}{
-                        Colors.ENDC}")
+                f"{Colors.BOLD}🎉 PR:     {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     else:
         print(
             f"{Colors.YELLOW}⚠️  Jules session was not created (source not indexed){Colors.ENDC}")
@@ -259,34 +238,21 @@ def print_session_status(
     activities: Optional[list[str]] = None
 ) -> None:
     """Prints status information for a Jules session."""
-    print(
-        f"\n{
-            Colors.BOLD}📋 Session Status:{
-            Colors.ENDC} {
-                Colors.CYAN}{session_id}{
-                    Colors.ENDC}")
+    print(f"\n{Colors.BOLD}📋 Session Status:{Colors.ENDC} {Colors.CYAN}{session_id}{Colors.ENDC}")
     print(f"   {Colors.BOLD}Title:   {Colors.ENDC} {title}")
     print(
-        f"   {
-            Colors.BOLD}URL:     {
-            Colors.ENDC} {
-                Colors.UNDERLINE}{url}{
-                    Colors.ENDC}")
-    status_msg = f"{
-        Colors.GREEN}✅ Yes{
-        Colors.ENDC}" if is_complete else f"{
-            Colors.YELLOW}⏳ In Progress{
-                Colors.ENDC}"
+        f"   {Colors.BOLD}URL:     {Colors.ENDC} {Colors.UNDERLINE}{url}{Colors.ENDC}")
+
+    if is_complete:
+        status_msg = f"{Colors.GREEN}✅ Yes{Colors.ENDC}"
+    else:
+        status_msg = f"{Colors.YELLOW}⏳ In Progress{Colors.ENDC}"
+
     print(f"   {Colors.BOLD}Complete:{Colors.ENDC} {status_msg}")
 
     if pr_url:
         print(
-            f"   {
-                Colors.BOLD}PR:      {
-                Colors.ENDC} {
-                Colors.UNDERLINE}{
-                    Colors.GREEN}{pr_url}{
-                        Colors.ENDC}")
+            f"   {Colors.BOLD}PR:      {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
 
     if activities:
         print(f"\n   {Colors.BOLD}Recent Activity:{Colors.ENDC}")
@@ -316,18 +282,9 @@ def print_progress(elapsed: int, message: str) -> None:
 def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
     """Prints session completion message."""
     duration = format_duration(elapsed)
-    print(
-        f"\n{
-            Colors.GREEN}✅ Session completed after {duration}!{
-            Colors.ENDC}")
+    print(f"\n{Colors.GREEN}✅ Session completed after {duration}!{Colors.ENDC}")
     if pr_url:
-        print(
-            f"{
-                Colors.BOLD}🎉 Pull Request:{
-                Colors.ENDC} {
-                Colors.UNDERLINE}{
-                    Colors.GREEN}{pr_url}{
-                        Colors.ENDC}")
+        print(f"{Colors.BOLD}🎉 Pull Request:{Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     else:
         print(
             f"{Colors.YELLOW}ℹ️  Session completed but no PR was created.{Colors.ENDC}")
@@ -336,10 +293,7 @@ def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
 def print_watch_timeout(timeout: int, session_url: str) -> None:
     """Prints timeout message."""
     duration = format_duration(timeout)
-    print(
-        f"\n{
-            Colors.YELLOW}⏱️  Timeout reached after {duration}. Session still running.{
-            Colors.ENDC}")
+    print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {duration}. Session still running.{Colors.ENDC}")
     print(f"   Check status at: {Colors.UNDERLINE}{session_url}{Colors.ENDC}")
 
 

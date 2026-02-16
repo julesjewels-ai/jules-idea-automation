@@ -183,13 +183,11 @@ Create a complete, immediately-runnable project with these files:
             except Exception as e:
                 if attempt < max_retries:
                     logger.warning(
-                        f"Scaffold generation attempt {
-                            attempt + 1} failed: {e}. Retrying...")
+                        f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
                     continue
                 else:
                     logger.error(
-                        f"Scaffold generation failed after {
-                            max_retries + 1} attempts: {e}")
+                        f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
                     # Return minimal fallback scaffold
                     return ProjectScaffold.create_fallback_scaffold(
                         idea_data['title'],
