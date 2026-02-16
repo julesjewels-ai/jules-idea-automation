@@ -10,6 +10,8 @@ from google.genai import types, errors
 
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
+from src.core.interfaces import ResiliencePolicy
+from src.utils.resilience import RetryStrategy, ResilienceError
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +31,11 @@ CATEGORY_PROMPTS = {
 class GeminiClient:
     """Client for the Google Gemini API, handling idea generation and project scaffolding."""
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        resilience_policy: Optional[ResiliencePolicy] = None
+    ) -> None:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -42,6 +48,10 @@ class GeminiClient:
             http_options={'api_version': 'v1beta'}
         )
         self.model_name = "gemini-3-pro-preview"
+        self.resilience = resilience_policy or RetryStrategy(
+            max_retries=2,
+            retryable_exceptions=(GenerationError,)
+        )
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
         """Maps Gemini API errors to user-friendly GenerationError."""
@@ -173,25 +183,18 @@ Create a complete, immediately-runnable project with these files:
 - Each file should have a module docstring
 """
 
-        for attempt in range(max_retries + 1):
-            try:
-                return self._generate_content(
-                    prompt,
-                    ProjectScaffold,
-                    "Failed to generate valid project scaffold."
-                )
-            except Exception as e:
-                if attempt < max_retries:
-                    logger.warning(
-                        f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
-                    continue
-                else:
-                    logger.error(
-                        f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
-                    # Return minimal fallback scaffold
-                    return ProjectScaffold.create_fallback_scaffold(
-                        idea_data['title'],
-                        idea_data['description']
-                    ).model_dump()
-
-        raise GenerationError("Failed to generate project scaffold.")
+        try:
+            result: dict[str, Any] = self.resilience.execute(
+                self._generate_content,
+                prompt=prompt,
+                schema=ProjectScaffold,
+                error_tip="Failed to generate valid project scaffold."
+            )
+            return result
+        except ResilienceError as e:
+            logger.error(f"Scaffold generation failed: {e}")
+            # Return minimal fallback scaffold
+            return ProjectScaffold.create_fallback_scaffold(  # type: ignore[no-any-return]
+                idea_data['title'],
+                idea_data['description']
+            ).model_dump()
