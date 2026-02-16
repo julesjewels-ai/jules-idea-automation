@@ -22,8 +22,7 @@ CATEGORY_PROMPTS = {
     "mobile_app": "Generate a mobile application idea. Focus on user experience and cross-platform compatibility.",
     "automation": "Generate an automation tool idea. Focus on workflow optimization and integration capabilities.",
     "ai_ml": "Generate an AI/ML application idea. Focus on practical use cases and accessible interfaces.",
-    "default": "Generate a creative, unique, and useful software application idea."
-}
+    "default": "Generate a creative, unique, and useful software application idea."}
 
 
 class GeminiClient:
@@ -34,8 +33,7 @@ class GeminiClient:
         if not self.api_key:
             raise ConfigurationError(
                 "GEMINI_API_KEY environment variable is not set",
-                tip="Get your API key from https://aistudio.google.com/app/apikey and add it to your .env file."
-            )
+                tip="Get your API key from https://aistudio.google.com/app/apikey and add it to your .env file.")
 
         self.client = genai.Client(
             api_key=self.api_key,
@@ -57,7 +55,8 @@ class GeminiClient:
 
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
-    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
+    def _generate_content(self, prompt: str, schema: Any,
+                          error_tip: str) -> dict[str, Any]:
         """Helper to generate content with consistent configuration and error handling."""
         try:
             response = self.client.models.generate_content(
@@ -70,7 +69,8 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            return json.loads(response.text or "")  # type: ignore[no-any-return]
+            # type: ignore[no-any-return]
+            return json.loads(response.text or "")
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
@@ -113,7 +113,7 @@ class GeminiClient:
         Analyze the following text provided in the <text_content> tags.
         Extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
-        
+
         <text_content>
         {safe_text}
         </text_content>
@@ -122,10 +122,10 @@ class GeminiClient:
         return self._generate_content(
             prompt,
             IdeaResponse,
-            "The AI model returned invalid JSON while analyzing the website content."
-        )
+            "The AI model returned invalid JSON while analyzing the website content.")
 
-    def generate_project_scaffold(self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
+    def generate_project_scaffold(
+            self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
         """Generates a complete MVP project scaffold for the given idea.
 
         Args:
@@ -154,7 +154,7 @@ Create a complete, immediately-runnable project with these files:
 3. src/core/__init__.py - Package marker
 4. src/core/app.py - Main business logic class with clear docstrings
 
-## Developer Experience  
+## Developer Experience
 5. Makefile - With targets: install, run, test, clean
 6. .env.example - Sample environment variables (if any needed)
 7. .gitignore - Python + venv + IDE + .env patterns
@@ -183,11 +183,13 @@ Create a complete, immediately-runnable project with these files:
             except Exception as e:
                 if attempt < max_retries:
                     logger.warning(
-                        f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
+                        f"Scaffold generation attempt {
+                            attempt + 1} failed: {e}. Retrying...")
                     continue
                 else:
                     logger.error(
-                        f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
+                        f"Scaffold generation failed after {
+                            max_retries + 1} attempts: {e}")
                     # Return minimal fallback scaffold
                     return ProjectScaffold.create_fallback_scaffold(
                         idea_data['title'],

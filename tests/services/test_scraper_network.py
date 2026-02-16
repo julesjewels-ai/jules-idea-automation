@@ -9,8 +9,10 @@ from src.services.scraper import scrape_text, ScrapingError
 @patch("src.services.scraper._fetch_response")
 def test_scrape_text_success(mock_fetch):
     url = "http://example.com"
-    content = ("<html><body><p>Some meaningful content here that is long enough.</p>" * 10
-               + "</body></html>")
+    content = (
+        "<html><body><p>Some meaningful content here that is long enough.</p>" *
+        10 +
+        "</body></html>")
 
     mock_response = MagicMock()
     mock_response.content = content.encode("utf-8")
