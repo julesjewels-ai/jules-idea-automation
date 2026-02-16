@@ -1,10 +1,10 @@
 """Integration tests for Resilience module and GeminiClient."""
 
 import pytest
-from unittest.mock import MagicMock, call
-from src.utils.resilience import RetryStrategy, ResilienceError, MaxRetriesExceededError
-from src.services.gemini import GeminiClient, GenerationError
-from src.core.models import ProjectScaffold
+from unittest.mock import MagicMock
+from src.utils.resilience import RetryStrategy, MaxRetriesExceededError
+from src.services.gemini import GeminiClient
+
 
 def test_retry_strategy_success():
     """Test that RetryStrategy returns result on success."""
@@ -16,19 +16,35 @@ def test_retry_strategy_success():
     assert result == "success"
     mock_op.assert_called_once_with("arg")
 
+
 def test_retry_strategy_retries_on_failure():
     """Test that RetryStrategy retries on failure."""
-    strategy = RetryStrategy(max_retries=2, base_delay=0.01, retryable_exceptions=(ValueError,))
-    mock_op = MagicMock(side_effect=[ValueError("fail1"), ValueError("fail2"), "success"])
+    strategy = RetryStrategy(
+        max_retries=2,
+        base_delay=0.01,
+        retryable_exceptions=(
+            ValueError,
+        ))
+    mock_op = MagicMock(
+        side_effect=[
+            ValueError("fail1"),
+            ValueError("fail2"),
+            "success"])
 
     result = strategy.execute(mock_op)
 
     assert result == "success"
     assert mock_op.call_count == 3
 
+
 def test_retry_strategy_max_retries_exceeded():
     """Test that RetryStrategy raises MaxRetriesExceededError."""
-    strategy = RetryStrategy(max_retries=2, base_delay=0.01, retryable_exceptions=(ValueError,))
+    strategy = RetryStrategy(
+        max_retries=2,
+        base_delay=0.01,
+        retryable_exceptions=(
+            ValueError,
+        ))
     mock_op = MagicMock(side_effect=ValueError("fail"))
 
     with pytest.raises(MaxRetriesExceededError) as excinfo:
@@ -37,15 +53,22 @@ def test_retry_strategy_max_retries_exceeded():
     assert "Max retries (2) exceeded" in str(excinfo.value)
     assert isinstance(excinfo.value.__cause__, ValueError)
 
+
 def test_retry_strategy_ignores_other_exceptions():
     """Test that RetryStrategy does not retry non-retryable exceptions."""
-    strategy = RetryStrategy(max_retries=2, base_delay=0.01, retryable_exceptions=(ValueError,))
+    strategy = RetryStrategy(
+        max_retries=2,
+        base_delay=0.01,
+        retryable_exceptions=(
+            ValueError,
+        ))
     mock_op = MagicMock(side_effect=TypeError("fail"))
 
     with pytest.raises(TypeError):
         strategy.execute(mock_op)
 
     assert mock_op.call_count == 1
+
 
 def test_gemini_client_uses_resilience(mocker):
     """Test that GeminiClient uses the injected resilience policy."""
@@ -77,6 +100,7 @@ def test_gemini_client_uses_resilience(mocker):
     mock_policy.execute.assert_called_once()
     # Check that the first argument to execute was _generate_content
     assert mock_policy.execute.call_args[0][0] == client._generate_content
+
 
 def test_gemini_client_fallback_on_failure(mocker):
     """Test that GeminiClient falls back to scaffold if resilience fails."""

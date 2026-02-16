@@ -18,12 +18,18 @@ logger = logging.getLogger(__name__)
 
 # Category-specific prompt templates
 CATEGORY_PROMPTS = {
-    "web_app": "Generate a creative web application idea. Focus on modern frontend frameworks and responsive design.",
-    "cli_tool": "Generate a useful command-line tool idea. Focus on developer productivity and Unix philosophy.",
-    "api_service": "Generate a RESTful API service idea. Focus on microservices architecture and scalability.",
-    "mobile_app": "Generate a mobile application idea. Focus on user experience and cross-platform compatibility.",
-    "automation": "Generate an automation tool idea. Focus on workflow optimization and integration capabilities.",
-    "ai_ml": "Generate an AI/ML application idea. Focus on practical use cases and accessible interfaces.",
+    "web_app": ("Generate a creative web application idea. Focus on modern frontend frameworks "
+                "and responsive design."),
+    "cli_tool": ("Generate a useful command-line tool idea. Focus on developer productivity "
+                 "and Unix philosophy."),
+    "api_service": ("Generate a RESTful API service idea. Focus on microservices architecture "
+                    "and scalability."),
+    "mobile_app": ("Generate a mobile application idea. Focus on user experience and "
+                   "cross-platform compatibility."),
+    "automation": ("Generate an automation tool idea. Focus on workflow optimization and "
+                   "integration capabilities."),
+    "ai_ml": ("Generate an AI/ML application idea. Focus on practical use cases and "
+              "accessible interfaces."),
     "default": "Generate a creative, unique, and useful software application idea."
 }
 
@@ -39,9 +45,9 @@ class GeminiClient:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
-                "GEMINI_API_KEY environment variable is not set",
-                tip="Get your API key from https://aistudio.google.com/app/apikey and add it to your .env file."
-            )
+                "GEMINI_API_KEY environment variable is not set", tip=(
+                    "Get your API key from https://aistudio.google.com/app/apikey "
+                    "and add it to your .env file."))
 
         self.client = genai.Client(
             api_key=self.api_key,
@@ -67,7 +73,8 @@ class GeminiClient:
 
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
-    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
+    def _generate_content(self, prompt: str, schema: Any,
+                          error_tip: str) -> dict[str, Any]:
         """Helper to generate content with consistent configuration and error handling."""
         try:
             response = self.client.models.generate_content(
@@ -80,7 +87,8 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            return json.loads(response.text or "")  # type: ignore[no-any-return]
+            # type: ignore[no-any-return]
+            return json.loads(response.text or "")
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
@@ -107,7 +115,7 @@ class GeminiClient:
         return self._generate_content(
             prompt,
             IdeaResponse,
-            "The AI model returned invalid JSON. Please try again or try a different category."
+            "The AI model returned invalid JSON. Please try again or try a different category."  # noqa: E501
         )
 
     def extract_idea_from_text(self, text: str) -> dict[str, Any]:
@@ -123,7 +131,7 @@ class GeminiClient:
         Analyze the following text provided in the <text_content> tags.
         Extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
-        
+
         <text_content>
         {safe_text}
         </text_content>
@@ -132,10 +140,11 @@ class GeminiClient:
         return self._generate_content(
             prompt,
             IdeaResponse,
-            "The AI model returned invalid JSON while analyzing the website content."
+            "The AI model returned invalid JSON while analyzing the website content."  # noqa: E501
         )
 
-    def generate_project_scaffold(self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
+    def generate_project_scaffold(
+            self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
         """Generates a complete MVP project scaffold for the given idea.
 
         Args:
@@ -164,7 +173,7 @@ Create a complete, immediately-runnable project with these files:
 3. src/core/__init__.py - Package marker
 4. src/core/app.py - Main business logic class with clear docstrings
 
-## Developer Experience  
+## Developer Experience
 5. Makefile - With targets: install, run, test, clean
 6. .env.example - Sample environment variables (if any needed)
 7. .gitignore - Python + venv + IDE + .env patterns
