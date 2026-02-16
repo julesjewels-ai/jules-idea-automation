@@ -23,7 +23,7 @@ class GitHubClient:
 
     def get_user(self) -> dict[str, Any]:
         """Returns the authenticated user's details."""
-        response = requests.get(f"{self.base_url}/user", headers=self.headers)
+        response = requests.get(f"{self.base_url}/user", headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
 
@@ -35,7 +35,7 @@ class GitHubClient:
             "private": private,
             "auto_init": False # We will add content manually
         }
-        response = requests.post(f"{self.base_url}/user/repos", headers=self.headers, json=payload)
+        response = requests.post(f"{self.base_url}/user/repos", headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
 
@@ -51,7 +51,7 @@ class GitHubClient:
             "content": encoded_content
         }
         
-        response = requests.put(url, headers=self.headers, json=payload)
+        response = requests.put(url, headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
 
@@ -79,13 +79,13 @@ class GitHubClient:
 
     def _get_latest_commit_sha(self, owner: str, repo: str, branch: str) -> str:
         url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(url, headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json()["object"]["sha"]  # type: ignore[no-any-return]
 
     def _get_tree_sha(self, owner: str, repo: str, commit_sha: str) -> str:
         url = f"{self.base_url}/repos/{owner}/{repo}/git/commits/{commit_sha}"
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(url, headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json()["tree"]["sha"]  # type: ignore[no-any-return]
 
@@ -97,7 +97,7 @@ class GitHubClient:
                 "content": file_info["content"],
                 "encoding": "utf-8"
             }
-            response = requests.post(url, headers=self.headers, json=payload)
+            response = requests.post(url, headers=self.headers, json=payload, timeout=30)
             response.raise_for_status()
             
             tree_items.append({
@@ -114,7 +114,7 @@ class GitHubClient:
             "base_tree": base_tree_sha,
             "tree": tree_items
         }
-        response = requests.post(url, headers=self.headers, json=payload)
+        response = requests.post(url, headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()
         return response.json()["sha"]  # type: ignore[no-any-return]
 
@@ -125,12 +125,12 @@ class GitHubClient:
             "tree": tree_sha,
             "parents": parents
         }
-        response = requests.post(url, headers=self.headers, json=payload)
+        response = requests.post(url, headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()
         return response.json()["sha"]  # type: ignore[no-any-return]
 
     def _update_ref(self, owner: str, repo: str, branch: str, commit_sha: str) -> None:
         url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
         payload = {"sha": commit_sha}
-        response = requests.patch(url, headers=self.headers, json=payload)
+        response = requests.patch(url, headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()

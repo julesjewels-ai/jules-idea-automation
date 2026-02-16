@@ -3,6 +3,11 @@ name = "jules-idea-automation"
 version = "1.0.0"
 description = "CLI tool for automating idea generation, repo creation, and Jules session initialization."
 requires-python = ">=3.9"
+license = "MIT"
+readme = "README.md"
+
+[project.urls]
+Repository = "https://github.com/julesjewels-ai/jules-idea-automation"
 
 [tool.black]
 line-length = 120
@@ -11,5 +16,12 @@ line-length = 120
 profile = "black"
 line_length = 120
 
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+strict = true
+explicit_package_bases = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+

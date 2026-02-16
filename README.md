@@ -1,5 +1,9 @@
 # Jules Automation Tool
 
+[![CI](https://github.com/julesjewels-ai/jules-idea-automation/actions/workflows/ci.yml/badge.svg)](https://github.com/julesjewels-ai/jules-idea-automation/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+
 A Python CLI tool that automates the software development lifecycle by generating ideas, creating repositories, and initializing Jules sessions.
 
 ## Overview
@@ -19,7 +23,7 @@ Set these API keys in a `.env` file:
 ## Installation
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/julesjewels-ai/jules-idea-automation.git
 cd jules-idea-automation
 python -m venv venv
 source venv/bin/activate
@@ -115,3 +119,11 @@ src/
 ├── services/        # Gemini, GitHub, Jules, Scraper
 └── utils/           # Polling, reporter
 ```
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.

@@ -46,8 +46,6 @@ def main() -> None:
         )
         sys.exit(1)
     except Exception as e:
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"HTTP Error: {e.response.status_code} - {e.response.text}", file=sys.stderr)
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 

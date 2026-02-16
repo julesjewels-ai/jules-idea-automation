@@ -46,6 +46,15 @@ env/
 # Environment variables
 .env
 
+# Tool caches
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Internal / maintenance
+.Jules/
+.benchmarks/
+
 # Media
 *.mp4
 *.avi
