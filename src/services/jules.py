@@ -156,8 +156,7 @@ class JulesClient:
             session_id: The session ID
         """
         return self._request(
-            "POST", f"{
-                self.base_url}/sessions/{session_id}:approvePlan")
+            "POST", f"{self.base_url}/sessions/{session_id}:approvePlan")
 
     def is_session_complete(
             self, session_id: str) -> tuple[bool, Optional[str]]:

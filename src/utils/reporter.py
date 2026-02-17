@@ -218,8 +218,10 @@ def print_workflow_report(
           f"{Colors.UNDERLINE}{repo_url}{Colors.ENDC}")
 
     if session_id:
+        # Use .format() or concatenation to avoid f-string syntax errors in 3.9
+        session_url_str = session_url or 'N/A'
         print(f"{Colors.BOLD}🤖 Jules:  {Colors.ENDC} "
-              f"{Colors.UNDERLINE}{session_url or 'N/A'}{Colors.ENDC}")
+              f"{Colors.UNDERLINE}{session_url_str}{Colors.ENDC}")
         print(f"{Colors.BOLD}   Session:{Colors.ENDC} {session_id}")
         if pr_url:
             print(f"{Colors.BOLD}🎉 PR:     {Colors.ENDC} "
@@ -281,10 +283,7 @@ def print_progress(elapsed: int, message: str) -> None:
 def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
     """Prints session completion message."""
     duration = format_duration(elapsed)
-    print(
-        f"\n{
-            Colors.GREEN}✅ Session completed after {duration}!{
-            Colors.ENDC}")
+    print(f"\n{Colors.GREEN}✅ Session completed after {duration}!{Colors.ENDC}")
     if pr_url:
         print(f"{Colors.BOLD}🎉 Pull Request:{Colors.ENDC} "
               f"{Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")

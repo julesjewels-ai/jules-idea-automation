@@ -4,11 +4,15 @@ from typing import Protocol, TypeVar, Callable, Any, runtime_checkable
 
 T = TypeVar("T")
 
+
 @runtime_checkable
 class ResiliencePolicy(Protocol):
     """Interface for resilience strategies like retries and circuit breakers."""
 
-    def execute(self, operation: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+    def execute(self,
+                operation: Callable[..., T],
+                *args: Any,
+                **kwargs: Any) -> T:
         """Executes the given operation with the implemented resilience strategy.
 
         Args:
@@ -20,6 +24,6 @@ class ResiliencePolicy(Protocol):
             The result of the operation.
 
         Raises:
-            Exception: The exception raised by the operation if resilience fails.
+            Exception: The exception raised by the operation if resilience fails.  # noqa: E501
         """
         ...

@@ -6,21 +6,27 @@ import argparse
 def create_parser() -> argparse.ArgumentParser:
     """Creates and configures the argument parser."""
     parser = argparse.ArgumentParser(description="Jules Automation Tool")
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    subparsers = parser.add_subparsers(
+        dest="command", help="Available commands")
 
     # Command: list-sources
     subparsers.add_parser("list-sources", help="List available Jules sources")
 
     # Command: agent
     agent_parser = subparsers.add_parser(
-        "agent", 
+        "agent",
         help="Generate an idea using Gemini and send to Jules"
     )
     agent_parser.add_argument(
-        "--category", 
-        choices=["web_app", "cli_tool", "api_service", "mobile_app", "automation", "ai_ml"],
-        help="Target a specific category for idea generation"
-    )
+        "--category",
+        choices=[
+            "web_app",
+            "cli_tool",
+            "api_service",
+            "mobile_app",
+            "automation",
+            "ai_ml"],
+        help="Target a specific category for idea generation")
     agent_parser.add_argument(
         "--private",
         action="store_true",
@@ -40,7 +46,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Command: website
     website_parser = subparsers.add_parser(
-        "website", 
+        "website",
         help="Scrape a website for an idea and send to Jules"
     )
     website_parser.add_argument("--url", required=True, help="URL to scrape")
@@ -63,7 +69,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Command: status
     status_parser = subparsers.add_parser(
-        "status", 
+        "status",
         help="Check status of a Jules session"
     )
     status_parser.add_argument("session_id", help="The session ID to check")
@@ -105,15 +111,13 @@ def create_parser() -> argparse.ArgumentParser:
     )
     manual_parser.add_argument(
         "--slug",
-        help="Custom GitHub repository slug (auto-generated from title if omitted)"
-    )
+        help="Custom GitHub repository slug (auto-generated from title if omitted)")
     manual_parser.add_argument(
         "--tech_stack",
-        help="Comma-separated list of technologies (e.g., 'Python,Flask,PostgreSQL')"
-    )
+        help="Comma-separated list of technologies (e.g., 'Python,Flask,PostgreSQL')")  # noqa: E501
     manual_parser.add_argument(
         "--features",
-        help="Comma-separated list of key features (e.g., 'Auth,CRUD,Export')"
+        help="Comma-separated list of key features (e.g., 'Auth,CRUD,Export')"  # noqa: E501
     )
     manual_parser.add_argument(
         "--private",
@@ -133,4 +137,3 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     return parser
-
