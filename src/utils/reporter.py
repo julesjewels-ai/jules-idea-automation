@@ -160,7 +160,12 @@ class Spinner:
         self._thread.start()
         return self
 
-    def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType]
+    ) -> None:
         self._stop_event.set()
         self._thread.join()
 

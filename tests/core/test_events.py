@@ -1,6 +1,5 @@
 """Tests for the event system."""
 
-import pytest
 from src.core.interfaces import Event
 from src.services.event_bus import LocalEventBus
 

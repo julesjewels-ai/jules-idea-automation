@@ -13,7 +13,8 @@ class GitHubClient:
         if not self.token:
             raise ConfigurationError(
                 "GITHUB_TOKEN environment variable is not set",
-                tip="Create a Personal Access Token (PAT) with 'repo' scope at https://github.com/settings/tokens and add it to your .env file."
+                tip="Create a Personal Access Token (PAT) with 'repo' scope at "
+                    "https://github.com/settings/tokens and add it to your .env file."
             )
         self.base_url = "https://api.github.com"
         self.headers = {
@@ -60,7 +61,14 @@ class GitHubClient:
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
 
-    def create_files(self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main") -> dict[str, Any]:
+    def create_files(
+        self,
+        owner: str,
+        repo: str,
+        files: list[dict[str, str]],
+        message: str,
+        branch: str = "main"
+    ) -> dict[str, Any]:
         """Creates multiple files in a single commit using the Git Data API.
 
         Args:

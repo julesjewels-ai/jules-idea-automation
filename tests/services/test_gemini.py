@@ -6,15 +6,18 @@ from google.genai import errors
 from src.services.gemini import GeminiClient
 from src.utils.errors import ConfigurationError, GenerationError
 
+
 @pytest.fixture
 def mock_genai_client():
     with patch("src.services.gemini.genai.Client") as mock:
         yield mock
 
+
 @pytest.fixture
 def client(mock_genai_client):
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
         return GeminiClient()
+
 
 def test_init_raises_error_without_api_key():
     # Ensure environment is clean
@@ -22,10 +25,12 @@ def test_init_raises_error_without_api_key():
         with pytest.raises(ConfigurationError):
             GeminiClient(api_key=None)
 
+
 def test_init_with_env_var():
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
         client = GeminiClient()
         assert client.api_key == "test_key"
+
 
 def test_generate_idea_success(client):
     mock_response = MagicMock()
@@ -43,6 +48,7 @@ def test_generate_idea_success(client):
     assert result["title"] == "Test App"
     client.client.models.generate_content.assert_called_once()
 
+
 def test_generate_idea_json_error(client):
     mock_response = MagicMock()
     mock_response.text = "invalid json"
@@ -51,17 +57,33 @@ def test_generate_idea_json_error(client):
     with pytest.raises(GenerationError):
         client.generate_idea()
 
+
 def test_generate_idea_api_error(client):
-    # Simulate an API error (e.g., invalid key)
-    client.client.models.generate_content.side_effect = errors.APIError(
-        code=400, response_json={"error": {"message": "400 API key not valid"}}
-    )
+    # Mock the APIError instance
+    # The actual signature is __init__(self, code: int, response: ...)
+    # But it's tricky to mock the response to behave exactly as expected by the error init logic
+    # Instead, we will create a mock class or instance that mimics the behavior needed.
+
+    # Create a subclass to bypass the real __init__ if needed, or pass the right args
+    class MockAPIError(errors.APIError):
+        def __init__(self, message):
+            self.message = message
+
+        def __str__(self):
+            return self.message
+
+    # Create the exception with the expected message string that our code checks
+    api_error = MockAPIError("400 API key not valid")
+
+    client.client.models.generate_content.side_effect = api_error
 
     with pytest.raises(GenerationError) as excinfo:
         client.generate_idea()
 
     assert "Gemini API Error" in str(excinfo.value)
+    # The code uses str(e) to check for "API key not valid"
     assert "Your GEMINI_API_KEY seems invalid" in excinfo.value.tip
+
 
 def test_extract_idea_from_text_success(client):
     mock_response = MagicMock()
@@ -78,6 +100,7 @@ def test_extract_idea_from_text_success(client):
 
     assert result["title"] == "Extracted App"
     client.client.models.generate_content.assert_called_once()
+
 
 def test_extract_idea_from_text_escapes_input(client):
     """Test that input text is escaped to prevent prompt injection."""
@@ -108,6 +131,7 @@ def test_extract_idea_from_text_escapes_input(client):
     # Check that raw malicious tag is NOT present
     assert malicious_input not in prompt
 
+
 def test_generate_project_scaffold_success(client):
     mock_response = MagicMock()
     mock_response.text = json.dumps({
@@ -127,6 +151,7 @@ def test_generate_project_scaffold_success(client):
     result = client.generate_project_scaffold(idea_data)
 
     assert result["run_command"] == "python main.py"
+
 
 def test_generate_project_scaffold_escapes_input(client):
     """Test that scaffold input is escaped."""
@@ -154,6 +179,7 @@ def test_generate_project_scaffold_escapes_input(client):
     assert "Desc &amp; more" in prompt
     assert "<project_title>" in prompt
 
+
 def test_generate_project_scaffold_retry_then_success(client):
     # First call raises exception, second call succeeds
     mock_response = MagicMock()
@@ -173,6 +199,7 @@ def test_generate_project_scaffold_retry_then_success(client):
 
     assert result["run_command"] == "python main.py"
     assert client.client.models.generate_content.call_count == 2
+
 
 def test_generate_project_scaffold_fallback(client):
     # All calls fail

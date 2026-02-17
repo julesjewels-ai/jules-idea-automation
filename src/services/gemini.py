@@ -114,7 +114,7 @@ class GeminiClient:
         Analyze the following text provided in the <text_content> tags.
         Extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
-        
+
         <text_content>
         {safe_text}
         </text_content>
@@ -155,7 +155,7 @@ Create a complete, immediately-runnable project with these files:
 3. src/core/__init__.py - Package marker
 4. src/core/app.py - Main business logic class with clear docstrings
 
-## Developer Experience  
+## Developer Experience
 5. Makefile - With targets: install, run, test, clean
 6. .env.example - Sample environment variables (if any needed)
 7. .gitignore - Python + venv + IDE + .env patterns

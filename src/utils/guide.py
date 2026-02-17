@@ -12,7 +12,7 @@ def print_welcome_guide() -> None:
     print(f"{Colors.BOLD}{Colors.HEADER}{'=' * 70}{Colors.ENDC}")
     print("\n")
 
-    intro = f"""This tool automates the end-to-end workflow of turning ideas into 
+    intro = f"""This tool automates the end-to-end workflow of turning ideas into
 working prototypes with automated development sessions.
 
 {Colors.BOLD}How it works:{Colors.ENDC}
@@ -80,7 +80,7 @@ def print_agent_guide() -> None:
     """Display detailed guide for agent mode."""
 
     content = f"""{Colors.BOLD}What is Agent Mode?{Colors.ENDC}
-Agent mode uses Google's Gemini AI to generate creative software ideas 
+Agent mode uses Google's Gemini AI to generate creative software ideas
 from scratch. Perfect when you want inspiration or a quick prototype.
 
 {Colors.BOLD}Basic Usage:{Colors.ENDC}
@@ -119,7 +119,7 @@ def print_website_guide() -> None:
     """Display detailed guide for website mode."""
 
     content = f"""{Colors.BOLD}What is Website Mode?{Colors.ENDC}
-Website mode extracts software ideas from public web pages. Perfect 
+Website mode extracts software ideas from public web pages. Perfect
 when you found an interesting concept online and want to build it.
 
 {Colors.BOLD}Basic Usage:{Colors.ENDC}
@@ -159,7 +159,7 @@ def print_manual_guide() -> None:
     """Display detailed guide for manual mode."""
 
     content = f"""{Colors.BOLD}What is Manual Mode?{Colors.ENDC}
-Manual mode lets you provide your own software idea details. Perfect 
+Manual mode lets you provide your own software idea details. Perfect
 when you know exactly what you want to build.
 
 {Colors.BOLD}Basic Usage (Title Only):{Colors.ENDC}

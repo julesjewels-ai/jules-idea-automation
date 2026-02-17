@@ -1,10 +1,10 @@
 """Tests for the console reporter."""
 
-import pytest
 from unittest.mock import MagicMock, patch
 from src.services.reporting import ConsoleReporter
 from src.services.event_bus import LocalEventBus
 from src.core.events import StepStarted, StepCompleted, StepProgress
+
 
 @patch("src.services.reporting.Spinner")
 def test_console_reporter_spinner(mock_spinner_cls):
