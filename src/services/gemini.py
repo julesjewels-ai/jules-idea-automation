@@ -70,7 +70,8 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            return json.loads(response.text or "")  # type: ignore[no-any-return]
+            # type: ignore[no-any-return]
+            return json.loads(response.text or "")
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",

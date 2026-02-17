@@ -10,7 +10,6 @@ from src.utils.reporter import (
     print_watch_complete,
     print_watch_timeout,
     print_sources_list,
-    print_idea_summary,
     Spinner,
     format_duration,
 )
@@ -99,14 +98,20 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
         idea_data: The idea data to process
     """
     from src.core.workflow import IdeaWorkflow
+    from src.services.event_bus import LocalEventBus
+    from src.services.reporting import ConsoleReporter
 
-    print_idea_summary(idea_data)
+    # Setup Event Bus and Reporter
+    bus = LocalEventBus()
+    reporter = ConsoleReporter(verbose=True)
+    reporter.register(bus)
 
-    workflow = IdeaWorkflow()
+    workflow = IdeaWorkflow(bus=bus)
     result = workflow.execute(
         idea_data,
         private=args.private,
-        timeout=args.timeout
+        timeout=args.timeout,
+        verbose=False  # Deprecated, handled by reporter
     )
 
     if result.session_id and args.watch:
