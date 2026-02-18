@@ -60,8 +60,15 @@ def test_generate_idea_json_error(client):
 
 def test_generate_idea_api_error(client):
     # Simulate an API error (e.g., invalid key)
+    # google-genai 0.8.0 APIError expects a response object with specific attributes
+    # We can subclass it to mock the behavior safely or mock the response object
+
+    class MockResponse:
+        def __init__(self):
+            self.body_segments = [{"error": {"message": "400 API key not valid"}}]
+
     client.client.models.generate_content.side_effect = errors.APIError(
-        code=400, response_json={"error": {"message": "400 API key not valid"}}
+        code=400, response=MockResponse()
     )
 
     with pytest.raises(GenerationError) as excinfo:
