@@ -69,7 +69,7 @@ def test_handle_manual_long_title(mock_slugify, mock_execute):
     # Verify title specifically
     call_args = mock_execute.call_args
     idea_data = call_args[0][1]
-    assert idea_data["title"] == "This is a very long title that is actually a descr"
+    assert idea_data["title"] == "A" * 50
 
 
 @patch('src.cli.commands._execute_and_watch')
