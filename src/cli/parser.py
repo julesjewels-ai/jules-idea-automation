@@ -13,11 +13,11 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Command: agent
     agent_parser = subparsers.add_parser(
-        "agent", 
+        "agent",
         help="Generate an idea using Gemini and send to Jules"
     )
     agent_parser.add_argument(
-        "--category", 
+        "--category",
         choices=["web_app", "cli_tool", "api_service", "mobile_app", "automation", "ai_ml"],
         help="Target a specific category for idea generation"
     )
@@ -40,7 +40,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Command: website
     website_parser = subparsers.add_parser(
-        "website", 
+        "website",
         help="Scrape a website for an idea and send to Jules"
     )
     website_parser.add_argument("--url", required=True, help="URL to scrape")
@@ -63,7 +63,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Command: status
     status_parser = subparsers.add_parser(
-        "status", 
+        "status",
         help="Check status of a Jules session"
     )
     status_parser.add_argument("session_id", help="The session ID to check")
@@ -133,4 +133,3 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     return parser
-
