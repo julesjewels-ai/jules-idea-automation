@@ -30,10 +30,12 @@ def handle_list_sources() -> None:
 def handle_agent(args: Namespace) -> None:
     """Handle the agent command."""
     from src.services.gemini import GeminiClient
+    from src.services.cache import FileCacheProvider
 
     category = getattr(args, 'category', None)
 
-    gemini = GeminiClient()
+    cache = FileCacheProvider()
+    gemini = GeminiClient(cache_provider=cache)
     msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
     with Spinner(msg, success_message="Idea generated"):
         idea_data = gemini.generate_idea(category=category)
@@ -45,6 +47,7 @@ def handle_website(args: Namespace) -> None:
     """Handle the website command."""
     from src.services.gemini import GeminiClient
     from src.services.scraper import scrape_text
+    from src.services.cache import FileCacheProvider
 
     print(f"Scraping {args.url}...")
 
@@ -53,7 +56,8 @@ def handle_website(args: Namespace) -> None:
 
     print(f"✓ Extracted {len(text)} characters of content")
 
-    gemini = GeminiClient()
+    cache = FileCacheProvider()
+    gemini = GeminiClient(cache_provider=cache)
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
         idea_data = gemini.extract_idea_from_text(text)
 

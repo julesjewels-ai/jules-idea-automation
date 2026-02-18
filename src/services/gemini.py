@@ -3,12 +3,14 @@ from __future__ import annotations
 import os
 import json
 import logging
+import hashlib
 from typing import Optional, Any
 from xml.sax.saxutils import escape
 from google import genai
 from google.genai import types, errors
 
 from src.core.models import IdeaResponse, ProjectScaffold
+from src.core.interfaces import CacheProvider
 from src.utils.errors import ConfigurationError, GenerationError
 
 
@@ -29,8 +31,14 @@ CATEGORY_PROMPTS = {
 class GeminiClient:
     """Client for the Google Gemini API, handling idea generation and project scaffolding."""
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        cache_provider: Optional[CacheProvider] = None
+    ) -> None:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        self.cache_provider = cache_provider
+
         if not self.api_key:
             raise ConfigurationError(
                 "GEMINI_API_KEY environment variable is not set",
@@ -59,6 +67,17 @@ class GeminiClient:
 
     def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
         """Helper to generate content with consistent configuration and error handling."""
+        # Check cache if available
+        cache_key = ""
+        if self.cache_provider:
+            # Create a deterministic key based on model and prompt hash
+            prompt_hash = hashlib.sha256(prompt.encode()).hexdigest()
+            cache_key = f"gemini:{self.model_name}:{prompt_hash}"
+            cached_result = self.cache_provider.get(cache_key)
+            if cached_result is not None:
+                logger.info(f"Cache hit for key: {cache_key}")
+                return cached_result  # type: ignore[no-any-return]
+
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -70,7 +89,13 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            return json.loads(response.text or "")  # type: ignore[no-any-return]
+            result = json.loads(response.text or "")
+
+            # Cache the successful result
+            if self.cache_provider and cache_key:
+                self.cache_provider.set(cache_key, result)
+
+            return result  # type: ignore[no-any-return]
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
@@ -113,7 +138,7 @@ class GeminiClient:
         Analyze the following text provided in the <text_content> tags.
         Extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
-        
+
         <text_content>
         {safe_text}
         </text_content>
@@ -154,7 +179,7 @@ Create a complete, immediately-runnable project with these files:
 3. src/core/__init__.py - Package marker
 4. src/core/app.py - Main business logic class with clear docstrings
 
-## Developer Experience  
+## Developer Experience
 5. Makefile - With targets: install, run, test, clean
 6. .env.example - Sample environment variables (if any needed)
 7. .gitignore - Python + venv + IDE + .env patterns
