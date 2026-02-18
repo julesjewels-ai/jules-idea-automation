@@ -3,6 +3,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from src.cli.commands import handle_list_sources
 from src.utils.reporter import Colors
+from typing import Any, Dict, List
 
 # Ensure module is loaded for patching
 import src.services.jules
@@ -10,10 +11,10 @@ import src.services.jules
 @patch('src.cli.commands.Spinner')
 @patch('src.services.jules.JulesClient')
 @patch('src.cli.commands.print_sources_list')
-def test_handle_list_sources(mock_print_sources, mock_jules_client_class, mock_spinner):
+def test_handle_list_sources(mock_print_sources: MagicMock, mock_jules_client_class: MagicMock, mock_spinner: MagicMock) -> None:
     # Setup
     mock_client_instance = mock_jules_client_class.return_value
-    mock_sources = {"sources": [{"name": "source1", "displayName": "Source 1"}]}
+    mock_sources: Dict[str, List[Dict[str, str]]] = {"sources": [{"name": "source1", "displayName": "Source 1"}]}
     mock_client_instance.list_sources.return_value = mock_sources
 
     # Execute
@@ -28,10 +29,10 @@ def test_handle_list_sources(mock_print_sources, mock_jules_client_class, mock_s
 @patch('src.cli.commands.Spinner')
 @patch('src.services.jules.JulesClient')
 @patch('src.cli.commands.print_sources_list')
-def test_handle_list_sources_empty(mock_print_sources, mock_jules_client_class, mock_spinner):
+def test_handle_list_sources_empty(mock_print_sources: MagicMock, mock_jules_client_class: MagicMock, mock_spinner: MagicMock) -> None:
     # Setup
     mock_client_instance = mock_jules_client_class.return_value
-    mock_sources = {}
+    mock_sources: Dict[str, Any] = {}
     mock_client_instance.list_sources.return_value = mock_sources
 
     # Execute
@@ -42,15 +43,15 @@ def test_handle_list_sources_empty(mock_print_sources, mock_jules_client_class, 
 
 from src.utils.reporter import print_sources_list
 
-def test_print_sources_list(capsys):
+def test_print_sources_list(capsys: Any) -> None:
     sources = {"sources": [{"name": "source1", "displayName": "Source 1"}]}
     print_sources_list(sources)
     captured = capsys.readouterr()
     assert "Found 1 source(s)" in captured.out
     assert "source1" in captured.out
 
-def test_print_sources_list_empty(capsys):
-    sources = {}
+def test_print_sources_list_empty(capsys: Any) -> None:
+    sources: Dict[str, Any] = {}
     print_sources_list(sources)
     captured = capsys.readouterr()
     assert "No sources found" in captured.out
