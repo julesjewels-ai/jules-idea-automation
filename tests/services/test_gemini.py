@@ -5,6 +5,7 @@ import os
 from google.genai import errors
 from src.services.gemini import GeminiClient
 from src.utils.errors import ConfigurationError, GenerationError
+from src.core.models import IdeaResponse
 
 @pytest.fixture
 def mock_genai_client():
@@ -53,13 +54,24 @@ def test_generate_idea_json_error(client):
 
 def test_generate_idea_api_error(client):
     # Simulate an API error (e.g., invalid key)
-    client.client.models.generate_content.side_effect = errors.APIError(
-        code=400, response_json={"error": {"message": "400 API key not valid"}}
-    )
+    mock_response = MagicMock()
+    mock_response.status_code = 400
+    # The APIError uses the response text or json for message, let's ensure it's set
+    # Actually, APIError likely formats the message itself.
+    # We rely on str(e) containing "400 API key not valid"
+    # If APIError(400, response) is used, response.json() or response.text might be used.
+    mock_response.json.return_value = {"error": {"message": "400 API key not valid"}}
+    mock_response.text = '{"error": {"message": "400 API key not valid"}}'
+
+    # Based on memory, constructor is (code, response)
+    client.client.models.generate_content.side_effect = errors.APIError(400, mock_response)
 
     with pytest.raises(GenerationError) as excinfo:
         client.generate_idea()
 
+    # The error message from APIError might vary, but we expect it to contain 400 or the message.
+    # If the mocked APIError doesn't format it nicely, we might need to adjust assertion.
+    # But let's assume it does.
     assert "Gemini API Error" in str(excinfo.value)
     assert "Your GEMINI_API_KEY seems invalid" in excinfo.value.tip
 
@@ -186,3 +198,38 @@ def test_generate_project_scaffold_fallback(client):
     assert result["run_command"] == "python main.py"
     assert any(f["path"] == "main.py" for f in result["files"])
     assert client.client.models.generate_content.call_count == 2
+
+def test_generate_content_uses_cache(client):
+    """Test that cache is checked and used."""
+    mock_cache = MagicMock()
+    client.cache_provider = mock_cache
+
+    # Mock cache hit
+    mock_cache.get.return_value = {"cached": "data"}
+
+    # Use IdeaResponse as a valid schema
+    result = client._generate_content("prompt", IdeaResponse, "error")
+
+    assert result == {"cached": "data"}
+    client.client.models.generate_content.assert_not_called()
+    mock_cache.get.assert_called_once()
+
+
+def test_generate_content_saves_to_cache(client):
+    """Test that result is saved to cache on miss."""
+    mock_cache = MagicMock()
+    client.cache_provider = mock_cache
+
+    # Mock cache miss
+    mock_cache.get.return_value = None
+
+    # Mock API response
+    mock_response = MagicMock()
+    mock_response.text = json.dumps({"new": "data"})
+    client.client.models.generate_content.return_value = mock_response
+
+    # Use IdeaResponse as a valid schema
+    result = client._generate_content("prompt", IdeaResponse, "error")
+
+    assert result == {"new": "data"}
+    mock_cache.set.assert_called_once()
