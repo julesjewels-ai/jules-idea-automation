@@ -11,7 +11,7 @@ from src.core.interfaces import CacheProvider
 logger = logging.getLogger(__name__)
 
 
-class FileCacheProvider:
+class FileCacheProvider(CacheProvider):
     """File-based cache provider."""
 
     def __init__(self, cache_dir: str = ".cache/gemini") -> None:
