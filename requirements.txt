@@ -34,13 +34,13 @@ imageio-ffmpeg==0.6.0
     # via moviepy
 moviepy==2.2.1
     # via -r requirements.in
-numpy==2.4.2
+numpy==1.26.4
     # via
+    #   -r requirements.in
     #   imageio
     #   moviepy
 pillow==11.3.0
     # via
-    #   -r requirements.in
     #   imageio
     #   moviepy
 proglog==0.1.12

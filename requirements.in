@@ -7,4 +7,4 @@ google-auth==2.30.0
 pydantic==2.10.6
 moviepy>=1.0.3
 ffmpeg-python>=0.2.0
-Pillow>=10.0.0
+numpy<2.0

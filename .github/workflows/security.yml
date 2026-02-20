@@ -17,6 +17,8 @@ jobs:
           fetch-depth: 0
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   sast:
     name: Subprocess & Code Audit
@@ -42,4 +44,5 @@ jobs:
       - name: Install pip-audit
         run: pip install pip-audit
       - name: Run pip-audit
-        run: pip-audit -r requirements.txt
+        # Ignore CVE-2026-25990 (Pillow) due to upstream moviepy constraint <12.0
+        run: pip-audit -r requirements.txt --ignore-vuln CVE-2026-25990
