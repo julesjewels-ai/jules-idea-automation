@@ -70,7 +70,11 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            return json.loads(response.text or "")  # type: ignore[no-any-return]
+            raw = json.loads(response.text or "")
+            # Validate against Pydantic schema if available
+            if hasattr(schema, 'model_validate'):
+                return schema.model_validate(raw).model_dump()  # type: ignore[no-any-return]
+            return raw  # type: ignore[no-any-return]
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",

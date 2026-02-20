@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Optional, Any
 
 from src.services.gemini import GeminiClient
@@ -11,6 +12,8 @@ from src.core.readme_builder import build_readme
 from src.core.models import WorkflowResult
 from src.utils.polling import poll_until
 from src.utils.reporter import print_workflow_report
+
+logger = logging.getLogger(__name__)
 
 
 class IdeaWorkflow:
@@ -159,12 +162,19 @@ class IdeaWorkflow:
         if not scaffold.get('files'):
             return files_to_create
 
+        if not isinstance(scaffold['files'], list):
+            logger.warning("Scaffold 'files' is not a list, skipping file creation.")
+            return files_to_create
+
         for file_info in scaffold['files']:
+            if not isinstance(file_info, dict) or 'path' not in file_info:
+                logger.warning(f"Skipping malformed file entry: {type(file_info)}")
+                continue
             if file_info['path'].lower() == 'readme.md':
                 continue
             files_to_create.append({
                 'path': file_info['path'],
-                'content': file_info['content']
+                'content': file_info.get('content', '')
             })
 
         if scaffold.get('requirements'):
