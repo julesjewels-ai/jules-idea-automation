@@ -105,7 +105,7 @@ python main.py guide --workflow agent
 | Flag | Description |
 |------|-------------|
 | `--category` | Target a specific idea category |
-| `--private` | Create private repo (default: public) |
+| `--public` | Create public repo (default: private) |
 | `--timeout` | Timeout in seconds (default: 1800) |
 | `--watch` | Watch session until completion |
 

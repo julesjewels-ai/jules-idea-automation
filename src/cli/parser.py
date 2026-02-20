@@ -22,9 +22,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Target a specific category for idea generation"
     )
     agent_parser.add_argument(
-        "--private",
+        "--public",
         action="store_true",
-        help="Create a private repository (default: public)"
+        help="Create a public repository (default: private)"
     )
     agent_parser.add_argument(
         "--timeout",
@@ -45,9 +45,9 @@ def create_parser() -> argparse.ArgumentParser:
     )
     website_parser.add_argument("--url", required=True, help="URL to scrape")
     website_parser.add_argument(
-        "--private",
+        "--public",
         action="store_true",
-        help="Create a private repository (default: public)"
+        help="Create a public repository (default: private)"
     )
     website_parser.add_argument(
         "--timeout",
@@ -116,9 +116,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Comma-separated list of key features (e.g., 'Auth,CRUD,Export')"
     )
     manual_parser.add_argument(
-        "--private",
+        "--public",
         action="store_true",
-        help="Create a private repository (default: public)"
+        help="Create a public repository (default: private)"
     )
     manual_parser.add_argument(
         "--timeout",

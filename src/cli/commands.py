@@ -95,7 +95,7 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
     """Execute the workflow and watch the session if requested.
 
     Args:
-        args: Command line arguments containing private and timeout settings
+        args: Command line arguments containing public and timeout settings
         idea_data: The idea data to process
     """
     from src.core.workflow import IdeaWorkflow
@@ -105,7 +105,7 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
     workflow = IdeaWorkflow()
     result = workflow.execute(
         idea_data,
-        private=args.private,
+        private=not args.public,
         timeout=args.timeout
     )
 

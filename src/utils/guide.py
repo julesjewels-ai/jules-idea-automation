@@ -56,7 +56,7 @@ working prototypes with automated development sessions.
     # Quick tips
     tips_content = f"""{Colors.BOLD}Common Options:{Colors.ENDC}
 • --watch      Watch the session until completion
-• --private    Create a private repository (default: public)
+• --public     Create a public repository (default: private)
 • --category   Target specific type (agent mode only)
 
 {Colors.BOLD}Get Detailed Help:{Colors.ENDC}
@@ -100,8 +100,8 @@ python main.py agent --category cli_tool
 {Colors.BOLD}Watch Until Complete:{Colors.ENDC}
 python main.py agent --watch
 
-{Colors.BOLD}Create Private Repository:{Colors.ENDC}
-python main.py agent --private
+{Colors.BOLD}Create Public Repository:{Colors.ENDC}
+python main.py agent --public
 
 {Colors.BOLD}What Happens Next?{Colors.ENDC}
 1. Gemini generates a unique software idea
@@ -127,8 +127,8 @@ python main.py website --url https://example.com
 {Colors.BOLD}With Watch Mode:{Colors.ENDC}
 python main.py website --url https://example.com --watch
 
-{Colors.BOLD}Create Private Repository:{Colors.ENDC}
-python main.py website --url https://example.com --private
+{Colors.BOLD}Create Public Repository:{Colors.ENDC}
+python main.py website --url https://example.com --public
 
 {Colors.BOLD}Requirements:{Colors.ENDC}
 • URL must be publicly accessible (no login required)
@@ -179,7 +179,7 @@ python main.py manual \"Task Manager\" \\
 • --slug         Custom repository name (auto-generated if omitted)
 • --tech_stack   Comma-separated list of technologies
 • --features     Comma-separated list of key features
-• --private      Create private repository (default: public)
+• --public       Create public repository (default: private)
 • --watch        Watch session until completion
 
 {Colors.BOLD}Tips:{Colors.ENDC}
@@ -219,7 +219,7 @@ python main.py manual \"Smart Home Dashboard\" \\
   --description \"Real-time IoT device monitoring and control\" \\
   --tech_stack \"React,Node.js,WebSockets,PostgreSQL\" \\
   --features \"Device monitoring,Alert system,Usage analytics\" \\
-  --private --watch
+  --public --watch
 
 {Colors.BOLD}Check Session Status:{Colors.ENDC}
 python main.py status <session_id>

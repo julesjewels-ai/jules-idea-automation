@@ -39,7 +39,7 @@ class IdeaWorkflow:
     def execute(
         self,
         idea_data: dict[str, Any],
-        private: bool = False,
+        private: bool = True,
         timeout: int = 1800,
         verbose: bool = True
     ) -> WorkflowResult:
@@ -47,7 +47,7 @@ class IdeaWorkflow:
         
         Args:
             idea_data: Dict with title, description, slug, tech_stack, features
-            private: Create private repository (default: public)
+            private: Create private repository (default: private)
             timeout: Max seconds to wait for Jules indexing
             verbose: Print progress messages
         
