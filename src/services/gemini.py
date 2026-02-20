@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import os
 import json
+import hashlib
 import logging
 from typing import Optional, Any
 from xml.sax.saxutils import escape
 from google import genai
 from google.genai import types, errors
 
+from src.core.interfaces import CacheProvider
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
 
@@ -29,7 +31,11 @@ CATEGORY_PROMPTS = {
 class GeminiClient:
     """Client for the Google Gemini API, handling idea generation and project scaffolding."""
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        cache_provider: Optional[CacheProvider] = None
+    ) -> None:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -42,6 +48,7 @@ class GeminiClient:
             http_options={'api_version': 'v1beta'}
         )
         self.model_name = "gemini-3-pro-preview"
+        self.cache_provider = cache_provider
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
         """Maps Gemini API errors to user-friendly GenerationError."""
@@ -59,6 +66,23 @@ class GeminiClient:
 
     def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
         """Helper to generate content with consistent configuration and error handling."""
+        # Try cache first
+        cache_key = ""
+        if self.cache_provider:
+            schema_name = getattr(schema, '__name__', str(schema))
+            prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+            cache_key = f"{self.model_name}:{prompt_hash}:{schema_name}"
+            cached = self.cache_provider.get(cache_key)
+            if cached:
+                try:
+                    logger.info(f"Cache hit for key: {cache_key}")
+                    # Re-validate against schema to ensure type safety
+                    if hasattr(schema, 'model_validate'):
+                        return schema.model_validate(cached).model_dump()  # type: ignore[no-any-return]
+                    return cached
+                except Exception as e:
+                    logger.warning(f"Cache validation failed for key {cache_key}: {e}. Treating as miss.")
+
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -71,10 +95,19 @@ class GeminiClient:
                 ),
             )
             raw = json.loads(response.text or "")
+
+            result: dict[str, Any]
             # Validate against Pydantic schema if available
             if hasattr(schema, 'model_validate'):
-                return schema.model_validate(raw).model_dump()  # type: ignore[no-any-return]
-            return raw  # type: ignore[no-any-return]
+                result = schema.model_validate(raw).model_dump()
+            else:
+                result = raw
+
+            # Store in cache
+            if self.cache_provider and cache_key:
+                self.cache_provider.set(cache_key, result)
+
+            return result
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
@@ -117,7 +150,7 @@ class GeminiClient:
         Analyze the following text provided in the <text_content> tags.
         Extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
-        
+
         <text_content>
         {safe_text}
         </text_content>
@@ -158,7 +191,7 @@ Create a complete, immediately-runnable project with these files:
 3. src/core/__init__.py - Package marker
 4. src/core/app.py - Main business logic class with clear docstrings
 
-## Developer Experience  
+## Developer Experience
 5. Makefile - With targets: install, run, test, clean
 6. .env.example - Sample environment variables (if any needed)
 7. .gitignore - Python + venv + IDE + .env patterns
@@ -193,7 +226,7 @@ Create a complete, immediately-runnable project with these files:
                     logger.error(
                         f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
                     # Return minimal fallback scaffold
-                    return ProjectScaffold.create_fallback_scaffold(
+                    return ProjectScaffold.create_fallback_scaffold(  # type: ignore[no-any-return]
                         idea_data['title'],
                         idea_data['description']
                     ).model_dump()
