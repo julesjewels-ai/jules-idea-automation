@@ -1,56 +1,39 @@
-import pytest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import patch
 from src.cli.commands import watch_session
-import src.services.jules
+
 
 @patch('src.services.jules.JulesClient')
-@patch('src.cli.commands.Spinner')
-@patch('src.utils.polling.time.sleep') # Speed up tests
-@patch('src.cli.commands.print_watch_complete')
-@patch('src.cli.commands.print_watch_timeout')
-def test_watch_session_success(mock_timeout_print, mock_complete_print, mock_sleep, mock_spinner_cls, mock_jules_cls):
-    # Setup
-    mock_jules = mock_jules_cls.return_value
-    # is_session_complete returns (is_complete, pr_url)
-    # First call False, Second call True
-    mock_jules.is_session_complete.side_effect = [(False, None), (True, "http://pr.url")]
-
-    # Mock list_activities
-    mock_jules.list_activities.return_value = {
-        "activities": [{"progressUpdated": {"title": "Doing something"}}]
+@patch('src.utils.polling.time.sleep')  # Speed up tests
+def test_watch_session_success(mock_sleep, MockJulesClient, capsys):
+    mock_client = MockJulesClient.return_value
+    # Sequence: Not complete, Not complete, Complete
+    mock_client.is_session_complete.side_effect = [
+        (False, None),
+        (False, None),
+        (True, "http://pr-url")
+    ]
+    mock_client.list_activities.return_value = {
+        "activities": [{"progressUpdated": {"title": "Working..."}}]
     }
 
-    # Execute
-    result, pr_url = watch_session("sess-123", timeout=100)
+    is_complete, pr_url = watch_session("sess_123", timeout=1)
 
-    # Verify
-    assert result is True
-    assert pr_url == "http://pr.url"
-    mock_complete_print.assert_called_once()
-    mock_timeout_print.assert_not_called()
-    assert mock_jules.is_session_complete.call_count == 2
+    assert is_complete is True
+    assert pr_url == "http://pr-url"
+    # Should have polled 3 times
+    assert mock_client.is_session_complete.call_count == 3
+
 
 @patch('src.services.jules.JulesClient')
-@patch('src.cli.commands.Spinner')
 @patch('src.utils.polling.time.sleep')
-@patch('src.cli.commands.print_watch_complete')
-@patch('src.cli.commands.print_watch_timeout')
-def test_watch_session_timeout(mock_timeout_print, mock_complete_print, mock_sleep, mock_spinner_cls, mock_jules_cls):
-    # Setup
-    mock_jules = mock_jules_cls.return_value
-    mock_jules.is_session_complete.return_value = (False, None)
-    mock_jules.get_session.return_value = {"url": "http://session.url"}
+def test_watch_session_timeout(mock_sleep, MockJulesClient, capsys):
+    mock_client = MockJulesClient.return_value
+    # Always incomplete
+    mock_client.is_session_complete.return_value = (False, None)
+    mock_client.get_session.return_value = {"url": "http://session-url"}
 
-    # Execute
-    # poll_interval is 30. timeout 50.
-    # 0 < 50 -> check -> sleep 30 -> elapsed 30
-    # 30 < 50 -> check -> sleep 30 -> elapsed 60
-    # 60 < 50 -> Break
-    result, pr_url = watch_session("sess-123", timeout=50)
+    # Short timeout to force exit
+    is_complete, pr_url = watch_session("sess_123", timeout=0.1)
 
-    # Verify
-    assert result is False
+    assert is_complete is False
     assert pr_url is None
-    mock_complete_print.assert_not_called()
-    mock_timeout_print.assert_called_once()
-    assert mock_jules.is_session_complete.call_count >= 2

@@ -1,63 +1,66 @@
-from __future__ import annotations
+"""GitHub API Client."""
 
+from __future__ import annotations
 import os
 import requests
 import base64
 from typing import Optional, Any
 from src.utils.errors import ConfigurationError
 
+
 class GitHubClient:
+    """Client for GitHub API."""
+
     def __init__(self, token: Optional[str] = None) -> None:
         self.token = token or os.environ.get("GITHUB_TOKEN")
         if not self.token:
             raise ConfigurationError(
                 "GITHUB_TOKEN environment variable is not set",
-                tip="Create a Personal Access Token (PAT) with 'repo' scope at https://github.com/settings/tokens and add it to your .env file."
+                tip="Create a Personal Access Token (PAT) with 'repo' scope at "
+                "https://github.com/settings/tokens and add it to your .env file."
             )
-        self.base_url = "https://api.github.com"
+
+        self.api_url = "https://api.github.com"
         self.headers = {
             "Authorization": f"token {self.token}",
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28"
+            "Accept": "application/vnd.github.v3+json"
         }
 
     def get_user(self) -> dict[str, Any]:
-        """Returns the authenticated user's details."""
-        response = requests.get(f"{self.base_url}/user", headers=self.headers, timeout=30)
+        """Get authenticated user details."""
+        response = requests.get(f"{self.api_url}/user", headers=self.headers)
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
 
-    def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
-        """Creates a new repository."""
-        payload = {
+    def create_repo(self, name: str, description: str, private: bool = False) -> dict[str, Any]:
+        """Create a new repository."""
+        data = {
             "name": name,
             "description": description,
             "private": private,
-            "auto_init": False # We will add content manually
+            "auto_init": False  # We will add content manually
         }
-        response = requests.post(f"{self.base_url}/user/repos", headers=self.headers, json=payload, timeout=30)
+        response = requests.post(f"{self.api_url}/user/repos", headers=self.headers, json=data)
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
 
-    def create_file(self, owner: str, repo: str, path: str, content: str, message: str) -> dict[str, Any]:
-        """Creates or updates a file in the repository."""
-        url = f"{self.base_url}/repos/{owner}/{repo}/contents/{path}"
-        
-        # GitHub API requires content to be base64 encoded
-        encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
-        
-        payload = {
+    def create_file(self, owner: str, repo: str, path: str, content: str, message: str,
+                    branch: str = "main") -> dict[str, Any]:
+        """Create a new file in the repository."""
+        url = f"{self.api_url}/repos/{owner}/{repo}/contents/{path}"
+        data = {
             "message": message,
-            "content": encoded_content
+            "content": base64.b64encode(content.encode("utf-8")).decode("utf-8"),
+            "branch": branch
         }
-        
-        response = requests.put(url, headers=self.headers, json=payload, timeout=30)
+        response = requests.put(url, headers=self.headers, json=data)
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
 
-    def create_files(self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main") -> dict[str, Any]:
+    def create_files(self, owner: str, repo: str, files: list[dict[str, str]],
+                     message: str, branch: str = "main") -> dict[str, Any]:
         """Creates multiple files in a single commit using the Git Data API.
-        
+
         Args:
             owner: Repository owner
             repo: Repository name
@@ -65,72 +68,73 @@ class GitHubClient:
             message: Commit message
             branch: Target branch (default: main)
         """
-        latest_commit_sha = self._get_latest_commit_sha(owner, repo, branch)
-        base_tree_sha = self._get_tree_sha(owner, repo, latest_commit_sha)
-        tree_items = self._create_blobs(owner, repo, files)
-        new_tree_sha = self._create_tree(owner, repo, base_tree_sha, tree_items)
-        new_commit_sha = self._create_commit(owner, repo, message, new_tree_sha, [latest_commit_sha])
-        self._update_ref(owner, repo, branch, new_commit_sha)
-        
-        return {
-            "commit_sha": new_commit_sha,
-            "files_created": len(files)
-        }
+        # Get latest commit SHA
+        ref_url = f"{self.api_url}/repos/{owner}/{repo}/git/ref/heads/{branch}"
+        ref_resp = requests.get(ref_url, headers=self.headers)
+        ref_resp.raise_for_status()
+        latest_commit_sha = ref_resp.json()["object"]["sha"]
 
-    def _get_latest_commit_sha(self, owner: str, repo: str, branch: str) -> str:
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
-        response = requests.get(url, headers=self.headers, timeout=30)
-        response.raise_for_status()
-        return response.json()["object"]["sha"]  # type: ignore[no-any-return]
+        # Get tree SHA
+        commit_url = f"{self.api_url}/repos/{owner}/{repo}/git/commits/{latest_commit_sha}"
+        commit_resp = requests.get(commit_url, headers=self.headers)
+        commit_resp.raise_for_status()
+        base_tree_sha = commit_resp.json()["tree"]["sha"]
 
-    def _get_tree_sha(self, owner: str, repo: str, commit_sha: str) -> str:
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/commits/{commit_sha}"
-        response = requests.get(url, headers=self.headers, timeout=30)
-        response.raise_for_status()
-        return response.json()["tree"]["sha"]  # type: ignore[no-any-return]
-
-    def _create_blobs(self, owner: str, repo: str, files: list[dict[str, str]]) -> list[dict[str, Any]]:
+        # Create blobs and build tree
         tree_items = []
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/blobs"
         for file_info in files:
-            payload = {
+            # Create blob
+            blob_data = {
                 "content": file_info["content"],
                 "encoding": "utf-8"
             }
-            response = requests.post(url, headers=self.headers, json=payload, timeout=30)
-            response.raise_for_status()
-            
+            blob_resp = requests.post(
+                f"{self.api_url}/repos/{owner}/{repo}/git/blobs",
+                headers=self.headers,
+                json=blob_data
+            )
+            blob_resp.raise_for_status()
+            blob_sha = blob_resp.json()["sha"]
+
             tree_items.append({
                 "path": file_info["path"],
                 "mode": "100644",
                 "type": "blob",
-                "sha": response.json()["sha"]
+                "sha": blob_sha
             })
-        return tree_items
 
-    def _create_tree(self, owner: str, repo: str, base_tree_sha: str, tree_items: list[dict[str, Any]]) -> str:
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/trees"
-        payload = {
+        # Create new tree
+        tree_data = {
             "base_tree": base_tree_sha,
             "tree": tree_items
         }
-        response = requests.post(url, headers=self.headers, json=payload, timeout=30)
-        response.raise_for_status()
-        return response.json()["sha"]  # type: ignore[no-any-return]
+        tree_resp = requests.post(
+            f"{self.api_url}/repos/{owner}/{repo}/git/trees",
+            headers=self.headers,
+            json=tree_data
+        )
+        tree_resp.raise_for_status()
+        new_tree_sha = tree_resp.json()["sha"]
 
-    def _create_commit(self, owner: str, repo: str, message: str, tree_sha: str, parents: list[str]) -> str:
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/commits"
-        payload = {
+        # Create commit
+        commit_data = {
             "message": message,
-            "tree": tree_sha,
-            "parents": parents
+            "tree": new_tree_sha,
+            "parents": [latest_commit_sha]
         }
-        response = requests.post(url, headers=self.headers, json=payload, timeout=30)
-        response.raise_for_status()
-        return response.json()["sha"]  # type: ignore[no-any-return]
+        new_commit_resp = requests.post(
+            f"{self.api_url}/repos/{owner}/{repo}/git/commits",
+            headers=self.headers,
+            json=commit_data
+        )
+        new_commit_resp.raise_for_status()
+        new_commit_sha = new_commit_resp.json()["sha"]
 
-    def _update_ref(self, owner: str, repo: str, branch: str, commit_sha: str) -> None:
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
-        payload = {"sha": commit_sha}
-        response = requests.patch(url, headers=self.headers, json=payload, timeout=30)
-        response.raise_for_status()
+        # Update reference
+        update_ref_data = {
+            "sha": new_commit_sha
+        }
+        update_resp = requests.patch(ref_url, headers=self.headers, json=update_ref_data)
+        update_resp.raise_for_status()
+
+        return {"files_created": len(files), "commit_sha": new_commit_sha}  # type: ignore[no-any-return]

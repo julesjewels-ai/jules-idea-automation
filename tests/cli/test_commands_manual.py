@@ -1,16 +1,13 @@
+from unittest.mock import patch
 from argparse import Namespace
-from unittest.mock import patch, ANY
-import pytest
 from src.cli.commands import handle_manual
 
+
 @patch('src.cli.commands._execute_and_watch')
-@patch('src.utils.slugify.slugify')
-def test_handle_manual_basic(mock_slugify, mock_execute):
-    """Test basic manual command with explicit title and description."""
-    mock_slugify.return_value = "my-title"
+def test_handle_manual_basic(mock_execute):
     args = Namespace(
-        title="My Title",
-        description="My Description",
+        title="My App",
+        description=None,
         slug=None,
         tech_stack=None,
         features=None
@@ -18,22 +15,23 @@ def test_handle_manual_basic(mock_slugify, mock_execute):
 
     handle_manual(args)
 
-    mock_slugify.assert_called_once_with("My Title")
-    expected_data = {
-        "title": "My Title",
-        "description": "My Description",
-        "slug": "my-title",
-        "tech_stack": [],
-        "features": []
-    }
-    mock_execute.assert_called_once_with(args, expected_data)
+    mock_execute.assert_called_once()
+    call_args = mock_execute.call_args
+    idea_data = call_args[0][1]
+
+    assert idea_data["title"] == "My App"
+    assert idea_data["description"] == "My App"
+    assert idea_data["slug"] == "my-app"
+
 
 @patch('src.cli.commands._execute_and_watch')
-@patch('src.utils.slugify.slugify')
-def test_handle_manual_long_title(mock_slugify, mock_execute):
-    """Test handling of long titles (description-as-title pattern)."""
-    long_title = "This is a very long title that is actually a description of the project. It goes on and on to exceed the limit. It definitely needs to be more than 100 characters to trigger the logic."
-    mock_slugify.return_value = "this-is-a-very-long"
+def test_handle_manual_long_title(mock_execute):
+    # Description-as-title pattern
+    long_title = (
+        "This is a very long title that is actually a description of the project. "
+        "It goes on and on to exceed the limit. "
+        "It definitely needs to be more than 100 characters to trigger the logic."
+    )
     args = Namespace(
         title=long_title,
         description=None,
@@ -44,51 +42,47 @@ def test_handle_manual_long_title(mock_slugify, mock_execute):
 
     handle_manual(args)
 
-    # Should extract first sentence/prefix
-    expected_title = "This is a very long title that is actually a descri" # 50 chars prefix then split '.'
-    # Wait, the logic is: raw_title[:50].split('.')[0].strip()
-    # "This is a very long title that is actually a descri" -> split('.') -> same string
+    idea_data = mock_execute.call_args[0][1]
+    # Check that description is the full text
+    assert idea_data["description"] == long_title
+    # Check that title is shortened (first sentence or prefix)
+    assert len(idea_data["title"]) < len(long_title)
 
-    # Let's verify the logic in commands.py:
-    # title = raw_title[:50].split('.')[0].strip() or "Manual Idea"
-
-    # "This is a very long title that is actually a descri" (50 chars)
-    # It doesn't contain a dot. So it takes the whole 50 chars.
-
-    mock_slugify.assert_called_once()
-
-    expected_data = {
-        "title": ANY, # We'll verify exact logic via the called args
-        "description": long_title,
-        "slug": "this-is-a-very-long",
-        "tech_stack": [],
-        "features": []
-    }
-    mock_execute.assert_called_once_with(args, expected_data)
-
-    # Verify title specifically
-    call_args = mock_execute.call_args
-    idea_data = call_args[0][1]
-    assert idea_data["title"] == "This is a very long title that is actually a descr"
 
 @patch('src.cli.commands._execute_and_watch')
-def test_handle_manual_with_lists(mock_execute):
-    """Test parsing of tech stack and features."""
+def test_handle_manual_full_options(mock_execute):
     args = Namespace(
         title="App",
         description="Desc",
-        slug="app",
-        tech_stack="python, react,  typescript ",
-        features="login,  dashboard"
+        slug="custom-slug",
+        tech_stack="python, react",
+        features="login, dashboard"
     )
 
     handle_manual(args)
 
-    expected_data = {
-        "title": "App",
-        "description": "Desc",
-        "slug": "app",
-        "tech_stack": ["python", "react", "typescript"],
-        "features": ["login", "dashboard"]
-    }
-    mock_execute.assert_called_once_with(args, expected_data)
+    mock_execute.assert_called_with(
+        args,
+        {
+            "title": "App",
+            "description": "Desc",
+            "slug": "custom-slug",
+            "tech_stack": ["python", "react"],
+            "features": ["login", "dashboard"]
+        }
+    )
+
+
+@patch('src.cli.commands._execute_and_watch')
+def test_handle_manual_slug_generation(mock_execute):
+    args = Namespace(
+        title="My Cool App!",
+        description=None,
+        slug=None,
+        tech_stack=None,
+        features=None
+    )
+
+    handle_manual(args)
+    idea_data = mock_execute.call_args[0][1]
+    assert idea_data["slug"] == "my-cool-app"

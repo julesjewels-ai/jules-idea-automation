@@ -57,7 +57,8 @@ class GeminiClient:
 
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
-    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
+    def _generate_content(self, prompt: str, schema: Any,
+                          error_tip: str) -> dict[str, Any]:
         """Helper to generate content with consistent configuration and error handling."""
         try:
             response = self.client.models.generate_content(
@@ -70,7 +71,8 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            return json.loads(response.text or "")  # type: ignore[no-any-return]
+            # type: ignore[no-any-return]
+            return json.loads(response.text or "")
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
@@ -113,7 +115,7 @@ class GeminiClient:
         Analyze the following text provided in the <text_content> tags.
         Extract the core software application idea or product concept described.
         Summarize it into a clear, actionable project description suitable for a developer to start building.
-        
+
         <text_content>
         {safe_text}
         </text_content>
@@ -125,7 +127,8 @@ class GeminiClient:
             "The AI model returned invalid JSON while analyzing the website content."
         )
 
-    def generate_project_scaffold(self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
+    def generate_project_scaffold(
+            self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
         """Generates a complete MVP project scaffold for the given idea.
 
         Args:
@@ -154,7 +157,7 @@ Create a complete, immediately-runnable project with these files:
 3. src/core/__init__.py - Package marker
 4. src/core/app.py - Main business logic class with clear docstrings
 
-## Developer Experience  
+## Developer Experience
 5. Makefile - With targets: install, run, test, clean
 6. .env.example - Sample environment variables (if any needed)
 7. .gitignore - Python + venv + IDE + .env patterns
