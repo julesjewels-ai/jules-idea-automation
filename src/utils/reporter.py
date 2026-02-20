@@ -119,12 +119,7 @@ def print_panel(content: str, title: str = "",
         padding = width - 4 - visible_len
         if padding < 0:
             padding = 0
-        print(
-            f"{color}{V_LINE}{
-                Colors.ENDC} {line}{
-                ' ' *
-                padding} {color}{V_LINE}{
-                Colors.ENDC}")
+        print(f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} {color}{V_LINE}{Colors.ENDC}")
 
     print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}")
 
