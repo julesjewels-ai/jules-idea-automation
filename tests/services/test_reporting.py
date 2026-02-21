@@ -1,7 +1,7 @@
 """Tests for the console reporter."""
 
-from unittest.mock import Mock, call
-from src.core.interfaces import Event, EventBus
+from unittest.mock import Mock
+from src.core.interfaces import EventBus
 from src.core.events import WorkflowStarted, RepoCreated, WorkflowFailed
 from src.core.models import IdeaResponse
 from src.services.reporting import ConsoleReporter
@@ -10,7 +10,7 @@ from src.services.reporting import ConsoleReporter
 def test_reporter_subscribes_to_events():
     """Test that the reporter subscribes to all relevant events."""
     bus = Mock(spec=EventBus)
-    reporter = ConsoleReporter(bus)
+    ConsoleReporter(bus)
 
     # Check that subscribe was called multiple times
     assert bus.subscribe.called

@@ -23,10 +23,12 @@ class Colors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
 def strip_ansi(text: str) -> str:
     """Removes ANSI escape codes from text."""
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     return ansi_escape.sub('', text)
+
 
 def _create_top_border(title: str, width: int, color: str) -> str:
     # Box drawing characters
@@ -48,7 +50,7 @@ def _create_top_border(title: str, width: int, color: str) -> str:
 
     # Ensure title fits
     if len(title_text) > width - 4:
-        title_text = title_text[:width-5] + "…"
+        title_text = title_text[:width - 5] + "…"
 
     left_pad = 2
     # Adjust right pad calculation by subtracting visual offset from the available space
@@ -115,7 +117,7 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
         visible_len = len(strip_ansi(line))
         padding = width - 4 - visible_len
         if padding < 0:
-             padding = 0
+            padding = 0
         print(f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} {color}{V_LINE}{Colors.ENDC}")
 
     print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}")
@@ -156,7 +158,8 @@ class Spinner:
         self._thread.start()
         return self
 
-    def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
+    def __exit__(self, exc_type: Optional[Type[BaseException]],
+                 exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
         self._stop_event.set()
         self._thread.join()
 
@@ -200,7 +203,7 @@ def print_workflow_report(
     print(f"{Colors.BOLD}📦 Project:{Colors.ENDC} {Colors.GREEN}{title}{Colors.ENDC}")
     print(f"{Colors.BOLD}📝 Slug:   {Colors.ENDC} {slug}")
     print(f"{Colors.BOLD}🔗 Repo:   {Colors.ENDC} {Colors.UNDERLINE}{repo_url}{Colors.ENDC}")
-    
+
     if session_id:
         print(f"{Colors.BOLD}🤖 Jules:  {Colors.ENDC} {Colors.UNDERLINE}{session_url or 'N/A'}{Colors.ENDC}")
         print(f"{Colors.BOLD}   Session:{Colors.ENDC} {session_id}")
@@ -208,7 +211,7 @@ def print_workflow_report(
             print(f"{Colors.BOLD}🎉 PR:     {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     else:
         print(f"{Colors.YELLOW}⚠️  Jules session was not created (source not indexed){Colors.ENDC}")
-    
+
     print(f"{Colors.BOLD}{Colors.BLUE}{'=' * 50}{Colors.ENDC}")
 
 
@@ -226,10 +229,10 @@ def print_session_status(
     print(f"   {Colors.BOLD}URL:     {Colors.ENDC} {Colors.UNDERLINE}{url}{Colors.ENDC}")
     status_msg = f"{Colors.GREEN}✅ Yes{Colors.ENDC}" if is_complete else f"{Colors.YELLOW}⏳ In Progress{Colors.ENDC}"
     print(f"   {Colors.BOLD}Complete:{Colors.ENDC} {status_msg}")
-    
+
     if pr_url:
         print(f"   {Colors.BOLD}PR:      {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
-    
+
     if activities:
         print(f"\n   {Colors.BOLD}Recent Activity:{Colors.ENDC}")
         for activity in activities[:3]:
@@ -322,11 +325,11 @@ def print_idea_summary(idea_data: dict[str, Any]) -> None:
 
     full_content = "\n".join(content_lines)
 
-    print("") # spacing before
+    print("")  # spacing before
     print_panel(
         full_content,
         title=f"✨ {idea_data['title']}",
         color=Colors.HEADER,
         width=70
     )
-    print("") # spacing after
+    print("")  # spacing after

@@ -1,11 +1,8 @@
 """Tests for the event system."""
 
-import pytest
 from unittest.mock import Mock
 from src.core.interfaces import Event
 from src.core.bus import LocalEventBus
-from src.core.events import WorkflowStarted
-from src.core.models import IdeaResponse
 
 
 class CustomEvent(Event):

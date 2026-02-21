@@ -1,7 +1,7 @@
 """Tests for the workflow with event system."""
 
 import pytest
-from unittest.mock import Mock, call
+from unittest.mock import Mock, call as mock_call
 from src.core.workflow import IdeaWorkflow
 from src.services.github import GitHubClient
 from src.services.gemini import GeminiClient
@@ -76,16 +76,16 @@ def test_workflow_execute_emits_events(mock_github, mock_gemini, mock_jules, moc
     assert calls[0][0][0].idea.title == "Test App"
 
     # Should have RepoCreated
-    assert any(isinstance(call[0][0], RepoCreated) for call in calls)
+    assert any(isinstance(c[0][0], RepoCreated) for c in calls)
 
     # Should have ScaffoldGenerated
-    assert any(isinstance(call[0][0], ScaffoldGenerated) for call in calls)
+    assert any(isinstance(c[0][0], ScaffoldGenerated) for c in calls)
 
     # Should have SessionWaitStarted
-    assert any(isinstance(call[0][0], SessionWaitStarted) for call in calls)
+    assert any(isinstance(c[0][0], SessionWaitStarted) for c in calls)
 
     # Should have SessionCreated
-    assert any(isinstance(call[0][0], SessionCreated) for call in calls)
+    assert any(isinstance(c[0][0], SessionCreated) for c in calls)
 
     # Last event should be WorkflowCompleted
     assert isinstance(calls[-1][0][0], WorkflowCompleted)
@@ -116,8 +116,8 @@ def test_workflow_failed_event(mock_github, mock_gemini, mock_jules, mock_bus):
 
     # Check for WorkflowFailed event
     calls = mock_bus.publish.call_args_list
-    assert any(isinstance(call[0][0], WorkflowFailed) for call in calls)
+    assert any(isinstance(c[0][0], WorkflowFailed) for c in calls)
 
     # Find the failed event
-    failed_event = next(call[0][0] for call in calls if isinstance(call[0][0], WorkflowFailed))
+    failed_event = next(c[0][0] for c in calls if isinstance(c[0][0], WorkflowFailed))
     assert "GitHub API Error" in failed_event.error

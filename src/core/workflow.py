@@ -29,10 +29,10 @@ logger = logging.getLogger(__name__)
 
 class IdeaWorkflow:
     """Orchestrates the creation of a GitHub repo and Jules session from an idea.
-    
+
     Follows Dependency Injection pattern for testability.
     """
-    
+
     def __init__(
         self,
         github: Optional[GitHubClient] = None,
@@ -41,7 +41,7 @@ class IdeaWorkflow:
         bus: Optional[EventBus] = None
     ):
         """Initialize workflow with optional service instances.
-        
+
         Args:
             github: GitHubClient instance (created if None)
             gemini: GeminiClient instance (created if None)
@@ -52,7 +52,7 @@ class IdeaWorkflow:
         self.gemini = gemini or GeminiClient()
         self.jules = jules or JulesClient()
         self.bus = bus or LocalEventBus()
-    
+
     def execute(
         self,
         idea_data: dict[str, Any],
@@ -61,13 +61,13 @@ class IdeaWorkflow:
         verbose: bool = True
     ) -> WorkflowResult:
         """Execute the full workflow.
-        
+
         Args:
             idea_data: Dict with title, description, slug, tech_stack, features
             private: Create private repository (default: private)
             timeout: Max seconds to wait for Jules indexing
             verbose: Deprecated. Use EventBus for reporting.
-        
+
         Returns:
             WorkflowResult with repo_url, session info, etc.
         """
@@ -111,35 +111,35 @@ class IdeaWorkflow:
         except Exception as e:
             self.bus.publish(WorkflowFailed(error=str(e)))
             raise
-    
+
     def _create_repository(self, idea_data: dict[str, Any], private: bool) -> str:
         """Create GitHub repository and return username."""
         user = self.github.get_user()
         username = str(user['login'])
-        
+
         visibility = "private" if private else "public"
         self.bus.publish(StepStarted(
             step_name="create_repo",
             description=f"Creating {visibility} GitHub repository '{idea_data['slug']}'"
         ))
-        
+
         self.github.create_repo(
             name=idea_data['slug'],
             description=idea_data['description'][:350],
             private=private
         )
-        
+
         return username
-    
+
     def _generate_scaffold(self, username: str, idea_data: dict[str, Any]) -> None:
         """Generate MVP scaffold and commit to repository."""
         self.bus.publish(StepStarted(
             step_name="generate_scaffold",
             description="Generating MVP scaffold with Gemini"
         ))
-        
+
         scaffold = self.gemini.generate_project_scaffold(idea_data)
-        
+
         # Build README
         readme_content = build_readme(
             title=idea_data['title'],
@@ -149,13 +149,13 @@ class IdeaWorkflow:
             requirements=scaffold.get('requirements'),
             run_command=scaffold.get('run_command')
         )
-        
+
         # First commit: README
         self.bus.publish(StepStarted(
             step_name="commit_readme",
             description="Initializing repository with README"
         ))
-        
+
         self.github.create_file(
             owner=username,
             repo=idea_data['slug'],
@@ -163,7 +163,7 @@ class IdeaWorkflow:
             content=readme_content,
             message="Initial commit: Add README with project description"
         )
-        
+
         # Second commit: Scaffold files
         files_to_create = self._prepare_scaffold_files(scaffold)
 
@@ -172,14 +172,14 @@ class IdeaWorkflow:
                 step_name="commit_files",
                 description=f"Adding {len(files_to_create)} MVP files"
             ))
-            
+
             result = self.github.create_files(
                 owner=username,
                 repo=idea_data['slug'],
                 files=files_to_create,
                 message="feat: Add MVP scaffold with SOLID structure"
             )
-            
+
             self.bus.publish(ScaffoldGenerated(files_count=result['files_created']))
 
     def _prepare_scaffold_files(self, scaffold: dict[str, Any]) -> list[dict[str, str]]:
@@ -209,9 +209,9 @@ class IdeaWorkflow:
                 'path': 'requirements.txt',
                 'content': '\n'.join(scaffold['requirements'])
             })
-            
+
         return files_to_create
-    
+
     def _create_jules_session(
         self,
         username: str,
@@ -220,24 +220,24 @@ class IdeaWorkflow:
     ) -> Optional[dict[str, Any]]:
         """Wait for Jules indexing and create session."""
         source_id = f"sources/github/{username}/{idea_data['slug']}"
-        
+
         self.bus.publish(SessionWaitStarted(
             source_id=source_id,
             timeout=timeout
         ))
-        
+
         # Poll for source
         def on_poll(elapsed: int) -> None:
             # We could emit a progress event here if desired
             pass
-        
+
         source_found = poll_until(
             condition=lambda: self.jules.source_exists(source_id),
             timeout=timeout,
             interval=10,
             on_poll=on_poll
         )
-        
+
         if not source_found:
             # Maybe emit SessionWaitTimeout?
             # For now, just logging error logic handled by reporter if needed?
@@ -248,5 +248,5 @@ class IdeaWorkflow:
             # But for now, let's just return None as before.
             # The caller will finish workflow with session_id=None.
             return None
-        
+
         return self.jules.create_session(source_id, idea_data['description'])
