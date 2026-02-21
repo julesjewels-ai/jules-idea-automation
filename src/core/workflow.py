@@ -70,7 +70,8 @@ class IdeaWorkflow:
         self._generate_scaffold(username, idea_data, verbose)
 
         # Step 3: Wait for Jules indexing and create session
-        session = self._create_jules_session(username, idea_data, timeout, verbose)
+        session = self._create_jules_session(
+            username, idea_data, timeout, verbose)
 
         # Build result
         from src.core.models import IdeaResponse
@@ -92,14 +93,17 @@ class IdeaWorkflow:
 
         return result
 
-    def _create_repository(self, idea_data: dict[str, Any], private: bool, verbose: bool) -> str:
+    def _create_repository(
+            self, idea_data: dict[str, Any], private: bool, verbose: bool) -> str:
         """Create GitHub repository and return username."""
         user = self.github.get_user()
         username = str(user['login'])
 
         visibility = "private" if private else "public"
         if verbose:
-            print(f"Creating {visibility} GitHub repository '{idea_data['slug']}'...")
+            print(
+                f"Creating {visibility} GitHub repository '{
+                    idea_data['slug']}'...")
 
         self.github.create_repo(
             name=idea_data['slug'],
@@ -109,7 +113,8 @@ class IdeaWorkflow:
 
         return username
 
-    def _generate_scaffold(self, username: str, idea_data: dict[str, Any], verbose: bool) -> None:
+    def _generate_scaffold(self, username: str,
+                           idea_data: dict[str, Any], verbose: bool) -> None:
         """Generate MVP scaffold and commit to repository."""
         if verbose:
             print("Generating MVP scaffold with Gemini (this may take a moment)...")
@@ -153,9 +158,12 @@ class IdeaWorkflow:
             )
 
             if verbose:
-                print(f"  Created {result['files_created']} files in single commit")
+                print(
+                    f"  Created {
+                        result['files_created']} files in single commit")
 
-    def _prepare_scaffold_files(self, scaffold: dict[str, Any]) -> list[dict[str, str]]:
+    def _prepare_scaffold_files(
+            self, scaffold: dict[str, Any]) -> list[dict[str, str]]:
         """Prepare list of files to create from scaffold data."""
         files_to_create: list[dict[str, str]] = []
 
@@ -164,7 +172,8 @@ class IdeaWorkflow:
             return files_to_create
 
         if not isinstance(files, list):
-            logger.warning("Scaffold 'files' is not a list, skipping file creation.")
+            logger.warning(
+                "Scaffold 'files' is not a list, skipping file creation.")
             return files_to_create
 
         for file_info in files:
@@ -206,7 +215,8 @@ class IdeaWorkflow:
 
         if verbose:
             print(f"Constructed Source ID: {source_id}")
-            print(f"Waiting for Jules to discover the new repository (timeout: {timeout}s)...")
+            print(
+                f"Waiting for Jules to discover the new repository (timeout: {timeout}s)...")
 
         # Poll for source
         def on_poll(elapsed: int) -> None:
@@ -222,7 +232,8 @@ class IdeaWorkflow:
 
         if not source_found:
             if verbose:
-                print(f"WARNING: Source '{source_id}' was not found in Jules after {timeout}s.")
+                print(
+                    f"WARNING: Source '{source_id}' was not found in Jules after {timeout}s.")
                 print("Please visit https://jules.google.com to install the app.")
             return None
 

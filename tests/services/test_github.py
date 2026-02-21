@@ -60,7 +60,8 @@ def test_create_files_success(github_client):
         mock_requests.patch.return_value = make_response({}, 200)
 
         # Execute
-        result = github_client.create_files(owner, repo, files, message, branch)
+        result = github_client.create_files(
+            owner, repo, files, message, branch)
 
         # Verify result
         assert result == {
@@ -70,8 +71,10 @@ def test_create_files_success(github_client):
 
         # Verify blob creation calls
         blob_calls = mock_requests.post.call_args_list
-        assert blob_calls[0].kwargs["json"] == {"content": "content1", "encoding": "utf-8"}
-        assert blob_calls[1].kwargs["json"] == {"content": "content2", "encoding": "utf-8"}
+        assert blob_calls[0].kwargs["json"] == {
+            "content": "content1", "encoding": "utf-8"}
+        assert blob_calls[1].kwargs["json"] == {
+            "content": "content2", "encoding": "utf-8"}
 
         # Verify ref update
         mock_requests.patch.assert_called_once()

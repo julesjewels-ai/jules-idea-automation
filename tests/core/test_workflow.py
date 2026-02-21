@@ -1,6 +1,6 @@
-import pytest
 from src.core.workflow import IdeaWorkflow
 from unittest.mock import Mock
+
 
 class TestWorkflowScaffold:
     def test_prepare_scaffold_files_empty(self):
