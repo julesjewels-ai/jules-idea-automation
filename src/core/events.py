@@ -1,7 +1,6 @@
 """Domain events for the workflow."""
 
-from typing import Any, Optional
-from pydantic import Field
+from typing import Optional
 from src.core.interfaces import Event
 from src.core.models import IdeaResponse, WorkflowResult
 

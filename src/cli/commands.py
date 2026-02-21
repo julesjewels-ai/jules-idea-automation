@@ -106,7 +106,8 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
 
     # Initialize Event Bus and Reporter
     bus = LocalEventBus()
-    reporter = ConsoleReporter(bus)
+    # Instantiate reporter to subscribe to bus events (side-effect only)
+    ConsoleReporter(bus)
 
     workflow = IdeaWorkflow(bus=bus)
     result = workflow.execute(

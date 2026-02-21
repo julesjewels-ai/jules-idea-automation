@@ -1,7 +1,7 @@
 """Tests for CLI commands."""
 
 from src.utils.reporter import print_sources_list
-from unittest.mock import patch, ANY
+from unittest.mock import patch
 from src.cli.commands import handle_list_sources, handle_agent
 
 

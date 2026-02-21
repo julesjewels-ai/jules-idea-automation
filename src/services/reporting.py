@@ -1,8 +1,6 @@
 """Console reporter service."""
 
-import sys
-from typing import Any
-from src.core.interfaces import Event, EventHandler, EventBus
+from src.core.interfaces import Event, EventBus
 from src.core.events import (
     WorkflowStarted,
     RepoCreated,
@@ -17,7 +15,6 @@ from src.core.events import (
 from src.utils.reporter import (
     print_workflow_report,
     Colors,
-    Spinner,
     print_header
 )
 
@@ -71,7 +68,8 @@ class ConsoleReporter:
         print("-" * 50)
 
     def _on_repo_created(self, event: RepoCreated) -> None:
-        print(f"{Colors.GREEN}✓{Colors.ENDC} GitHub repository created: {Colors.UNDERLINE}{event.repo_url}{Colors.ENDC}")
+        print(f"{Colors.GREEN}✓{Colors.ENDC} GitHub repository created: "
+              f"{Colors.UNDERLINE}{event.repo_url}{Colors.ENDC}")
 
     def _on_scaffold_generated(self, event: ScaffoldGenerated) -> None:
         print(f"{Colors.GREEN}✓{Colors.ENDC} Generated {event.files_count} files for MVP scaffold")
@@ -80,7 +78,8 @@ class ConsoleReporter:
         print(f"{Colors.CYAN}ℹ{Colors.ENDC} Waiting for Jules to index repository (timeout: {event.timeout}s)...")
 
     def _on_session_created(self, event: SessionCreated) -> None:
-        print(f"{Colors.GREEN}✓{Colors.ENDC} Jules session created: {Colors.UNDERLINE}{event.session_url}{Colors.ENDC}")
+        print(f"{Colors.GREEN}✓{Colors.ENDC} Jules session created: "
+              f"{Colors.UNDERLINE}{event.session_url}{Colors.ENDC}")
 
     def _on_workflow_completed(self, event: WorkflowCompleted) -> None:
         print_workflow_report(

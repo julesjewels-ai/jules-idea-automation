@@ -1,50 +1,170 @@
-from __future__ import annotations
+"""GitHub API client service."""
 
-import os
-import requests
+import logging
 import base64
 from typing import Optional, Any
-from src.utils.errors import ConfigurationError
+import requests
+from src.utils.errors import APIError
+
+logger = logging.getLogger(__name__)
 
 
 class GitHubClient:
-    def __init__(self, token: Optional[str] = None) -> None:
-        self.token = token or os.environ.get("GITHUB_TOKEN")
-        if not self.token:
-            raise ConfigurationError(
-                "GITHUB_TOKEN environment variable is not set",
-                tip="Create a Personal Access Token (PAT) with 'repo' scope at https://github.com/settings/tokens and add it to your .env file."
-            )
+    """Client for interacting with GitHub API."""
+
+    def __init__(self, token: Optional[str] = None):
+        """Initialize GitHub client.
+
+        Args:
+            token: GitHub PAT (read from env if None)
+        """
+        import os
+        self.token = token or os.getenv("GITHUB_TOKEN")
         self.base_url = "https://api.github.com"
+
+        if not self.token:
+            raise ValueError(
+                "GITHUB_TOKEN is not set. Please set it in your .env file.\n"
+                "Create a Personal Access Token (PAT) with 'repo' scope at https://github.com/settings/tokens"
+            )
+
         self.headers = {
-            "Authorization": f"token {self.token}",
-            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {self.token}",
+            "Accept": "application/vnd.github.v3+json",
             "X-GitHub-Api-Version": "2022-11-28"
         }
 
     def get_user(self) -> dict[str, Any]:
-        """Returns the authenticated user's details."""
-        response = requests.get(f"{self.base_url}/user", headers=self.headers, timeout=30)
-        response.raise_for_status()
-        return response.json()  # type: ignore[no-any-return]
+        """Get authenticated user details."""
+        url = f"{self.base_url}/user"
+        response = requests.get(url, headers=self.headers)
+
+        if response.status_code != 200:
+            raise APIError(f"GitHub API Error: {response.text}")
+
+        return response.json()  # type: ignore
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
-        """Creates a new repository."""
+        """Create a new GitHub repository."""
+        url = f"{self.base_url}/user/repos"
         payload = {
             "name": name,
             "description": description,
             "private": private,
             "auto_init": False  # We will add content manually
         }
-        response = requests.post(f"{self.base_url}/user/repos", headers=self.headers, json=payload, timeout=30)
-        response.raise_for_status()
-        return response.json()  # type: ignore[no-any-return]
+
+        response = requests.post(url, json=payload, headers=self.headers)
+
+        if response.status_code == 422:
+            # Check if repo already exists
+            error_msg = response.json().get('message', '')
+            if "name already exists" in error_msg:
+                logger.warning(f"Repository '{name}' already exists. Using existing repo.")
+                # Return existing repo details (simplified)
+                user = self.get_user()
+                return {"html_url": f"https://github.com/{user['login']}/{name}"}
+
+        if response.status_code != 201:
+            raise APIError(f"Failed to create GitHub repo: {response.text}")
+
+        return response.json()  # type: ignore
+
+    def create_files(
+        self,
+        owner: str,
+        repo: str,
+        files: list[dict[str, str]],
+        message: str,
+        branch: str = "main"
+    ) -> dict[str, Any]:
+        """Creates multiple files in a single commit using the Git Data API."""
+        if not files:
+            return {"files_created": 0}
+
+        # 1. Get reference to latest commit on branch
+        ref_url = f"{self.base_url}/repos/{owner}/{repo}/git/ref/heads/{branch}"
+        response = requests.get(ref_url, headers=self.headers)
+
+        if response.status_code == 404:
+            # Branch doesn't exist (empty repo), create initial commit?
+            # For simplicity, we assume repo might be empty or initialized.
+            # If empty, we can't use this flow easily without creating a root tree.
+            # Fallback to create_file for the first file if needed, or handle empty repo case.
+            pass
+
+        # If we can't get ref (e.g. empty repo), we can't use tree API easily.
+        # But wait, we initialized with auto_init=False, so it's empty.
+        # However, we usually create README first using create_file which inits the repo.
+
+        if response.status_code != 200:
+            # Fallback: create files individually (slower but reliable for empty repos)
+            created_count = 0
+            for file in files:
+                try:
+                    self.create_file(owner, repo, file['path'], file['content'], message)
+                    created_count += 1
+                except APIError as e:
+                    logger.warning(f"Failed to create file {file['path']}: {e}")
+            return {"files_created": created_count}
+
+        latest_commit_sha = response.json()["object"]["sha"]
+
+        # 2. Get the tree for that commit
+        commit_url = f"{self.base_url}/repos/{owner}/{repo}/git/commits/{latest_commit_sha}"
+        commit_resp = requests.get(commit_url, headers=self.headers)
+        base_tree_sha = commit_resp.json()["tree"]["sha"]
+
+        # 3. Create a new tree with new files
+        tree_items = []
+        for file in files:
+            tree_items.append({
+                "path": file['path'],
+                "mode": "100644",
+                "type": "blob",
+                "content": file['content']
+            })
+
+        tree_url = f"{self.base_url}/repos/{owner}/{repo}/git/trees"
+        tree_payload = {
+            "base_tree": base_tree_sha,
+            "tree": tree_items
+        }
+
+        tree_resp = requests.post(tree_url, json=tree_payload, headers=self.headers)
+        if tree_resp.status_code != 201:
+            raise APIError(f"Failed to create git tree: {tree_resp.text}")
+
+        new_tree_sha = tree_resp.json()["sha"]
+
+        # 4. Create a new commit pointing to the new tree
+        new_commit_url = f"{self.base_url}/repos/{owner}/{repo}/git/commits"
+        commit_payload = {
+            "message": message,
+            "tree": new_tree_sha,
+            "parents": [latest_commit_sha]
+        }
+
+        new_commit_resp = requests.post(new_commit_url, json=commit_payload, headers=self.headers)
+        if new_commit_resp.status_code != 201:
+            raise APIError(f"Failed to create git commit: {new_commit_resp.text}")
+
+        new_commit_sha = new_commit_resp.json()["sha"]
+
+        # 5. Update the reference to point to the new commit
+        update_ref_url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
+        update_resp = requests.patch(update_ref_url, json={"sha": new_commit_sha}, headers=self.headers)
+
+        if update_resp.status_code != 200:
+            raise APIError(f"Failed to update git ref: {update_resp.text}")
+
+        return {"files_created": len(files)}
 
     def create_file(self, owner: str, repo: str, path: str, content: str, message: str) -> dict[str, Any]:
-        """Creates or updates a file in the repository."""
+        """Create a single file in the repository."""
         url = f"{self.base_url}/repos/{owner}/{repo}/contents/{path}"
 
-        # GitHub API requires content to be base64 encoded
+        # Encode content
         encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
 
         payload = {
@@ -52,87 +172,13 @@ class GitHubClient:
             "content": encoded_content
         }
 
-        response = requests.put(url, headers=self.headers, json=payload, timeout=30)
-        response.raise_for_status()
-        return response.json()  # type: ignore[no-any-return]
+        response = requests.put(url, json=payload, headers=self.headers)
 
-    def create_files(self, owner: str, repo: str,
-                     files: list[dict[str, str]], message: str, branch: str = "main") -> dict[str, Any]:
-        """Creates multiple files in a single commit using the Git Data API.
+        if response.status_code == 422:
+            logger.warning(f"File '{path}' already exists or cannot be created.")
+            return {}
 
-        Args:
-            owner: Repository owner
-            repo: Repository name
-            files: List of dicts with 'path' and 'content' keys
-            message: Commit message
-            branch: Target branch (default: main)
-        """
-        latest_commit_sha = self._get_latest_commit_sha(owner, repo, branch)
-        base_tree_sha = self._get_tree_sha(owner, repo, latest_commit_sha)
-        tree_items = self._create_blobs(owner, repo, files)
-        new_tree_sha = self._create_tree(owner, repo, base_tree_sha, tree_items)
-        new_commit_sha = self._create_commit(owner, repo, message, new_tree_sha, [latest_commit_sha])
-        self._update_ref(owner, repo, branch, new_commit_sha)
+        if response.status_code not in [200, 201]:
+            raise APIError(f"Failed to create file '{path}': {response.text}")
 
-        return {
-            "commit_sha": new_commit_sha,
-            "files_created": len(files)
-        }
-
-    def _get_latest_commit_sha(self, owner: str, repo: str, branch: str) -> str:
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
-        response = requests.get(url, headers=self.headers, timeout=30)
-        response.raise_for_status()
-        return response.json()["object"]["sha"]  # type: ignore[no-any-return]
-
-    def _get_tree_sha(self, owner: str, repo: str, commit_sha: str) -> str:
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/commits/{commit_sha}"
-        response = requests.get(url, headers=self.headers, timeout=30)
-        response.raise_for_status()
-        return response.json()["tree"]["sha"]  # type: ignore[no-any-return]
-
-    def _create_blobs(self, owner: str, repo: str, files: list[dict[str, str]]) -> list[dict[str, Any]]:
-        tree_items = []
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/blobs"
-        for file_info in files:
-            payload = {
-                "content": file_info["content"],
-                "encoding": "utf-8"
-            }
-            response = requests.post(url, headers=self.headers, json=payload, timeout=30)
-            response.raise_for_status()
-
-            tree_items.append({
-                "path": file_info["path"],
-                "mode": "100644",
-                "type": "blob",
-                "sha": response.json()["sha"]
-            })
-        return tree_items
-
-    def _create_tree(self, owner: str, repo: str, base_tree_sha: str, tree_items: list[dict[str, Any]]) -> str:
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/trees"
-        payload = {
-            "base_tree": base_tree_sha,
-            "tree": tree_items
-        }
-        response = requests.post(url, headers=self.headers, json=payload, timeout=30)
-        response.raise_for_status()
-        return response.json()["sha"]  # type: ignore[no-any-return]
-
-    def _create_commit(self, owner: str, repo: str, message: str, tree_sha: str, parents: list[str]) -> str:
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/commits"
-        payload = {
-            "message": message,
-            "tree": tree_sha,
-            "parents": parents
-        }
-        response = requests.post(url, headers=self.headers, json=payload, timeout=30)
-        response.raise_for_status()
-        return response.json()["sha"]  # type: ignore[no-any-return]
-
-    def _update_ref(self, owner: str, repo: str, branch: str, commit_sha: str) -> None:
-        url = f"{self.base_url}/repos/{owner}/{repo}/git/refs/heads/{branch}"
-        payload = {"sha": commit_sha}
-        response = requests.patch(url, headers=self.headers, json=payload, timeout=30)
-        response.raise_for_status()
+        return response.json()  # type: ignore

@@ -27,3 +27,8 @@ class JulesApiError(AppError):
     """Raised when the Jules API returns an error."""
 
     pass
+
+
+class APIError(AppError):
+    """Raised when an external API (like GitHub) returns an error."""
+    pass

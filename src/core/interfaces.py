@@ -1,6 +1,6 @@
 """Core interfaces for the event system."""
 
-from typing import Protocol, Any
+from typing import Protocol
 from pydantic import BaseModel, ConfigDict
 
 
@@ -23,7 +23,7 @@ class EventBus(Protocol):
     """Protocol for the event bus."""
 
     def subscribe(self, event_type: type[Event], handler: EventHandler) -> None:
-        """Subscribe to an event type."""
+        """Subscribe an event type."""
         ...
 
     def publish(self, event: Event) -> None:
