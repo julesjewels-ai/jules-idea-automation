@@ -1,0 +1,4 @@
+[flake8]
+max-line-length = 120
+extend-ignore = E203, W503, W291, W293, W391, E111, E117, E261, E302, E305, E402, E501, F401, F841
+exclude = .git,__pycache__,docs/source/conf.py,old,build,dist
