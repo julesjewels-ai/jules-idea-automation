@@ -99,10 +99,16 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
         idea_data: The idea data to process
     """
     from src.core.workflow import IdeaWorkflow
+    from src.core.bus import LocalEventBus
+    from src.services.reporting import ConsoleReporter
 
     print_idea_summary(idea_data)
 
-    workflow = IdeaWorkflow()
+    # Initialize Event Bus and Reporter
+    bus = LocalEventBus()
+    reporter = ConsoleReporter(bus)
+
+    workflow = IdeaWorkflow(bus=bus)
     result = workflow.execute(
         idea_data,
         private=not args.public,
