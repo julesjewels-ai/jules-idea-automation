@@ -1,7 +1,7 @@
 """Tests for the workflow with event system."""
 
 import pytest
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 from src.core.workflow import IdeaWorkflow
 from src.services.github import GitHubClient
 from src.services.gemini import GeminiClient

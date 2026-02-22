@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from typing import Type
-from src.core.interfaces import Event, EventBus, EventHandler
+from src.core.interfaces import Event, EventHandler
 
 
 class LocalEventBus:
