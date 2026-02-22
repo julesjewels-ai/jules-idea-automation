@@ -1,29 +1,32 @@
 """Integration tests for Gemini Caching."""
 
 import pytest
-import hashlib
 import json
 from unittest.mock import MagicMock, patch
 from src.services.gemini import GeminiClient
 from pathlib import Path
 from typing import Generator
 from src.services.cache import FileCacheProvider
-from src.core.models import IdeaResponse
+
 
 @pytest.fixture  # type: ignore
 def mock_genai_client() -> Generator[MagicMock, None, None]:
     with patch("src.services.gemini.genai.Client") as mock:
         yield mock
 
+
 @pytest.fixture  # type: ignore
 def cache_dir(tmp_path: Path) -> Path:
     return tmp_path / "cache"
+
 
 @pytest.fixture  # type: ignore
 def provider(cache_dir: Path) -> FileCacheProvider:
     return FileCacheProvider(cache_dir=str(cache_dir))
 
-def test_gemini_uses_cache(mock_genai_client: MagicMock, provider: FileCacheProvider) -> None:
+
+def test_gemini_uses_cache(mock_genai_client: MagicMock,
+                           provider: FileCacheProvider) -> None:
     """Test that GeminiClient uses the cache."""
     client = GeminiClient(api_key="test", cache=provider)
 
@@ -51,7 +54,9 @@ def test_gemini_uses_cache(mock_genai_client: MagicMock, provider: FileCacheProv
     # API should strictly be called once
     assert client.client.models.generate_content.call_count == 1
 
-def test_gemini_cache_miss(mock_genai_client: MagicMock, provider: FileCacheProvider) -> None:
+
+def test_gemini_cache_miss(mock_genai_client: MagicMock,
+                           provider: FileCacheProvider) -> None:
     """Test that GeminiClient handles cache miss."""
     client = GeminiClient(api_key="test", cache=provider)
 

@@ -33,8 +33,10 @@ class FileCacheProvider(CacheProvider):
         try:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            logger.warning(f"Failed to create cache directory {cache_dir}: {e}")
-            # If we can't create the directory, subsequent ops will fail gracefully
+            logger.warning(
+                f"Failed to create cache directory {cache_dir}: {e}")
+            # If we can't create the directory, subsequent ops will fail
+            # gracefully
 
     def _get_cache_path(self, key: str) -> Path:
         """Generate a safe file path for the given key."""

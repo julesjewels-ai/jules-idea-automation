@@ -36,7 +36,8 @@ def handle_agent(args: Namespace) -> None:
 
     cache = FileCacheProvider()
     gemini = GeminiClient(cache=cache)
-    msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
+    msg = f"Generating idea with Gemini{
+        f' (category: {category})' if category else ''}..."
     with Spinner(msg, success_message="Idea generated"):
         idea_data = gemini.generate_idea(category=category)
 
@@ -123,7 +124,8 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
         watch_session(result.session_id, timeout=args.timeout)
 
 
-def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[str]]:
+def watch_session(
+        session_id: str, timeout: int = 1800) -> tuple[bool, Optional[str]]:
     """Watch a Jules session until completion or timeout.
 
     Args:
@@ -149,7 +151,8 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[
                 activities = jules.list_activities(session_id, page_size=1)
                 if activities.get("activities"):
                     latest = activities["activities"][0]
-                    return str(latest.get("progressUpdated", {}).get("title", "Working..."))
+                    return str(latest.get("progressUpdated",
+                               {}).get("title", "Working..."))
                 return "Working..."
             except Exception:
                 return "Polling..."

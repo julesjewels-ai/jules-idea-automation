@@ -4,7 +4,7 @@ import json
 import time
 import hashlib
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from src.services.cache import FileCacheProvider
@@ -82,7 +82,8 @@ def test_ttl_expiry(provider: FileCacheProvider) -> None:
     assert provider.get(key) is None
 
 
-def test_corrupt_cache_file(provider: FileCacheProvider, cache_dir: Path) -> None:
+def test_corrupt_cache_file(
+        provider: FileCacheProvider, cache_dir: Path) -> None:
     """Test handling of corrupt cache files."""
     key = "corrupt_key"
     hashed_key = hashlib.sha256(key.encode("utf-8")).hexdigest()
@@ -104,7 +105,7 @@ def test_cache_init_failure_handled(tmp_path: Path) -> None:
 
     # Should log warning but not crash
     with patch("src.services.cache.logger") as mock_logger:
-        provider = FileCacheProvider(cache_dir=str(file_path))
+        FileCacheProvider(cache_dir=str(file_path))
 
         # Verify warning logged
         mock_logger.warning.assert_called()
