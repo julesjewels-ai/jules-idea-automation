@@ -5,10 +5,10 @@ from __future__ import annotations
 import pytest
 from unittest.mock import Mock
 from pytest_mock import MockerFixture
-from typing import Any, Generator
+from typing import Any
 
 from src.core.workflow import IdeaWorkflow
-from src.core.models import WorkflowResult, IdeaResponse
+from src.core.models import WorkflowResult
 from src.services.github import GitHubClient
 from src.services.gemini import GeminiClient
 from src.services.jules import JulesClient
@@ -130,7 +130,7 @@ def test_execute_behavior(
 
         # Verify Scaffold Commit
         gh.create_file.assert_called_once()  # README
-        gh.create_files.assert_called_once() # Scaffold files
+        gh.create_files.assert_called_once()  # Scaffold files
 
         # Verify Jules Logic
         mock_poll.assert_called_once()
