@@ -3,11 +3,13 @@ from __future__ import annotations
 import os
 import json
 import logging
-from typing import Optional, Any
+import hashlib
+from typing import Optional, Any, cast
 from xml.sax.saxutils import escape
 from google import genai
 from google.genai import types, errors
 
+from src.core.interfaces import CacheProvider
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
 
@@ -29,8 +31,10 @@ CATEGORY_PROMPTS = {
 class GeminiClient:
     """Client for the Google Gemini API, handling idea generation and project scaffolding."""
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(self, api_key: Optional[str] = None, cache: Optional[CacheProvider] = None) -> None:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        self.cache = cache
+
         if not self.api_key:
             raise ConfigurationError(
                 "GEMINI_API_KEY environment variable is not set",
@@ -59,6 +63,17 @@ class GeminiClient:
 
     def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
         """Helper to generate content with consistent configuration and error handling."""
+        # Check cache if available
+        cache_key = ""
+        if self.cache:
+            prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+            schema_name = getattr(schema, "__name__", "raw")
+            cache_key = f"{self.model_name}:{prompt_hash}:{schema_name}"
+            cached_result = self.cache.get(cache_key)
+            if cached_result:
+                logger.info("Cache hit for Gemini request")
+                return cached_result  # type: ignore[no-any-return]
+
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -71,10 +86,19 @@ class GeminiClient:
                 ),
             )
             raw = json.loads(response.text or "")
+
             # Validate against Pydantic schema if available
+            result: dict[str, Any]
             if hasattr(schema, 'model_validate'):
-                return schema.model_validate(raw).model_dump()  # type: ignore[no-any-return]
-            return raw  # type: ignore[no-any-return]
+                result = schema.model_validate(raw).model_dump()
+            else:
+                result = raw
+
+            # Cache the result if caching is enabled
+            if self.cache and cache_key:
+                self.cache.set(cache_key, result)
+
+            return result
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
@@ -193,9 +217,9 @@ Create a complete, immediately-runnable project with these files:
                     logger.error(
                         f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
                     # Return minimal fallback scaffold
-                    return ProjectScaffold.create_fallback_scaffold(
+                    return cast(dict[str, Any], ProjectScaffold.create_fallback_scaffold(
                         idea_data['title'],
                         idea_data['description']
-                    ).model_dump()
+                    ).model_dump())
 
         raise GenerationError("Failed to generate project scaffold.")
