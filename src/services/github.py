@@ -6,13 +6,15 @@ import base64
 from typing import Optional, Any
 from src.utils.errors import ConfigurationError
 
+
 class GitHubClient:
     def __init__(self, token: Optional[str] = None) -> None:
         self.token = token or os.environ.get("GITHUB_TOKEN")
         if not self.token:
             raise ConfigurationError(
                 "GITHUB_TOKEN environment variable is not set",
-                tip="Create a Personal Access Token (PAT) with 'repo' scope at https://github.com/settings/tokens and add it to your .env file."
+                tip=("Create a Personal Access Token (PAT) with 'repo' scope at "
+                     "https://github.com/settings/tokens and add it to your .env file.")
             )
         self.base_url = "https://api.github.com"
         self.headers = {
@@ -33,7 +35,7 @@ class GitHubClient:
             "name": name,
             "description": description,
             "private": private,
-            "auto_init": False # We will add content manually
+            "auto_init": False  # We will add content manually
         }
         response = requests.post(f"{self.base_url}/user/repos", headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()
@@ -42,22 +44,24 @@ class GitHubClient:
     def create_file(self, owner: str, repo: str, path: str, content: str, message: str) -> dict[str, Any]:
         """Creates or updates a file in the repository."""
         url = f"{self.base_url}/repos/{owner}/{repo}/contents/{path}"
-        
+
         # GitHub API requires content to be base64 encoded
         encoded_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
-        
+
         payload = {
             "message": message,
             "content": encoded_content
         }
-        
+
         response = requests.put(url, headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
 
-    def create_files(self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main") -> dict[str, Any]:
+    def create_files(
+        self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main"
+    ) -> dict[str, Any]:
         """Creates multiple files in a single commit using the Git Data API.
-        
+
         Args:
             owner: Repository owner
             repo: Repository name
@@ -71,7 +75,7 @@ class GitHubClient:
         new_tree_sha = self._create_tree(owner, repo, base_tree_sha, tree_items)
         new_commit_sha = self._create_commit(owner, repo, message, new_tree_sha, [latest_commit_sha])
         self._update_ref(owner, repo, branch, new_commit_sha)
-        
+
         return {
             "commit_sha": new_commit_sha,
             "files_created": len(files)
@@ -99,7 +103,7 @@ class GitHubClient:
             }
             response = requests.post(url, headers=self.headers, json=payload, timeout=30)
             response.raise_for_status()
-            
+
             tree_items.append({
                 "path": file_info["path"],
                 "mode": "100644",

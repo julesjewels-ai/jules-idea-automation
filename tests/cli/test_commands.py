@@ -1,11 +1,7 @@
-
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from src.cli.commands import handle_list_sources
-from src.utils.reporter import Colors
+from src.utils.reporter import print_sources_list
 
-# Ensure module is loaded for patching
-import src.services.jules
 
 @patch('src.cli.commands.Spinner')
 @patch('src.services.jules.JulesClient')
@@ -25,6 +21,7 @@ def test_handle_list_sources(mock_print_sources, mock_jules_client_class, mock_s
     mock_print_sources.assert_called_once_with(mock_sources)
     mock_spinner.assert_called_once_with("Fetching sources...", success_message="Sources fetched")
 
+
 @patch('src.cli.commands.Spinner')
 @patch('src.services.jules.JulesClient')
 @patch('src.cli.commands.print_sources_list')
@@ -40,7 +37,6 @@ def test_handle_list_sources_empty(mock_print_sources, mock_jules_client_class, 
     # Verify
     mock_print_sources.assert_called_once_with(mock_sources)
 
-from src.utils.reporter import print_sources_list
 
 def test_print_sources_list(capsys):
     sources = {"sources": [{"name": "source1", "displayName": "Source 1"}]}
@@ -48,6 +44,7 @@ def test_print_sources_list(capsys):
     captured = capsys.readouterr()
     assert "Found 1 source(s)" in captured.out
     assert "source1" in captured.out
+
 
 def test_print_sources_list_empty(capsys):
     sources = {}

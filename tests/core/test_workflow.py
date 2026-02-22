@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import MagicMock
 from src.core.workflow import IdeaWorkflow
 
+
 class TestIdeaWorkflow:
     @pytest.fixture
     def workflow(self):
