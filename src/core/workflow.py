@@ -101,9 +101,7 @@ class IdeaWorkflow:
 
         visibility = "private" if private else "public"
         if verbose:
-            print(
-                f"Creating {visibility} GitHub repository '{
-                    idea_data['slug']}'...")
+            print(f"Creating {visibility} GitHub repository '{idea_data['slug']}'...")
 
         self.github.create_repo(
             name=idea_data['slug'],
@@ -158,9 +156,7 @@ class IdeaWorkflow:
             )
 
             if verbose:
-                print(
-                    f"  Created {
-                        result['files_created']} files in single commit")
+                print(f"  Created {result['files_created']} files in single commit")
 
     def _prepare_scaffold_files(
             self, scaffold: dict[str, Any]) -> list[dict[str, str]]:
@@ -177,9 +173,7 @@ class IdeaWorkflow:
 
         for file_info in scaffold['files']:
             if not isinstance(file_info, dict) or 'path' not in file_info:
-                logger.warning(
-                    f"Skipping malformed file entry: {
-                        type(file_info)}")
+                logger.warning(f"Skipping malformed file entry: {type(file_info)}")
                 continue
             if file_info['path'].lower() == 'readme.md':
                 continue

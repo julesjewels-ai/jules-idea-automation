@@ -36,8 +36,8 @@ def handle_agent(args: Namespace) -> None:
 
     cache = FileCacheProvider()
     gemini = GeminiClient(cache=cache)
-    msg = f"Generating idea with Gemini{
-        f' (category: {category})' if category else ''}..."
+    category_str = f" (category: {category})" if category else ""
+    msg = f"Generating idea with Gemini{category_str}..."
     with Spinner(msg, success_message="Idea generated"):
         idea_data = gemini.generate_idea(category=category)
 
