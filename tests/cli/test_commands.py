@@ -3,10 +3,7 @@ import pytest
 from typing import Any
 from unittest.mock import MagicMock, patch
 from src.cli.commands import handle_list_sources
-from src.utils.reporter import Colors
-
-# Ensure module is loaded for patching
-import src.services.jules
+from src.utils.reporter import print_sources_list
 
 
 @patch('src.cli.commands.Spinner')
@@ -31,6 +28,7 @@ def test_handle_list_sources(
     mock_print_sources.assert_called_once_with(mock_sources)
     mock_spinner.assert_called_once_with("Fetching sources...", success_message="Sources fetched")
 
+
 @patch('src.cli.commands.Spinner')
 @patch('src.services.jules.JulesClient')
 @patch('src.cli.commands.print_sources_list')
@@ -49,8 +47,6 @@ def test_handle_list_sources_empty(
 
     # Verify
     mock_print_sources.assert_called_once_with(mock_sources)
-
-from src.utils.reporter import print_sources_list
 
 
 def test_print_sources_list(capsys: pytest.CaptureFixture[str]) -> None:

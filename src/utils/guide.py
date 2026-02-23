@@ -10,8 +10,8 @@ def print_welcome_guide() -> None:
     print(f"{Colors.BOLD}{Colors.HEADER}  Welcome to Jules Idea Automation! 🚀{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.HEADER}{'=' * 70}{Colors.ENDC}")
     print("\n")
-    
-    intro = f"""This tool automates the end-to-end workflow of turning ideas into 
+
+    intro = f"""This tool automates the end-to-end workflow of turning ideas into
 working prototypes with automated development sessions.
 
 {Colors.BOLD}How it works:{Colors.ENDC}
@@ -19,13 +19,13 @@ working prototypes with automated development sessions.
 2. Create a GitHub repository with MVP scaffold
 3. Start an automated Jules development session
 4. Watch as your idea becomes a working prototype!"""
-    
+
     print_panel(intro, color=Colors.CYAN, width=70)
     print("\n")
-    
+
     # Three main workflows
     print(f"{Colors.BOLD}{Colors.BLUE}Choose Your Workflow:{Colors.ENDC}\n")
-    
+
     _print_workflow_option(
         number=1,
         emoji="🤖",
@@ -33,7 +33,7 @@ working prototypes with automated development sessions.
         command="python main.py agent",
         description="Let Gemini AI generate a creative software idea for you"
     )
-    
+
     _print_workflow_option(
         number=2,
         emoji="🌐",
@@ -41,7 +41,7 @@ working prototypes with automated development sessions.
         command="python main.py website --url <URL>",
         description="Extract an idea from any public website"
     )
-    
+
     _print_workflow_option(
         number=3,
         emoji="✍️",
@@ -49,9 +49,9 @@ working prototypes with automated development sessions.
         command="python main.py manual \"<title>\"",
         description="Provide your own custom idea and details"
     )
-    
+
     print("")
-    
+
     # Quick tips
     tips_content = f"""{Colors.BOLD}Common Options:{Colors.ENDC}
 • --watch      Watch the session until completion
@@ -62,7 +62,7 @@ working prototypes with automated development sessions.
 • python main.py agent --help
 • python main.py website --help
 • python main.py manual --help"""
-    
+
     print_panel(tips_content, title="💡 Tips", color=Colors.YELLOW, width=70)
     print("\n")
 
@@ -78,7 +78,7 @@ def _print_workflow_option(number: int, emoji: str, name: str, command: str, des
 def print_agent_guide() -> None:
     """Display detailed guide for agent mode."""
     content = f"""{Colors.BOLD}What is Agent Mode?{Colors.ENDC}
-Agent mode uses Google's Gemini AI to generate creative software ideas 
+Agent mode uses Google's Gemini AI to generate creative software ideas
 from scratch. Perfect when you want inspiration or a quick prototype.
 
 {Colors.BOLD}Basic Usage:{Colors.ENDC}
@@ -106,7 +106,7 @@ python main.py agent --public
 2. GitHub repository is created with MVP scaffold
 3. Jules session starts with automated development
 4. (Optional) Watch progress until PR is created"""
-    
+
     print("")
     print_panel(content, title="🤖 Agent Mode Guide", color=Colors.BLUE, width=70)
     print("")
@@ -115,7 +115,7 @@ python main.py agent --public
 def print_website_guide() -> None:
     """Display detailed guide for website mode."""
     content = f"""{Colors.BOLD}What is Website Mode?{Colors.ENDC}
-Website mode extracts software ideas from public web pages. Perfect 
+Website mode extracts software ideas from public web pages. Perfect
 when you found an interesting concept online and want to build it.
 
 {Colors.BOLD}Basic Usage:{Colors.ENDC}
@@ -144,7 +144,7 @@ If scraping fails:
 • Ensure URL is publicly accessible
 • Try a different URL with clearer content
 • Use 'agent' mode as an alternative"""
-    
+
     print("")
     print_panel(content, title="🌐 Website Mode Guide", color=Colors.CYAN, width=70)
     print("")
@@ -153,7 +153,7 @@ If scraping fails:
 def print_manual_guide() -> None:
     """Display detailed guide for manual mode."""
     content = f"""{Colors.BOLD}What is Manual Mode?{Colors.ENDC}
-Manual mode lets you provide your own software idea details. Perfect 
+Manual mode lets you provide your own software idea details. Perfect
 when you know exactly what you want to build.
 
 {Colors.BOLD}Basic Usage (Title Only):{Colors.ENDC}
@@ -189,7 +189,7 @@ python main.py manual \"Task Manager\" \\
 2. GitHub repository is created with MVP scaffold
 3. Jules session starts with automated development
 4. (Optional) Watch progress until PR is created"""
-    
+
     print("")
     print_panel(content, title="✍️  Manual Mode Guide", color=Colors.GREEN, width=70)
     print("")
@@ -224,7 +224,7 @@ python main.py status <session_id> --watch
 
 {Colors.BOLD}List Available Sources:{Colors.ENDC}
 python main.py list-sources"""
-    
+
     print("")
     print_panel(content, title="📚 Usage Examples", color=Colors.HEADER, width=70)
     print("")

@@ -1,11 +1,10 @@
-import pytest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 from src.cli.commands import watch_session
-import src.services.jules
+
 
 @patch('src.services.jules.JulesClient')
 @patch('src.cli.commands.Spinner')
-@patch('src.utils.polling.time.sleep') # Speed up tests
+@patch('src.utils.polling.time.sleep')  # Speed up tests
 @patch('src.cli.commands.print_watch_complete')
 @patch('src.cli.commands.print_watch_timeout')
 def test_watch_session_success(
@@ -35,6 +34,7 @@ def test_watch_session_success(
     mock_complete_print.assert_called_once()
     mock_timeout_print.assert_not_called()
     assert mock_jules.is_session_complete.call_count == 2
+
 
 @patch('src.services.jules.JulesClient')
 @patch('src.cli.commands.Spinner')

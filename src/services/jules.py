@@ -72,7 +72,7 @@ class JulesClient:
     def create_session(self, source_id: str, prompt: str) -> dict[str, Any]:
         """Create a new session with the given source and prompt."""
         url = f"{self.base_url}/sessions"
-        
+
         # Based on official API documentation:
         # https://developers.google.com/jules/api
         payload = {
@@ -86,9 +86,9 @@ class JulesClient:
             "automationMode": "AUTO_CREATE_PR",
             "title": "Automated Idea Session"
         }
-        
+
         return self._request("POST", url, json=payload)
-    
+
     def source_exists(self, source_id: str) -> bool:
         """Check if a source exists in the user's connected sources."""
         sources = self.list_sources()
@@ -96,21 +96,21 @@ class JulesClient:
             if source.get("name") == source_id:
                 return True
         return False
-    
+
     def get_session(self, session_id: str) -> dict[str, Any]:
         """Retrieve details for a specific session.
-        
+
         Args:
             session_id: The session ID (numeric string)
-        
+
         Returns:
             Session object with outputs if complete
         """
         return self._request("GET", f"{self.base_url}/sessions/{session_id}")
-    
+
     def list_sessions(self, page_size: int = 10) -> dict[str, Any]:
         """List recent sessions.
-        
+
         Args:
             page_size: Number of sessions to return (default: 10)
         """
@@ -119,10 +119,10 @@ class JulesClient:
             f"{self.base_url}/sessions",
             params={"pageSize": page_size}
         )
-    
+
     def list_activities(self, session_id: str, page_size: int = 30) -> dict[str, Any]:
         """List activities (progress updates) for a session.
-        
+
         Args:
             session_id: The session ID
             page_size: Number of activities to return (default: 30)
@@ -132,10 +132,10 @@ class JulesClient:
             f"{self.base_url}/sessions/{session_id}/activities",
             params={"pageSize": page_size}
         )
-    
+
     def send_message(self, session_id: str, prompt: str) -> dict[str, Any]:
         """Send a follow-up message to an active session.
-        
+
         Args:
             session_id: The session ID
             prompt: The message to send to the agent
@@ -145,35 +145,35 @@ class JulesClient:
             f"{self.base_url}/sessions/{session_id}:sendMessage",
             json={"prompt": prompt}
         )
-    
+
     def approve_plan(self, session_id: str) -> dict[str, Any]:
         """Approve the pending plan for a session.
-        
+
         Args:
             session_id: The session ID
         """
         return self._request("POST", f"{self.base_url}/sessions/{session_id}:approvePlan")
-    
+
     def is_session_complete(self, session_id: str) -> tuple[bool, Optional[str]]:
         """Check if a session has completed and returns PR URL if available.
-        
+
         Returns:
             tuple: (is_complete: bool, pr_url: str or None)
         """
         session = self.get_session(session_id)
         outputs = session.get("outputs", [])
-        
+
         # Check for PR in outputs
         for output in outputs:
             if "pullRequest" in output:
                 pr = output["pullRequest"]
                 return True, pr.get("url")
-        
+
         # Check activities for sessionCompleted
         activities = self.list_activities(session_id)
         for activity in activities.get("activities", []):
             if "sessionCompleted" in activity:
                 # Session complete but might not have PR
                 return True, None
-        
+
         return False, None

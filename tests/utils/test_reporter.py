@@ -37,10 +37,11 @@ def test_print_panel_basic(capsys: pytest.CaptureFixture[str]) -> None:
     # Top border length might vary slightly due to title placement logic but roughly matches width.
     assert len(clean_lines[0]) == width
 
+
 def test_print_panel_wrapping(capsys: pytest.CaptureFixture[str]) -> None:
     """Test print_panel wrapping functionality."""
     content = "This is a very long line that should be wrapped because it exceeds the width."
-    width = 20 # Small width to force wrapping
+    width = 20  # Small width to force wrapping
 
     print_panel(content, width=width)
 
