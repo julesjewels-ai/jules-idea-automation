@@ -1,13 +1,12 @@
 """Integration tests for Gemini client caching."""
-import pytest
 from unittest.mock import MagicMock
 from src.services.gemini import GeminiClient
 from src.services.cache import FileCacheProvider
-from src.core.models import IdeaResponse
 
 
 from pathlib import Path
 from pytest_mock import MockerFixture
+
 
 def test_gemini_caching(tmp_path: Path, mocker: MockerFixture) -> None:
     """Test that GeminiClient uses the cache."""
@@ -28,7 +27,10 @@ def test_gemini_caching(tmp_path: Path, mocker: MockerFixture) -> None:
     }
 
     mock_response = MagicMock()
-    mock_response.text = '{"title": "Test Idea", "description": "A test idea", "slug": "test-idea", "tech_stack": ["python"], "features": ["feature1"]}'
+    mock_response.text = (
+        '{"title": "Test Idea", "description": "A test idea", "slug": "test-idea", '
+        '"tech_stack": ["python"], "features": ["feature1"]}'
+    )
     mock_model.generate_content.return_value = mock_response
 
     # Initialize GeminiClient with cache
