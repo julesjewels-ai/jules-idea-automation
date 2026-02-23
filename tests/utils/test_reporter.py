@@ -1,7 +1,8 @@
 import pytest
 from src.utils.reporter import print_panel, strip_ansi, Colors
 
-def test_print_panel_basic(capsys):
+
+def test_print_panel_basic(capsys: pytest.CaptureFixture[str]) -> None:
     """Test basic print_panel functionality."""
     content = "Hello World"
     title = "Test Title"
@@ -36,7 +37,7 @@ def test_print_panel_basic(capsys):
     # Top border length might vary slightly due to title placement logic but roughly matches width.
     assert len(clean_lines[0]) == width
 
-def test_print_panel_wrapping(capsys):
+def test_print_panel_wrapping(capsys: pytest.CaptureFixture[str]) -> None:
     """Test print_panel wrapping functionality."""
     content = "This is a very long line that should be wrapped because it exceeds the width."
     width = 20 # Small width to force wrapping

@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 from src.utils.security import validate_url, ScrapingError
 
+__all__ = ["scrape_text", "ScrapingError"]
+
 
 # Minimum characters required to consider the page has meaningful content
 MIN_CONTENT_LENGTH = 200
@@ -24,7 +26,7 @@ BLOCKED_INDICATORS = [
 
 
 def scrape_text(url: str) -> str:
-    """Fetches the content of a URL and extracts validated text.
+    """Fetch the content of a URL and extracts validated text.
 
     Args:
         url: The URL to scrape
@@ -55,7 +57,7 @@ def scrape_text(url: str) -> str:
 
 
 def _extract_text(content: bytes) -> str:
-    """Extracts clean text from HTML content.
+    """Extract clean text from HTML content.
 
     Args:
         content: The HTML content in bytes
@@ -85,7 +87,7 @@ def _extract_text(content: bytes) -> str:
 
 
 def _fetch_response(url: str) -> requests.Response:
-    """Fetches the URL and handles network errors.
+    """Fetch the URL and handles network errors.
 
     Args:
         url: The URL to fetch
