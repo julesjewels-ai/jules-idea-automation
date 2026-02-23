@@ -3,7 +3,10 @@
 from __future__ import annotations
 import sys
 from argparse import Namespace
-from typing import Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.services.gemini import GeminiClient
 
 from src.utils.reporter import (
     print_session_status,
@@ -30,21 +33,24 @@ def handle_list_sources() -> None:
 def handle_agent(args: Namespace) -> None:
     """Handle the agent command."""
     from src.services.gemini import GeminiClient
+    from src.services.cache import FileCacheProvider
 
     category = getattr(args, 'category', None)
 
-    gemini = GeminiClient()
+    cache = FileCacheProvider()
+    gemini = GeminiClient(cache_provider=cache)
     msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
     with Spinner(msg, success_message="Idea generated"):
         idea_data = gemini.generate_idea(category=category)
 
-    _execute_and_watch(args, idea_data)
+    _execute_and_watch(args, idea_data, gemini_client=gemini)
 
 
 def handle_website(args: Namespace) -> None:
     """Handle the website command."""
     from src.services.gemini import GeminiClient
     from src.services.scraper import scrape_text
+    from src.services.cache import FileCacheProvider
 
     print(f"Scraping {args.url}...")
 
@@ -53,11 +59,12 @@ def handle_website(args: Namespace) -> None:
 
     print(f"✓ Extracted {len(text)} characters of content")
 
-    gemini = GeminiClient()
+    cache = FileCacheProvider()
+    gemini = GeminiClient(cache_provider=cache)
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
         idea_data = gemini.extract_idea_from_text(text)
 
-    _execute_and_watch(args, idea_data)
+    _execute_and_watch(args, idea_data, gemini_client=gemini)
 
 
 def handle_status(args: Namespace) -> None:
@@ -91,18 +98,23 @@ def handle_status(args: Namespace) -> None:
         )
 
 
-def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
+def _execute_and_watch(
+    args: Namespace,
+    idea_data: dict[str, Any],
+    gemini_client: Optional[GeminiClient] = None
+) -> None:
     """Execute the workflow and watch the session if requested.
 
     Args:
         args: Command line arguments containing public and timeout settings
         idea_data: The idea data to process
+        gemini_client: Optional GeminiClient instance
     """
     from src.core.workflow import IdeaWorkflow
 
     print_idea_summary(idea_data)
 
-    workflow = IdeaWorkflow()
+    workflow = IdeaWorkflow(gemini=gemini_client)
     result = workflow.execute(
         idea_data,
         private=not args.public,
@@ -218,6 +230,8 @@ def _parse_list_arg(arg_value: str | None) -> list[str]:
 def handle_manual(args: Namespace) -> None:
     """Handle the manual command."""
     from src.utils.slugify import slugify
+    from src.services.gemini import GeminiClient
+    from src.services.cache import FileCacheProvider
 
     title, description = _parse_title_and_description(args)
 
@@ -233,7 +247,9 @@ def handle_manual(args: Namespace) -> None:
         "features": _parse_list_arg(args.features)
     }
 
-    _execute_and_watch(args, idea_data)
+    cache = FileCacheProvider()
+    gemini = GeminiClient(cache_provider=cache)
+    _execute_and_watch(args, idea_data, gemini_client=gemini)
 
 
 def dispatch_command(args: Namespace) -> None:

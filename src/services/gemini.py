@@ -3,13 +3,17 @@ from __future__ import annotations
 import os
 import json
 import logging
-from typing import Optional, Any
+import hashlib
+from typing import Optional, Any, TYPE_CHECKING
 from xml.sax.saxutils import escape
 from google import genai
 from google.genai import types, errors
 
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
+
+if TYPE_CHECKING:
+    from src.core.interfaces import CacheProvider
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +33,11 @@ CATEGORY_PROMPTS = {
 class GeminiClient:
     """Client for the Google Gemini API, handling idea generation and project scaffolding."""
 
-    def __init__(self, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        cache_provider: Optional[CacheProvider] = None
+    ) -> None:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -42,6 +50,13 @@ class GeminiClient:
             http_options={'api_version': 'v1beta'}
         )
         self.model_name = "gemini-3-pro-preview"
+        self.cache_provider = cache_provider
+
+    def _get_cache_key(self, prompt: str, schema: Any) -> str:
+        """Construct a unique cache key."""
+        schema_name = getattr(schema, '__name__', str(schema))
+        prompt_hash = hashlib.sha256(prompt.encode()).hexdigest()
+        return f"{self.model_name}:{prompt_hash}:{schema_name}"
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
         """Maps Gemini API errors to user-friendly GenerationError."""
@@ -59,6 +74,20 @@ class GeminiClient:
 
     def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
         """Helper to generate content with consistent configuration and error handling."""
+        cache_key = None
+        if self.cache_provider:
+            cache_key = self._get_cache_key(prompt, schema)
+            cached = self.cache_provider.get(cache_key)
+            if cached:
+                logger.info("Cache hit for Gemini request")
+                if hasattr(schema, 'model_validate'):
+                    try:
+                        return schema.model_validate(cached).model_dump()  # type: ignore[no-any-return]
+                    except Exception:
+                        logger.warning("Cached data failed validation, generating new content.")
+                else:
+                    return cached  # type: ignore[no-any-return]
+
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -71,10 +100,18 @@ class GeminiClient:
                 ),
             )
             raw = json.loads(response.text or "")
+
+            result: dict[str, Any]
             # Validate against Pydantic schema if available
             if hasattr(schema, 'model_validate'):
-                return schema.model_validate(raw).model_dump()  # type: ignore[no-any-return]
-            return raw  # type: ignore[no-any-return]
+                result = schema.model_validate(raw).model_dump()
+            else:
+                result = raw
+
+            if self.cache_provider and cache_key:
+                self.cache_provider.set(cache_key, result)
+
+            return result
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
