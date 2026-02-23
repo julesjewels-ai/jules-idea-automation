@@ -34,6 +34,8 @@ pydantic==2.10.6
     #   google-genai
 pydantic-core==2.27.2
     # via pydantic
+pytest-mock==3.15.1
+    # via -r requirements.in
 python-dotenv==1.2.1
     # via -r requirements.in
 requests==2.32.5
