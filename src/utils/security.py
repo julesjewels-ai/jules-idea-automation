@@ -37,7 +37,14 @@ def validate_url(url: str) -> None:
 
 
 def _parse_and_validate_scheme(url: str) -> ParseResult:
-    """Parse URL and validate scheme."""
+    """Parse URL and validate scheme.
+
+    Args:
+        url: The URL to parse.
+
+    Returns:
+        The parsed URL object.
+    """
     parsed = urlparse(url)
     if parsed.scheme not in ('http', 'https'):
         raise ScrapingError(
@@ -48,7 +55,14 @@ def _parse_and_validate_scheme(url: str) -> ParseResult:
 
 
 def _validate_hostname(parsed: ParseResult) -> str:
-    """Validate and extract hostname."""
+    """Validate and extract hostname.
+
+    Args:
+        parsed: The parsed URL object.
+
+    Returns:
+        The hostname string.
+    """
     hostname = parsed.hostname
     if not hostname:
         raise ScrapingError(
@@ -61,7 +75,14 @@ def _validate_hostname(parsed: ParseResult) -> str:
 def _resolve_ip(
     hostname: str
 ) -> Union[ipaddress.IPv4Address, ipaddress.IPv6Address]:
-    """Resolve hostname to IP address."""
+    """Resolve hostname to IP address.
+
+    Args:
+        hostname: The hostname to resolve.
+
+    Returns:
+        The resolved IP address object.
+    """
     try:
         ip_str = socket.gethostbyname(hostname)
         return ipaddress.ip_address(ip_str)
@@ -77,7 +98,12 @@ def _validate_ip_safety(
     ip: Union[ipaddress.IPv4Address, ipaddress.IPv6Address],
     hostname: str
 ) -> None:
-    """Check if IP is safe (public)."""
+    """Check if IP is safe (public).
+
+    Args:
+        ip: The IP address to check.
+        hostname: The hostname associated with the IP.
+    """
     if ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_reserved:
         raise ScrapingError(
             f"Access to private/local address {hostname} ({ip}) is blocked "

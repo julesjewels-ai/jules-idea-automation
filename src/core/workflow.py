@@ -93,7 +93,16 @@ class IdeaWorkflow:
         return result
     
     def _create_repository(self, idea_data: dict[str, Any], private: bool, verbose: bool) -> str:
-        """Create GitHub repository and return username."""
+        """Create GitHub repository and return username.
+
+        Args:
+            idea_data: The idea data containing slug and description.
+            private: Whether the repository should be private.
+            verbose: Whether to print verbose output.
+
+        Returns:
+            The username of the repository owner.
+        """
         user = self.github.get_user()
         username = str(user['login'])
         
@@ -110,7 +119,13 @@ class IdeaWorkflow:
         return username
     
     def _generate_scaffold(self, username: str, idea_data: dict[str, Any], verbose: bool) -> None:
-        """Generate MVP scaffold and commit to repository."""
+        """Generate MVP scaffold and commit to repository.
+
+        Args:
+            username: The GitHub username.
+            idea_data: The idea data.
+            verbose: Whether to print verbose output.
+        """
         if verbose:
             print("Generating MVP scaffold with Gemini (this may take a moment)...")
         
@@ -156,7 +171,14 @@ class IdeaWorkflow:
                 print(f"  Created {result['files_created']} files in single commit")
 
     def _prepare_scaffold_files(self, scaffold: dict[str, Any]) -> list[dict[str, str]]:
-        """Prepare list of files to create from scaffold data."""
+        """Prepare list of files to create from scaffold data.
+
+        Args:
+            scaffold: The scaffold data.
+
+        Returns:
+            A list of dictionaries representing files to create.
+        """
         files_to_create: list[dict[str, str]] = []
 
         if not scaffold.get('files'):
@@ -192,7 +214,17 @@ class IdeaWorkflow:
         timeout: int,
         verbose: bool
     ) -> Optional[dict[str, Any]]:
-        """Wait for Jules indexing and create session."""
+        """Wait for Jules indexing and create session.
+
+        Args:
+            username: The GitHub username.
+            idea_data: The idea data.
+            timeout: The timeout duration in seconds.
+            verbose: Whether to print verbose output.
+
+        Returns:
+            The created session data, or None if the source was not found.
+        """
         source_id = f"sources/github/{username}/{idea_data['slug']}"
         
         if verbose:

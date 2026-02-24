@@ -69,7 +69,15 @@ working prototypes with automated development sessions.
 
 
 def _print_workflow_option(number: int, emoji: str, name: str, command: str, description: str) -> None:
-    """Print a single workflow option."""
+    """Print a single workflow option.
+
+    Args:
+        number: The option number.
+        emoji: The emoji icon for the option.
+        name: The name of the option.
+        command: The command to execute the option.
+        description: A description of the option.
+    """
     print(f"  {Colors.BOLD}{number}. {emoji} {name}{Colors.ENDC}")
     print(f"     {Colors.CYAN}{command}{Colors.ENDC}")
     print(f"     {description}")

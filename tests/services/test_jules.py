@@ -3,11 +3,12 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import requests
+from typing import Any, Optional
 from src.services.jules import JulesClient
 from src.utils.errors import JulesApiError
 
 
-def _make_http_error(status_code, text="", json_data=None):
+def _make_http_error(status_code: int, text: str = "", json_data: Optional[Any] = None) -> requests.exceptions.HTTPError:
     """Helper to create a requests.exceptions.HTTPError with a mock response."""
     response = MagicMock()
     response.status_code = status_code
@@ -20,7 +21,7 @@ def _make_http_error(status_code, text="", json_data=None):
     return error
 
 
-def test_jules_client_api_error_401():
+def test_jules_client_api_error_401() -> None:
     client = JulesClient(api_key="test-key")
 
     with patch("src.services.jules.requests.request") as mock_request:
@@ -37,7 +38,7 @@ def test_jules_client_api_error_401():
         assert "Your Jules API key seems invalid" in excinfo.value.tip
 
 
-def test_jules_client_api_error_403():
+def test_jules_client_api_error_403() -> None:
     client = JulesClient(api_key="test-key")
 
     with patch("src.services.jules.requests.request") as mock_request:
@@ -51,7 +52,7 @@ def test_jules_client_api_error_403():
         assert "You don't have permission" in excinfo.value.tip
 
 
-def test_jules_client_api_error_404():
+def test_jules_client_api_error_404() -> None:
     client = JulesClient(api_key="test-key")
 
     with patch("src.services.jules.requests.request") as mock_request:
@@ -65,7 +66,7 @@ def test_jules_client_api_error_404():
         assert "The requested resource was not found" in excinfo.value.tip
 
 
-def test_jules_client_generic_error():
+def test_jules_client_generic_error() -> None:
     client = JulesClient(api_key="test-key")
 
     with patch("src.services.jules.requests.request") as mock_request:
@@ -79,7 +80,7 @@ def test_jules_client_generic_error():
         assert "API returned status 500" in excinfo.value.tip
 
 
-def test_jules_client_json_error():
+def test_jules_client_json_error() -> None:
     client = JulesClient(api_key="test-key")
 
     with patch("src.services.jules.requests.request") as mock_request:

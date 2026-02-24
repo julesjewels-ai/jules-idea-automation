@@ -44,7 +44,14 @@ class GeminiClient:
         self.model_name = "gemini-3-pro-preview"
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
-        """Maps Gemini API errors to user-friendly GenerationError."""
+        """Maps Gemini API errors to user-friendly GenerationError.
+
+        Args:
+            e: The Gemini APIError exception.
+
+        Returns:
+            A GenerationError with a user-friendly message and tip.
+        """
         tip = "Check your internet connection and API status."
         err_msg = str(e)
 
@@ -58,7 +65,19 @@ class GeminiClient:
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
     def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
-        """Helper to generate content with consistent configuration and error handling."""
+        """Helper to generate content with consistent configuration and error handling.
+
+        Args:
+            prompt: The text prompt for the model.
+            schema: The expected response schema (Pydantic model or dict).
+            error_tip: The tip to display if generation fails.
+
+        Returns:
+            The generated content as a dictionary.
+
+        Raises:
+            GenerationError: If generation fails or returns invalid JSON.
+        """
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -105,7 +124,14 @@ class GeminiClient:
         )
 
     def extract_idea_from_text(self, text: str) -> dict[str, Any]:
-        """Extracts the core app idea from the provided text."""
+        """Extracts the core app idea from the provided text.
+
+        Args:
+            text: The text content to analyze.
+
+        Returns:
+            The extracted idea data as a dictionary.
+        """
         # Truncate text if it's too long to avoid token limits
         max_chars = 100000
         truncated_text = text[:max_chars]

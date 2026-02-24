@@ -20,7 +20,19 @@ class JulesClient:
         }
 
     def _request(self, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
-        """Internal helper to handle API requests and errors."""
+        """Internal helper to handle API requests and errors.
+
+        Args:
+            method: The HTTP method (GET, POST, etc.).
+            url: The full URL to request.
+            **kwargs: Additional arguments passed to requests.request.
+
+        Returns:
+            The JSON response from the API.
+
+        Raises:
+            JulesApiError: If the API request fails.
+        """
         try:
             response = requests.request(method, url, headers=self.headers, **kwargs)
             response.raise_for_status()
@@ -37,7 +49,14 @@ class JulesClient:
             raise JulesApiError(f"Network error: {e}", tip="Check your internet connection.")
 
     def _handle_http_error(self, e: requests.exceptions.HTTPError) -> str:
-        """Determines the appropriate user tip for an HTTP error."""
+        """Determines the appropriate user tip for an HTTP error.
+
+        Args:
+            e: The HTTPError exception.
+
+        Returns:
+            A user-friendly tip string.
+        """
         status_code = e.response.status_code
         if status_code == 401:
             return "Your Jules API key seems invalid. Check your .env file."
@@ -49,7 +68,14 @@ class JulesClient:
         return self._extract_api_error_message(e) or f"API returned status {status_code}."
 
     def _extract_api_error_message(self, e: requests.exceptions.HTTPError) -> Optional[str]:
-        """Attempts to parse a Google-style JSON error message."""
+        """Attempts to parse a Google-style JSON error message.
+
+        Args:
+            e: The HTTPError exception.
+
+        Returns:
+            The error message string if found, otherwise None.
+        """
         try:
             error_data = e.response.json()
             error_msg = error_data.get('error', {}).get('message')
@@ -64,7 +90,15 @@ class JulesClient:
         return self._request("GET", f"{self.base_url}/sources")
 
     def create_session(self, source_id: str, prompt: str) -> dict[str, Any]:
-        """Creates a new session with the given source and prompt."""
+        """Creates a new session with the given source and prompt.
+
+        Args:
+            source_id: The ID of the source to use.
+            prompt: The prompt describing the task.
+
+        Returns:
+            The created session data.
+        """
         url = f"{self.base_url}/sessions"
         
         # Based on official API documentation:
@@ -84,7 +118,14 @@ class JulesClient:
         return self._request("POST", url, json=payload)
     
     def source_exists(self, source_id: str) -> bool:
-        """Checks if a source exists in the user's connected sources."""
+        """Checks if a source exists in the user's connected sources.
+
+        Args:
+            source_id: The ID of the source to check.
+
+        Returns:
+            True if the source exists, False otherwise.
+        """
         sources = self.list_sources()
         for source in sources.get("sources", []):
             if source.get("name") == source_id:
@@ -150,6 +191,9 @@ class JulesClient:
     
     def is_session_complete(self, session_id: str) -> tuple[bool, Optional[str]]:
         """Checks if a session has completed and returns PR URL if available.
+
+        Args:
+            session_id: The session ID.
         
         Returns:
             tuple: (is_complete: bool, pr_url: str or None)

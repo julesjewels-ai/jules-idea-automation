@@ -28,7 +28,16 @@ class GitHubClient:
         return response.json()  # type: ignore[no-any-return]
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
-        """Creates a new repository."""
+        """Creates a new repository.
+
+        Args:
+            name: The name of the repository.
+            description: The description of the repository.
+            private: Whether the repository should be private.
+
+        Returns:
+            The created repository data.
+        """
         payload = {
             "name": name,
             "description": description,
@@ -40,7 +49,18 @@ class GitHubClient:
         return response.json()  # type: ignore[no-any-return]
 
     def create_file(self, owner: str, repo: str, path: str, content: str, message: str) -> dict[str, Any]:
-        """Creates or updates a file in the repository."""
+        """Creates or updates a file in the repository.
+
+        Args:
+            owner: The repository owner.
+            repo: The repository name.
+            path: The file path.
+            content: The file content.
+            message: The commit message.
+
+        Returns:
+            The response from the GitHub API.
+        """
         url = f"{self.base_url}/repos/{owner}/{repo}/contents/{path}"
         
         # GitHub API requires content to be base64 encoded
@@ -64,6 +84,9 @@ class GitHubClient:
             files: List of dicts with 'path' and 'content' keys
             message: Commit message
             branch: Target branch (default: main)
+
+        Returns:
+            Dict containing commit SHA and number of files created.
         """
         latest_commit_sha = self._get_latest_commit_sha(owner, repo, branch)
         base_tree_sha = self._get_tree_sha(owner, repo, latest_commit_sha)

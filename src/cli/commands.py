@@ -28,7 +28,11 @@ def handle_list_sources() -> None:
 
 
 def handle_agent(args: Namespace) -> None:
-    """Handle the agent command."""
+    """Handle the agent command.
+
+    Args:
+        args: Command line arguments.
+    """
     from src.services.gemini import GeminiClient
 
     category = getattr(args, 'category', None)
@@ -42,7 +46,11 @@ def handle_agent(args: Namespace) -> None:
 
 
 def handle_website(args: Namespace) -> None:
-    """Handle the website command."""
+    """Handle the website command.
+
+    Args:
+        args: Command line arguments.
+    """
     from src.services.gemini import GeminiClient
     from src.services.scraper import scrape_text
 
@@ -61,7 +69,11 @@ def handle_website(args: Namespace) -> None:
 
 
 def handle_status(args: Namespace) -> None:
-    """Handle the status command."""
+    """Handle the status command.
+
+    Args:
+        args: Command line arguments.
+    """
     from src.services.jules import JulesClient
 
     client = JulesClient()
@@ -165,7 +177,11 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[
 
 
 def handle_guide(args: Namespace) -> None:
-    """Handle the guide command."""
+    """Handle the guide command.
+
+    Args:
+        args: Command line arguments.
+    """
     from src.utils.guide import (
         print_welcome_guide,
         print_agent_guide,
@@ -193,6 +209,12 @@ def _parse_title_and_description(args: Namespace) -> tuple[str, str]:
 
     Handles the case where a long title is provided
     (Description-as-Title pattern).
+
+    Args:
+        args: Command line arguments.
+
+    Returns:
+        Tuple of (title, description).
     """
     raw_title = args.title
 
@@ -209,14 +231,25 @@ def _parse_title_and_description(args: Namespace) -> tuple[str, str]:
 
 
 def _parse_list_arg(arg_value: str | None) -> list[str]:
-    """Parse a comma-separated list argument."""
+    """Parse a comma-separated list argument.
+
+    Args:
+        arg_value: The string value to parse.
+
+    Returns:
+        List of strings.
+    """
     if not arg_value:
         return []
     return [item.strip() for item in arg_value.split(',')]
 
 
 def handle_manual(args: Namespace) -> None:
-    """Handle the manual command."""
+    """Handle the manual command.
+
+    Args:
+        args: Command line arguments.
+    """
     from src.utils.slugify import slugify
 
     title, description = _parse_title_and_description(args)
@@ -237,7 +270,11 @@ def handle_manual(args: Namespace) -> None:
 
 
 def dispatch_command(args: Namespace) -> None:
-    """Dispatch to the appropriate command handler."""
+    """Dispatch to the appropriate command handler.
+
+    Args:
+        args: Command line arguments.
+    """
     handlers = {
         "list-sources": lambda: handle_list_sources(),
         "agent": lambda: handle_agent(args),
