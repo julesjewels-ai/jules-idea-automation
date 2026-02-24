@@ -155,34 +155,43 @@ class IdeaWorkflow:
             if verbose:
                 print(f"  Created {result['files_created']} files in single commit")
 
+    def _process_file_entry(self, file_info: Any) -> Optional[dict[str, str]]:
+        """Validate and format a single file entry."""
+        if not isinstance(file_info, dict) or 'path' not in file_info:
+            logger.warning(f"Skipping malformed file entry: {type(file_info)}")
+            return None
+
+        if file_info['path'].lower() == 'readme.md':
+            return None
+
+        return {
+            'path': file_info['path'],
+            'content': file_info.get('content', '')
+        }
+
     def _prepare_scaffold_files(self, scaffold: dict[str, Any]) -> list[dict[str, str]]:
         """Prepare list of files to create from scaffold data."""
         files_to_create: list[dict[str, str]] = []
 
-        if not scaffold.get('files'):
+        files_list = scaffold.get('files')
+        if not files_list:
             return files_to_create
 
-        if not isinstance(scaffold['files'], list):
+        if not isinstance(files_list, list):
             logger.warning("Scaffold 'files' is not a list, skipping file creation.")
             return files_to_create
 
-        for file_info in scaffold['files']:
-            if not isinstance(file_info, dict) or 'path' not in file_info:
-                logger.warning(f"Skipping malformed file entry: {type(file_info)}")
-                continue
-            if file_info['path'].lower() == 'readme.md':
-                continue
-            files_to_create.append({
-                'path': file_info['path'],
-                'content': file_info.get('content', '')
-            })
+        for file_info in files_list:
+            processed_file = self._process_file_entry(file_info)
+            if processed_file:
+                files_to_create.append(processed_file)
 
         if scaffold.get('requirements'):
             files_to_create.append({
                 'path': 'requirements.txt',
                 'content': '\n'.join(scaffold['requirements'])
             })
-            
+
         return files_to_create
     
     def _create_jules_session(
