@@ -110,9 +110,8 @@ class IdeaWorkflow:
 
         visibility = "private" if private else "public"
         if verbose:
-            print(
-                f"Creating {visibility} GitHub repository '{
-                    idea_data['slug']}'...")
+            msg = f"Creating {visibility} GitHub repository '{idea_data['slug']}'..."
+            print(msg)
 
         self.github.create_repo(
             name=idea_data['slug'],
@@ -173,9 +172,8 @@ class IdeaWorkflow:
             )
 
             if verbose:
-                print(
-                    f"  Created {
-                        result['files_created']} files in single commit")
+                msg = f"  Created {result['files_created']} files in single commit"
+                print(msg)
 
     def _prepare_scaffold_files(
             self, scaffold: dict[str, Any]) -> list[dict[str, str]]:
@@ -199,9 +197,7 @@ class IdeaWorkflow:
 
         for file_info in scaffold['files']:
             if not isinstance(file_info, dict) or 'path' not in file_info:
-                logger.warning(
-                    f"Skipping malformed file entry: {
-                        type(file_info)}")
+                logger.warning(f"Skipping malformed file entry: {type(file_info)}")
                 continue
             if file_info['path'].lower() == 'readme.md':
                 continue
@@ -257,8 +253,7 @@ class IdeaWorkflow:
 
         if not source_found:
             if verbose:
-                print(
-                    f"WARNING: Source '{source_id}' was not found in Jules after {timeout}s.")
+                print(f"WARNING: Source '{source_id}' was not found in Jules after {timeout}s.")
                 print("Please visit https://jules.google.com to install the app.")
             return None
 

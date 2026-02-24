@@ -67,7 +67,8 @@ def _create_top_border(title: str, width: int, color: str) -> str:
     if right_pad < 0:
         right_pad = 0
 
-    return f"{TL_CORNER}{H_LINE * left_pad}{Colors.BOLD}{title_text}{Colors.ENDC}{color}{H_LINE * right_pad}{TR_CORNER}"
+    border_middle = f"{H_LINE * left_pad}{Colors.BOLD}{title_text}{Colors.ENDC}{color}{H_LINE * right_pad}"
+    return f"{TL_CORNER}{border_middle}{TR_CORNER}"
 
 
 def _wrap_content(content: str, width: int) -> list[str]:
@@ -107,8 +108,7 @@ def _wrap_content(content: str, width: int) -> list[str]:
     return wrapped_lines
 
 
-def print_panel(content: str, title: str = "",
-                color: str = Colors.CYAN, width: int = 60) -> None:
+def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: int = 60) -> None:
     """Prints content inside a bordered panel.
 
     Args:
@@ -133,12 +133,8 @@ def print_panel(content: str, title: str = "",
         padding = width - 4 - visible_len
         if padding < 0:
             padding = 0
-        print(
-            f"{color}{V_LINE}{
-                Colors.ENDC} {line}{
-                ' '
-                * padding} {color}{V_LINE}{
-                Colors.ENDC}")
+        line_content = f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} {color}{V_LINE}{Colors.ENDC}"
+        print(line_content)
 
     print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}")
 
@@ -150,8 +146,7 @@ class Spinner:
     success (✔) or failure (✖) state upon completion.
     """
 
-    def __init__(self, message: str = "Processing",
-                 success_message: Optional[str] = None):
+    def __init__(self, message: str = "Processing", success_message: Optional[str] = None):
         self.message = message
         self.success_message = success_message
         self._stop_event = threading.Event()
@@ -161,8 +156,7 @@ class Spinner:
         chars = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
         i = 0
         while not self._stop_event.is_set():
-            sys.stdout.write(
-                f"\r{Colors.CYAN}{chars[i % len(chars)]}{Colors.ENDC} {self.message}")
+            sys.stdout.write(f"\r{Colors.CYAN}{chars[i % len(chars)]}{Colors.ENDC} {self.message}")
             sys.stdout.flush()
             time.sleep(0.1)
             i += 1
@@ -195,8 +189,7 @@ class Spinner:
 
         # Even if not TTY, we want to print the final status if possible,
         # but the current implementation limits it to TTY.
-        # We will keep the TTY check for now to avoid breaking non-interactive
-        # logs.
+        # We will keep the TTY check for now to avoid breaking non-interactive logs.
         if sys.stdout.isatty():
             sys.stdout.write("\033[?25h")  # Show cursor
 
@@ -248,33 +241,15 @@ def print_workflow_report(
     print_header("✨ WORKFLOW COMPLETE")
     print(f"{Colors.BOLD}📦 Project:{Colors.ENDC} {Colors.GREEN}{title}{Colors.ENDC}")
     print(f"{Colors.BOLD}📝 Slug:   {Colors.ENDC} {slug}")
-    print(
-        f"{
-            Colors.BOLD}🔗 Repo:   {
-            Colors.ENDC} {
-                Colors.UNDERLINE}{repo_url}{
-                    Colors.ENDC}")
+    print(f"{Colors.BOLD}🔗 Repo:   {Colors.ENDC} {Colors.UNDERLINE}{repo_url}{Colors.ENDC}")
 
     if session_id:
-        print(
-            f"{
-                Colors.BOLD}🤖 Jules:  {
-                Colors.ENDC} {
-                Colors.UNDERLINE}{
-                    session_url or 'N/A'}{
-                        Colors.ENDC}")
+        print(f"{Colors.BOLD}🤖 Jules:  {Colors.ENDC} {Colors.UNDERLINE}{session_url or 'N/A'}{Colors.ENDC}")
         print(f"{Colors.BOLD}   Session:{Colors.ENDC} {session_id}")
         if pr_url:
-            print(
-                f"{
-                    Colors.BOLD}🎉 PR:     {
-                    Colors.ENDC} {
-                    Colors.UNDERLINE}{
-                    Colors.GREEN}{pr_url}{
-                        Colors.ENDC}")
+            print(f"{Colors.BOLD}🎉 PR:     {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     else:
-        print(
-            f"{Colors.YELLOW}⚠️  Jules session was not created (source not indexed){Colors.ENDC}")
+        print(f"{Colors.YELLOW}⚠️  Jules session was not created (source not indexed){Colors.ENDC}")
 
     print(f"{Colors.BOLD}{Colors.BLUE}{'=' * 50}{Colors.ENDC}")
 
@@ -297,34 +272,14 @@ def print_session_status(
         pr_url: URL to the Pull Request (if any).
         activities: List of recent activity descriptions.
     """
-    print(
-        f"\n{
-            Colors.BOLD}📋 Session Status:{
-            Colors.ENDC} {
-                Colors.CYAN}{session_id}{
-                    Colors.ENDC}")
+    print(f"\n{Colors.BOLD}📋 Session Status:{Colors.ENDC} {Colors.CYAN}{session_id}{Colors.ENDC}")
     print(f"   {Colors.BOLD}Title:   {Colors.ENDC} {title}")
-    print(
-        f"   {
-            Colors.BOLD}URL:     {
-            Colors.ENDC} {
-                Colors.UNDERLINE}{url}{
-                    Colors.ENDC}")
-    status_msg = f"{
-        Colors.GREEN}✅ Yes{
-        Colors.ENDC}" if is_complete else f"{
-            Colors.YELLOW}⏳ In Progress{
-                Colors.ENDC}"
+    print(f"   {Colors.BOLD}URL:     {Colors.ENDC} {Colors.UNDERLINE}{url}{Colors.ENDC}")
+    status_msg = f"{Colors.GREEN}✅ Yes{Colors.ENDC}" if is_complete else f"{Colors.YELLOW}⏳ In Progress{Colors.ENDC}"
     print(f"   {Colors.BOLD}Complete:{Colors.ENDC} {status_msg}")
 
     if pr_url:
-        print(
-            f"   {
-                Colors.BOLD}PR:      {
-                Colors.ENDC} {
-                Colors.UNDERLINE}{
-                    Colors.GREEN}{pr_url}{
-                        Colors.ENDC}")
+        print(f"   {Colors.BOLD}PR:      {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
 
     if activities:
         print(f"\n   {Colors.BOLD}Recent Activity:{Colors.ENDC}")
@@ -371,21 +326,11 @@ def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
         pr_url: URL of the created Pull Request (if any).
     """
     duration = format_duration(elapsed)
-    print(
-        f"\n{
-            Colors.GREEN}✅ Session completed after {duration}!{
-            Colors.ENDC}")
+    print(f"\n{Colors.GREEN}✅ Session completed after {duration}!{Colors.ENDC}")
     if pr_url:
-        print(
-            f"{
-                Colors.BOLD}🎉 Pull Request:{
-                Colors.ENDC} {
-                Colors.UNDERLINE}{
-                    Colors.GREEN}{pr_url}{
-                        Colors.ENDC}")
+        print(f"{Colors.BOLD}🎉 Pull Request:{Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     else:
-        print(
-            f"{Colors.YELLOW}ℹ️  Session completed but no PR was created.{Colors.ENDC}")
+        print(f"{Colors.YELLOW}ℹ️  Session completed but no PR was created.{Colors.ENDC}")
 
 
 def print_watch_timeout(timeout: int, session_url: str) -> None:
@@ -396,10 +341,7 @@ def print_watch_timeout(timeout: int, session_url: str) -> None:
         session_url: URL to check the session status.
     """
     duration = format_duration(timeout)
-    print(
-        f"\n{
-            Colors.YELLOW}⏱️  Timeout reached after {duration}. Session still running.{
-            Colors.ENDC}")
+    print(f"\n{Colors.YELLOW}⏱️  Timeout reached after {duration}. Session still running.{Colors.ENDC}")
     print(f"   Check status at: {Colors.UNDERLINE}{session_url}{Colors.ENDC}")
 
 
