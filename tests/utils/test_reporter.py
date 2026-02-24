@@ -1,6 +1,7 @@
 import pytest
 from src.utils.reporter import print_panel, strip_ansi, Colors
 
+
 def test_print_panel_basic(capsys: pytest.CaptureFixture[str]) -> None:
     """Test basic print_panel functionality."""
     content = "Hello World"
@@ -31,15 +32,18 @@ def test_print_panel_basic(capsys: pytest.CaptureFixture[str]) -> None:
     assert content_line.endswith("│")
 
     # Verify visual width (allowing for some border chars)
-    # Box drawing characters might mess up len() if not careful, but strip_ansi handles colors.
+    # Box drawing characters might mess up len() if not careful, but strip_ansi
+    # handles colors.
     # The printed width is effectively the 'width' parameter.
-    # Top border length might vary slightly due to title placement logic but roughly matches width.
+    # Top border length might vary slightly due to title placement logic but
+    # roughly matches width.
     assert len(clean_lines[0]) == width
+
 
 def test_print_panel_wrapping(capsys: pytest.CaptureFixture[str]) -> None:
     """Test print_panel wrapping functionality."""
     content = "This is a very long line that should be wrapped because it exceeds the width."
-    width = 20 # Small width to force wrapping
+    width = 20  # Small width to force wrapping
 
     print_panel(content, width=width)
 

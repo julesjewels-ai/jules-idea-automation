@@ -8,7 +8,11 @@ from src.services.jules import JulesClient
 from src.utils.errors import JulesApiError
 
 
-def _make_http_error(status_code: int, text: str = "", json_data: Optional[Any] = None) -> requests.exceptions.HTTPError:
+def _make_http_error(
+    status_code: int,
+    text: str = "",
+    json_data: Optional[Any] = None
+) -> requests.exceptions.HTTPError:
     """Helper to create a requests.exceptions.HTTPError with a mock response."""
     response = MagicMock()
     response.status_code = status_code
@@ -26,9 +30,12 @@ def test_jules_client_api_error_401() -> None:
 
     with patch("src.services.jules.requests.request") as mock_request:
         mock_request.side_effect = _make_http_error(401, "Unauthorized")
-        # The _request method catches HTTPError, so we need to simulate raise_for_status
+        # The _request method catches HTTPError, so we need to simulate
+        # raise_for_status
         mock_resp = MagicMock()
-        mock_resp.raise_for_status.side_effect = _make_http_error(401, "Unauthorized")
+        mock_resp.raise_for_status.side_effect = _make_http_error(
+            401, "Unauthorized"
+        )
         mock_request.side_effect = None
         mock_request.return_value = mock_resp
 
@@ -43,7 +50,9 @@ def test_jules_client_api_error_403() -> None:
 
     with patch("src.services.jules.requests.request") as mock_request:
         mock_resp = MagicMock()
-        mock_resp.raise_for_status.side_effect = _make_http_error(403, "Forbidden")
+        mock_resp.raise_for_status.side_effect = _make_http_error(
+            403, "Forbidden"
+        )
         mock_request.return_value = mock_resp
 
         with pytest.raises(JulesApiError) as excinfo:
@@ -57,7 +66,9 @@ def test_jules_client_api_error_404() -> None:
 
     with patch("src.services.jules.requests.request") as mock_request:
         mock_resp = MagicMock()
-        mock_resp.raise_for_status.side_effect = _make_http_error(404, "Not Found")
+        mock_resp.raise_for_status.side_effect = _make_http_error(
+            404, "Not Found"
+        )
         mock_request.return_value = mock_resp
 
         with pytest.raises(JulesApiError) as excinfo:
@@ -71,7 +82,9 @@ def test_jules_client_generic_error() -> None:
 
     with patch("src.services.jules.requests.request") as mock_request:
         mock_resp = MagicMock()
-        mock_resp.raise_for_status.side_effect = _make_http_error(500, "Internal Server Error")
+        mock_resp.raise_for_status.side_effect = _make_http_error(
+            500, "Internal Server Error"
+        )
         mock_request.return_value = mock_resp
 
         with pytest.raises(JulesApiError) as excinfo:

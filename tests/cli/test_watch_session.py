@@ -1,19 +1,26 @@
-import pytest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 from src.cli.commands import watch_session
-import src.services.jules
+
 
 @patch('src.services.jules.JulesClient')
 @patch('src.cli.commands.Spinner')
-@patch('src.utils.polling.time.sleep') # Speed up tests
+@patch('src.utils.polling.time.sleep')  # Speed up tests
 @patch('src.cli.commands.print_watch_complete')
 @patch('src.cli.commands.print_watch_timeout')
-def test_watch_session_success(mock_timeout_print: MagicMock, mock_complete_print: MagicMock, mock_sleep: MagicMock, mock_spinner_cls: MagicMock, mock_jules_cls: MagicMock) -> None:
+def test_watch_session_success(
+    mock_timeout_print: MagicMock,
+    mock_complete_print: MagicMock,
+    mock_sleep: MagicMock,
+    mock_spinner_cls: MagicMock,
+    mock_jules_cls: MagicMock
+) -> None:
     # Setup
     mock_jules = mock_jules_cls.return_value
     # is_session_complete returns (is_complete, pr_url)
     # First call False, Second call True
-    mock_jules.is_session_complete.side_effect = [(False, None), (True, "http://pr.url")]
+    mock_jules.is_session_complete.side_effect = [
+        (False, None), (True, "http://pr.url")
+    ]
 
     # Mock list_activities
     mock_jules.list_activities.return_value = {
@@ -30,12 +37,19 @@ def test_watch_session_success(mock_timeout_print: MagicMock, mock_complete_prin
     mock_timeout_print.assert_not_called()
     assert mock_jules.is_session_complete.call_count == 2
 
+
 @patch('src.services.jules.JulesClient')
 @patch('src.cli.commands.Spinner')
 @patch('src.utils.polling.time.sleep')
 @patch('src.cli.commands.print_watch_complete')
 @patch('src.cli.commands.print_watch_timeout')
-def test_watch_session_timeout(mock_timeout_print: MagicMock, mock_complete_print: MagicMock, mock_sleep: MagicMock, mock_spinner_cls: MagicMock, mock_jules_cls: MagicMock) -> None:
+def test_watch_session_timeout(
+    mock_timeout_print: MagicMock,
+    mock_complete_print: MagicMock,
+    mock_sleep: MagicMock,
+    mock_spinner_cls: MagicMock,
+    mock_jules_cls: MagicMock
+) -> None:
     # Setup
     mock_jules = mock_jules_cls.return_value
     mock_jules.is_session_complete.return_value = (False, None)

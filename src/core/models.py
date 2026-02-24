@@ -10,9 +10,14 @@ class IdeaResponse(BaseModel):
     """Represents a generated software idea."""
     title: str = Field(description="The name of the software idea.")
     description: str = Field(description="A detailed description of the idea.")
-    slug: str = Field(description="A kebab-case string for GitHub repository name.")
-    tech_stack: list[str] = Field(default_factory=list, description="Recommended technologies.")
-    features: list[str] = Field(default_factory=list, description="Key MVP features.")
+    slug: str = Field(
+        description="A kebab-case string for GitHub repository name.")
+    tech_stack: list[str] = Field(
+        default_factory=list,
+        description="Recommended technologies.")
+    features: list[str] = Field(
+        default_factory=list,
+        description="Key MVP features.")
 
 
 class ProjectFile(BaseModel):
@@ -25,11 +30,16 @@ class ProjectFile(BaseModel):
 class ProjectScaffold(BaseModel):
     """Represents a complete project scaffold."""
     files: list[ProjectFile] = Field(description="List of files to create.")
-    requirements: list[str] = Field(default_factory=list, description="Python dependencies.")
-    run_command: str = Field(default="python main.py", description="Command to run the app.")
+    requirements: list[str] = Field(
+        default_factory=list,
+        description="Python dependencies.")
+    run_command: str = Field(
+        default="python main.py",
+        description="Command to run the app.")
 
     @classmethod
-    def create_fallback_scaffold(cls, title: str, description: str) -> "ProjectScaffold":
+    def create_fallback_scaffold(
+            cls, title: str, description: str) -> "ProjectScaffold":
         """Creates a default scaffold when generation fails.
 
         Args:

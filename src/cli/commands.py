@@ -151,7 +151,8 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[
                 activities = jules.list_activities(session_id, page_size=1)
                 if activities.get("activities"):
                     latest = activities["activities"][0]
-                    return str(latest.get("progressUpdated", {}).get("title", "Working..."))
+                    title = latest.get("progressUpdated", {}).get("title", "Working...")
+                    return str(title)
                 return "Working..."
             except Exception:
                 return "Polling..."
