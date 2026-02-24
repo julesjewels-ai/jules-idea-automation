@@ -6,3 +6,4 @@ google-auth==2.30.0
 pydantic==2.10.6
 pytest-mock
 iniconfig<2.0.0
+pytest<9.0.0
