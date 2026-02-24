@@ -53,8 +53,13 @@ def test_generate_idea_json_error(client):
 
 def test_generate_idea_api_error(client):
     # Simulate an API error (e.g., invalid key)
+    # google-genai 0.8.0 APIError expects 'response' argument, not 'response_json'
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"error": {"message": "400 API key not valid"}}
+    mock_response.status_code = 400
+
     client.client.models.generate_content.side_effect = errors.APIError(
-        code=400, response_json={"error": {"message": "400 API key not valid"}}
+        code=400, response=mock_response
     )
 
     with pytest.raises(GenerationError) as excinfo:
