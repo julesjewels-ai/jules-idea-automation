@@ -1,12 +1,13 @@
 import pytest
 from pytest_mock import MockerFixture
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 from typing import Any, Callable
 
 from src.core.workflow import IdeaWorkflow
 from src.services.github import GitHubClient
 from src.services.gemini import GeminiClient
 from src.services.jules import JulesClient
+
 
 @pytest.fixture
 def mock_github(mocker: MockerFixture) -> Mock:
@@ -16,6 +17,7 @@ def mock_github(mocker: MockerFixture) -> Mock:
     mock.create_file.return_value = {"content": {"name": "README.md"}}
     mock.create_files.return_value = {"files_created": 2}
     return mock
+
 
 @pytest.fixture
 def mock_gemini(mocker: MockerFixture) -> Mock:
@@ -27,6 +29,7 @@ def mock_gemini(mocker: MockerFixture) -> Mock:
     }
     return mock
 
+
 @pytest.fixture
 def mock_jules(mocker: MockerFixture) -> Mock:
     mock = mocker.create_autospec(JulesClient, instance=True)
@@ -37,21 +40,26 @@ def mock_jules(mocker: MockerFixture) -> Mock:
     }
     return mock
 
+
 @pytest.fixture
 def mock_poll_until(mocker: MockerFixture) -> Mock:
     return mocker.patch("src.core.workflow.poll_until", return_value=True)
+
 
 @pytest.fixture
 def mock_print_report(mocker: MockerFixture) -> Mock:
     return mocker.patch("src.core.workflow.print_workflow_report")
 
+
 @pytest.fixture
 def mock_build_readme(mocker: MockerFixture) -> Mock:
     return mocker.patch("src.core.workflow.build_readme", return_value="# Readme")
 
+
 @pytest.fixture
 def workflow(mock_github: Mock, mock_gemini: Mock, mock_jules: Mock) -> IdeaWorkflow:
     return IdeaWorkflow(github=mock_github, gemini=mock_gemini, jules=mock_jules)
+
 
 @pytest.fixture
 def idea_data() -> dict[str, Any]:
@@ -63,17 +71,22 @@ def idea_data() -> dict[str, Any]:
         "features": ["feature1"]
     }
 
+
 def setup_happy_path(m_gh: Mock, m_gem: Mock, m_jul: Mock, m_poll: Mock) -> None:
     pass
+
 
 def setup_jules_timeout(m_gh: Mock, m_gem: Mock, m_jul: Mock, m_poll: Mock) -> None:
     m_poll.return_value = False
 
+
 def setup_empty_scaffold(m_gh: Mock, m_gem: Mock, m_jul: Mock, m_poll: Mock) -> None:
     m_gem.generate_project_scaffold.return_value = {"files": [], "requirements": []}
 
+
 def setup_github_error(m_gh: Mock, m_gem: Mock, m_jul: Mock, m_poll: Mock) -> None:
     m_gh.create_repo.side_effect = RuntimeError("GitHub API Error")
+
 
 @pytest.mark.parametrize("scenario, setup_func, expected_result", [
     ("happy_path", setup_happy_path, "success"),
@@ -129,7 +142,7 @@ def test_workflow_execute(
             mock_gemini.generate_project_scaffold.assert_called_once_with(idea_data)
             mock_github.create_files.assert_called_once()
             created_files = mock_github.create_files.call_args[1]["files"]
-            assert len(created_files) == 2 # main.py + requirements.txt
+            assert len(created_files) == 2  # main.py + requirements.txt
             assert any(f["path"] == "main.py" for f in created_files)
             assert any(f["path"] == "requirements.txt" for f in created_files)
 
