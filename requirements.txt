@@ -22,8 +22,10 @@ google-genai==0.8.0
     # via -r requirements.in
 idna==3.11
     # via requests
-iniconfig==2.3.0
-    # via pytest
+iniconfig==1.1.1
+    # via
+    #   -r requirements.in
+    #   pytest
 packaging==26.0
     # via pytest
 pluggy==1.6.0
