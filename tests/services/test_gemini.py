@@ -2,32 +2,33 @@ import pytest
 from unittest.mock import MagicMock, patch
 import json
 import os
+from typing import Generator
 from google.genai import errors
 from src.services.gemini import GeminiClient
 from src.utils.errors import ConfigurationError, GenerationError
 
 @pytest.fixture
-def mock_genai_client():
+def mock_genai_client() -> Generator[MagicMock, None, None]:
     with patch("src.services.gemini.genai.Client") as mock:
         yield mock
 
 @pytest.fixture
-def client(mock_genai_client):
+def client(mock_genai_client: MagicMock) -> GeminiClient:
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
         return GeminiClient()
 
-def test_init_raises_error_without_api_key():
+def test_init_raises_error_without_api_key() -> None:
     # Ensure environment is clean
     with patch.dict(os.environ, {}, clear=True):
         with pytest.raises(ConfigurationError):
             GeminiClient(api_key=None)
 
-def test_init_with_env_var():
+def test_init_with_env_var() -> None:
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
         client = GeminiClient()
         assert client.api_key == "test_key"
 
-def test_generate_idea_success(client):
+def test_generate_idea_success(client: GeminiClient) -> None:
     mock_response = MagicMock()
     mock_response.text = json.dumps({
         "title": "Test App",
@@ -43,7 +44,7 @@ def test_generate_idea_success(client):
     assert result["title"] == "Test App"
     client.client.models.generate_content.assert_called_once()
 
-def test_generate_idea_json_error(client):
+def test_generate_idea_json_error(client: GeminiClient) -> None:
     mock_response = MagicMock()
     mock_response.text = "invalid json"
     client.client.models.generate_content.return_value = mock_response
@@ -51,7 +52,7 @@ def test_generate_idea_json_error(client):
     with pytest.raises(GenerationError):
         client.generate_idea()
 
-def test_generate_idea_api_error(client):
+def test_generate_idea_api_error(client: GeminiClient) -> None:
     # Simulate an API error (e.g., invalid key)
     # google-genai 0.8.0 APIError expects 'response' argument, not 'response_json'
     mock_response = MagicMock()
@@ -66,9 +67,10 @@ def test_generate_idea_api_error(client):
         client.generate_idea()
 
     assert "Gemini API Error" in str(excinfo.value)
+    assert excinfo.value.tip
     assert "Your GEMINI_API_KEY seems invalid" in excinfo.value.tip
 
-def test_extract_idea_from_text_success(client):
+def test_extract_idea_from_text_success(client: GeminiClient) -> None:
     mock_response = MagicMock()
     mock_response.text = json.dumps({
         "title": "Extracted App",
@@ -84,7 +86,7 @@ def test_extract_idea_from_text_success(client):
     assert result["title"] == "Extracted App"
     client.client.models.generate_content.assert_called_once()
 
-def test_extract_idea_from_text_escapes_input(client):
+def test_extract_idea_from_text_escapes_input(client: GeminiClient) -> None:
     """Test that input text is escaped to prevent prompt injection."""
     mock_response = MagicMock()
     mock_response.text = json.dumps({
@@ -113,7 +115,7 @@ def test_extract_idea_from_text_escapes_input(client):
     # Check that raw malicious tag is NOT present
     assert malicious_input not in prompt
 
-def test_generate_project_scaffold_success(client):
+def test_generate_project_scaffold_success(client: GeminiClient) -> None:
     mock_response = MagicMock()
     mock_response.text = json.dumps({
         "files": [],
@@ -133,7 +135,7 @@ def test_generate_project_scaffold_success(client):
 
     assert result["run_command"] == "python main.py"
 
-def test_generate_project_scaffold_escapes_input(client):
+def test_generate_project_scaffold_escapes_input(client: GeminiClient) -> None:
     """Test that scaffold input is escaped."""
     mock_response = MagicMock()
     mock_response.text = json.dumps({
@@ -159,7 +161,7 @@ def test_generate_project_scaffold_escapes_input(client):
     assert "Desc &amp; more" in prompt
     assert "<project_title>" in prompt
 
-def test_generate_project_scaffold_retry_then_success(client):
+def test_generate_project_scaffold_retry_then_success(client: GeminiClient) -> None:
     # First call raises exception, second call succeeds
     mock_response = MagicMock()
     mock_response.text = json.dumps({
@@ -179,7 +181,7 @@ def test_generate_project_scaffold_retry_then_success(client):
     assert result["run_command"] == "python main.py"
     assert client.client.models.generate_content.call_count == 2
 
-def test_generate_project_scaffold_fallback(client):
+def test_generate_project_scaffold_fallback(client: GeminiClient) -> None:
     # All calls fail
     client.client.models.generate_content.side_effect = Exception("API Error")
 

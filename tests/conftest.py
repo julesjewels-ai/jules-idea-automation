@@ -1,3 +1,5 @@
+"""Test configuration."""
+
 import sys
 import os
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Jules Automation Tool - Entry Point
+Jules Automation Tool - Entry Point.
 
 This is the main entry point for the CLI.
 It handles only orchestration - all business logic is in src/
@@ -12,14 +12,14 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-from src.cli.parser import create_parser
-from src.cli.commands import dispatch_command
-from src.utils.errors import AppError
-from src.utils.reporter import print_panel, Colors
+from src.cli.parser import create_parser  # noqa: E402
+from src.cli.commands import dispatch_command  # noqa: E402
+from src.utils.errors import AppError  # noqa: E402
+from src.utils.reporter import print_panel, Colors  # noqa: E402
 
 
 def main() -> None:
-    """Main entry point - orchestration only."""
+    """Execute main entry point - orchestration only."""
     parser = create_parser()
     args = parser.parse_args()
     
