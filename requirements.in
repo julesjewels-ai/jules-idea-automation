@@ -4,7 +4,7 @@ google-genai==0.8.0
 python-dotenv==1.2.1
 google-auth==2.30.0
 pydantic==2.10.6
-pytest
+pytest<9.0.0
 pytest-mock
 mypy
 ruff
