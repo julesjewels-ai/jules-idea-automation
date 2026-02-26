@@ -1,7 +1,7 @@
 import pytest
 from pytest_mock import MockerFixture
 from src.core.workflow import IdeaWorkflow
-from src.core.models import WorkflowResult
+from src.core.models import WorkflowResult, IdeaResponse, ProjectScaffold, ProjectFile
 from src.services.github import GitHubClient
 from src.services.gemini import GeminiClient
 from src.services.jules import JulesClient
@@ -17,14 +17,14 @@ def mock_clients(mocker: MockerFixture) -> dict[str, MagicMock]:
     }
 
 @pytest.fixture
-def idea_data() -> dict[str, Any]:
-    return {
-        "title": "Test Idea",
-        "description": "A test description",
-        "slug": "test-idea",
-        "tech_stack": ["python"],
-        "features": ["feature1"],
-    }
+def idea_data() -> IdeaResponse:
+    return IdeaResponse(
+        title="Test Idea",
+        description="A test description",
+        slug="test-idea",
+        tech_stack=["python"],
+        features=["feature1"],
+    )
 
 @pytest.mark.parametrize("scenario, private_flag, verbose_flag, poll_success, expected_result", [
     ("happy_path", True, True, True, "success"),
@@ -34,7 +34,7 @@ def idea_data() -> dict[str, Any]:
 def test_execute_behavior(
     mocker: MockerFixture,
     mock_clients: dict[str, MagicMock],
-    idea_data: dict[str, Any],
+    idea_data: IdeaResponse,
     scenario: str,
     private_flag: bool,
     verbose_flag: bool,
@@ -53,13 +53,13 @@ def test_execute_behavior(
     jules = mock_clients["jules"]
 
     github.get_user.return_value = {"login": "testuser"}
-    gemini.generate_project_scaffold.return_value = {
-        "files": [
-            {"path": "main.py", "content": "print('hello')", "description": "Main file"}
+    gemini.generate_project_scaffold.return_value = ProjectScaffold(
+        files=[
+            ProjectFile(path="main.py", content="print('hello')", description="Main file")
         ],
-        "requirements": ["requests"],
-        "run_command": "python main.py"
-    }
+        requirements=["requests"],
+        run_command="python main.py"
+    )
     mock_build_readme.return_value = "# README"
 
     # Configure poll result

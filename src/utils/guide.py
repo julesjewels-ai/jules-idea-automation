@@ -5,7 +5,6 @@ from src.utils.reporter import Colors, print_panel
 
 def print_welcome_guide() -> None:
     """Display the main welcome guide with all available workflows."""
-    
     print("\n")
     print(f"{Colors.BOLD}{Colors.HEADER}{'=' * 70}{Colors.ENDC}")
     print(f"{Colors.BOLD}{Colors.HEADER}  Welcome to Jules Idea Automation! 🚀{Colors.ENDC}")
@@ -78,7 +77,6 @@ def _print_workflow_option(number: int, emoji: str, name: str, command: str, des
 
 def print_agent_guide() -> None:
     """Display detailed guide for agent mode."""
-    
     content = f"""{Colors.BOLD}What is Agent Mode?{Colors.ENDC}
 Agent mode uses Google's Gemini AI to generate creative software ideas 
 from scratch. Perfect when you want inspiration or a quick prototype.
@@ -116,7 +114,6 @@ python main.py agent --public
 
 def print_website_guide() -> None:
     """Display detailed guide for website mode."""
-    
     content = f"""{Colors.BOLD}What is Website Mode?{Colors.ENDC}
 Website mode extracts software ideas from public web pages. Perfect 
 when you found an interesting concept online and want to build it.
@@ -155,7 +152,6 @@ If scraping fails:
 
 def print_manual_guide() -> None:
     """Display detailed guide for manual mode."""
-    
     content = f"""{Colors.BOLD}What is Manual Mode?{Colors.ENDC}
 Manual mode lets you provide your own software idea details. Perfect 
 when you know exactly what you want to build.
@@ -201,7 +197,6 @@ python main.py manual \"Task Manager\" \\
 
 def print_examples() -> None:
     """Display common usage examples."""
-    
     content = f"""{Colors.BOLD}Quick Start - Generate Random Idea:{Colors.ENDC}
 python main.py agent
 

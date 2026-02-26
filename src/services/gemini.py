@@ -1,18 +1,23 @@
+"""Gemini API client."""
+
 from __future__ import annotations
 
 import os
 import json
 import logging
-from typing import Optional, Any
+from typing import Optional, Any, Type, TypeVar
 from xml.sax.saxutils import escape
 from google import genai
 from google.genai import types, errors
+from pydantic import BaseModel
 
 from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
 
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T", bound=BaseModel)
 
 # Category-specific prompt templates
 CATEGORY_PROMPTS = {
@@ -30,6 +35,7 @@ class GeminiClient:
     """Client for the Google Gemini API, handling idea generation and project scaffolding."""
 
     def __init__(self, api_key: Optional[str] = None) -> None:
+        """Initialize the GeminiClient."""
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -44,7 +50,7 @@ class GeminiClient:
         self.model_name = "gemini-3-pro-preview"
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
-        """Maps Gemini API errors to user-friendly GenerationError."""
+        """Map Gemini API errors to user-friendly GenerationError."""
         tip = "Check your internet connection and API status."
         err_msg = str(e)
 
@@ -57,8 +63,8 @@ class GeminiClient:
 
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
-    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
-        """Helper to generate content with consistent configuration and error handling."""
+    def _generate_content(self, prompt: str, schema: Type[T], error_tip: str) -> T:
+        """Generate content with consistent configuration and error handling."""
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -71,10 +77,8 @@ class GeminiClient:
                 ),
             )
             raw = json.loads(response.text or "")
-            # Validate against Pydantic schema if available
-            if hasattr(schema, 'model_validate'):
-                return schema.model_validate(raw).model_dump()  # type: ignore[no-any-return]
-            return raw  # type: ignore[no-any-return]
+            # Validate against Pydantic schema
+            return schema.model_validate(raw)
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
@@ -88,8 +92,8 @@ class GeminiClient:
                 tip="Check your network connection and configuration."
             )
 
-    def generate_idea(self, category: Optional[str] = None) -> dict[str, Any]:
-        """Generates a unique software idea using Gemini 3.
+    def generate_idea(self, category: Optional[str] = None) -> IdeaResponse:
+        """Generate a unique software idea using Gemini 3.
 
         Args:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
@@ -104,8 +108,8 @@ class GeminiClient:
             "The AI model returned invalid JSON. Please try again or try a different category."
         )
 
-    def extract_idea_from_text(self, text: str) -> dict[str, Any]:
-        """Extracts the core app idea from the provided text."""
+    def extract_idea_from_text(self, text: str) -> IdeaResponse:
+        """Extract the core app idea from the provided text."""
         # Truncate text if it's too long to avoid token limits
         max_chars = 100000
         truncated_text = text[:max_chars]
@@ -129,19 +133,19 @@ class GeminiClient:
             "The AI model returned invalid JSON while analyzing the website content."
         )
 
-    def generate_project_scaffold(self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
-        """Generates a complete MVP project scaffold for the given idea.
+    def generate_project_scaffold(self, idea_data: IdeaResponse, max_retries: int = 2) -> ProjectScaffold:
+        """Generate a complete MVP project scaffold for the given idea.
 
         Args:
-            idea_data: Dict with title, description, slug, tech_stack, features
+            idea_data: IdeaResponse object with title, description, slug, tech_stack, features
             max_retries: Number of retries on failure (default: 2)
 
         Returns:
             ProjectScaffold with files, requirements, and run command
         """
         # Sanitize inputs
-        safe_title = escape(idea_data['title'])
-        safe_desc = escape(idea_data['description'][:500])
+        safe_title = escape(idea_data.title)
+        safe_desc = escape(idea_data.description[:500])
 
         # Developer-ready MVP prompt
         prompt = f"""
@@ -194,8 +198,8 @@ Create a complete, immediately-runnable project with these files:
                         f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
                     # Return minimal fallback scaffold
                     return ProjectScaffold.create_fallback_scaffold(
-                        idea_data['title'],
-                        idea_data['description']
-                    ).model_dump()
+                        idea_data.title,
+                        idea_data.description
+                    )
 
         raise GenerationError("Failed to generate project scaffold.")

@@ -9,7 +9,7 @@ from src.services.gemini import GeminiClient
 from src.services.github import GitHubClient
 from src.services.jules import JulesClient
 from src.core.readme_builder import build_readme
-from src.core.models import WorkflowResult
+from src.core.models import WorkflowResult, IdeaResponse, ProjectScaffold, ProjectFile
 from src.utils.polling import poll_until
 from src.utils.reporter import print_workflow_report
 
@@ -41,7 +41,7 @@ class IdeaWorkflow:
     
     def execute(
         self,
-        idea_data: dict[str, Any],
+        idea_data: IdeaResponse,
         private: bool = True,
         timeout: int = 1800,
         verbose: bool = True
@@ -49,7 +49,7 @@ class IdeaWorkflow:
         """Execute the full workflow.
         
         Args:
-            idea_data: Dict with title, description, slug, tech_stack, features
+            idea_data: IdeaResponse with title, description, slug, tech_stack, features
             private: Create private repository (default: private)
             timeout: Max seconds to wait for Jules indexing
             verbose: Print progress messages
@@ -58,13 +58,13 @@ class IdeaWorkflow:
             WorkflowResult with repo_url, session info, etc.
         """
         if verbose:
-            print(f"Processing Idea: {idea_data['title']}")
-            print(f"Slug: {idea_data['slug']}")
+            print(f"Processing Idea: {idea_data.title}")
+            print(f"Slug: {idea_data.slug}")
             print("-" * 40)
         
         # Step 1: Create GitHub repository
         username = self._create_repository(idea_data, private, verbose)
-        repo_url = f"https://github.com/{username}/{idea_data['slug']}"
+        repo_url = f"https://github.com/{username}/{idea_data.slug}"
         
         # Step 2: Generate and commit scaffold
         self._generate_scaffold(username, idea_data, verbose)
@@ -73,9 +73,8 @@ class IdeaWorkflow:
         session = self._create_jules_session(username, idea_data, timeout, verbose)
         
         # Build result
-        from src.core.models import IdeaResponse
         result = WorkflowResult(
-            idea=IdeaResponse(**idea_data),
+            idea=idea_data,
             repo_url=repo_url,
             session_id=session.get('id') if session else None,
             session_url=session.get('url') if session else None
@@ -83,8 +82,8 @@ class IdeaWorkflow:
         
         if verbose:
             print_workflow_report(
-                title=idea_data['title'],
-                slug=idea_data['slug'],
+                title=idea_data.title,
+                slug=idea_data.slug,
                 repo_url=repo_url,
                 session_id=result.session_id,
                 session_url=result.session_url
@@ -92,24 +91,24 @@ class IdeaWorkflow:
         
         return result
     
-    def _create_repository(self, idea_data: dict[str, Any], private: bool, verbose: bool) -> str:
+    def _create_repository(self, idea_data: IdeaResponse, private: bool, verbose: bool) -> str:
         """Create GitHub repository and return username."""
         user = self.github.get_user()
         username = str(user['login'])
         
         visibility = "private" if private else "public"
         if verbose:
-            print(f"Creating {visibility} GitHub repository '{idea_data['slug']}'...")
+            print(f"Creating {visibility} GitHub repository '{idea_data.slug}'...")
         
         self.github.create_repo(
-            name=idea_data['slug'],
-            description=idea_data['description'][:350],
+            name=idea_data.slug,
+            description=idea_data.description[:350],
             private=private
         )
         
         return username
     
-    def _generate_scaffold(self, username: str, idea_data: dict[str, Any], verbose: bool) -> None:
+    def _generate_scaffold(self, username: str, idea_data: IdeaResponse, verbose: bool) -> None:
         """Generate MVP scaffold and commit to repository."""
         if verbose:
             print("Generating MVP scaffold with Gemini (this may take a moment)...")
@@ -118,12 +117,12 @@ class IdeaWorkflow:
         
         # Build README
         readme_content = build_readme(
-            title=idea_data['title'],
-            description=idea_data['description'],
-            tech_stack=idea_data.get('tech_stack'),
-            features=idea_data.get('features'),
-            requirements=scaffold.get('requirements'),
-            run_command=scaffold.get('run_command')
+            title=idea_data.title,
+            description=idea_data.description,
+            tech_stack=idea_data.tech_stack,
+            features=idea_data.features,
+            requirements=scaffold.requirements,
+            run_command=scaffold.run_command
         )
         
         # First commit: README
@@ -132,7 +131,7 @@ class IdeaWorkflow:
         
         self.github.create_file(
             owner=username,
-            repo=idea_data['slug'],
+            repo=idea_data.slug,
             path="README.md",
             content=readme_content,
             message="Initial commit: Add README with project description"
@@ -147,7 +146,7 @@ class IdeaWorkflow:
             
             result = self.github.create_files(
                 owner=username,
-                repo=idea_data['slug'],
+                repo=idea_data.slug,
                 files=files_to_create,
                 message="feat: Add MVP scaffold with SOLID structure"
             )
@@ -155,41 +154,32 @@ class IdeaWorkflow:
             if verbose:
                 print(f"  Created {result['files_created']} files in single commit")
 
-    def _process_file_entry(self, file_info: Any) -> Optional[dict[str, str]]:
+    def _process_file_entry(self, file_info: ProjectFile) -> Optional[dict[str, str]]:
         """Validate and format a single file entry."""
-        if not isinstance(file_info, dict) or 'path' not in file_info:
-            logger.warning(f"Skipping malformed file entry: {type(file_info)}")
-            return None
-
-        if file_info['path'].lower() == 'readme.md':
+        if file_info.path.lower() == 'readme.md':
             return None
 
         return {
-            'path': file_info['path'],
-            'content': file_info.get('content', '')
+            'path': file_info.path,
+            'content': file_info.content
         }
 
-    def _prepare_scaffold_files(self, scaffold: dict[str, Any]) -> list[dict[str, str]]:
+    def _prepare_scaffold_files(self, scaffold: ProjectScaffold) -> list[dict[str, str]]:
         """Prepare list of files to create from scaffold data."""
         files_to_create: list[dict[str, str]] = []
 
-        files_list = scaffold.get('files')
-        if not files_list:
+        if not scaffold.files:
             return files_to_create
 
-        if not isinstance(files_list, list):
-            logger.warning("Scaffold 'files' is not a list, skipping file creation.")
-            return files_to_create
-
-        for file_info in files_list:
+        for file_info in scaffold.files:
             processed_file = self._process_file_entry(file_info)
             if processed_file:
                 files_to_create.append(processed_file)
 
-        if scaffold.get('requirements'):
+        if scaffold.requirements:
             files_to_create.append({
                 'path': 'requirements.txt',
-                'content': '\n'.join(scaffold['requirements'])
+                'content': '\n'.join(scaffold.requirements)
             })
 
         return files_to_create
@@ -197,12 +187,12 @@ class IdeaWorkflow:
     def _create_jules_session(
         self,
         username: str,
-        idea_data: dict[str, Any],
+        idea_data: IdeaResponse,
         timeout: int,
         verbose: bool
     ) -> Optional[dict[str, Any]]:
         """Wait for Jules indexing and create session."""
-        source_id = f"sources/github/{username}/{idea_data['slug']}"
+        source_id = f"sources/github/{username}/{idea_data.slug}"
         
         if verbose:
             print(f"Constructed Source ID: {source_id}")
@@ -229,4 +219,4 @@ class IdeaWorkflow:
         if verbose:
             print("Source found! Creating session in Jules...")
         
-        return self.jules.create_session(source_id, idea_data['description'])
+        return self.jules.create_session(source_id, idea_data.description)

@@ -14,6 +14,7 @@ from src.utils.reporter import (
     Spinner,
     format_duration,
 )
+from src.core.models import IdeaResponse
 
 
 def handle_list_sources() -> None:
@@ -91,7 +92,7 @@ def handle_status(args: Namespace) -> None:
         )
 
 
-def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
+def _execute_and_watch(args: Namespace, idea_data: IdeaResponse) -> None:
     """Execute the workflow and watch the session if requested.
 
     Args:
@@ -100,7 +101,7 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
     """
     from src.core.workflow import IdeaWorkflow
 
-    print_idea_summary(idea_data)
+    print_idea_summary(idea_data.model_dump())
 
     workflow = IdeaWorkflow()
     result = workflow.execute(
@@ -224,14 +225,14 @@ def handle_manual(args: Namespace) -> None:
     # Generate slug from title if not provided
     slug = args.slug or slugify(title)
 
-    # Construct idea_data dictionary compatible with IdeaResponse
-    idea_data = {
-        "title": title,
-        "description": description,
-        "slug": slug,
-        "tech_stack": _parse_list_arg(args.tech_stack),
-        "features": _parse_list_arg(args.features)
-    }
+    # Construct IdeaResponse object
+    idea_data = IdeaResponse(
+        title=title,
+        description=description,
+        slug=slug,
+        tech_stack=_parse_list_arg(args.tech_stack),
+        features=_parse_list_arg(args.features)
+    )
 
     _execute_and_watch(args, idea_data)
 

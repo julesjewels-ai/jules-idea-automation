@@ -4,6 +4,7 @@ import json
 import os
 from google.genai import errors
 from src.services.gemini import GeminiClient
+from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
 
 @pytest.fixture
@@ -40,7 +41,8 @@ def test_generate_idea_success(client):
 
     result = client.generate_idea(category="web_app")
 
-    assert result["title"] == "Test App"
+    assert isinstance(result, IdeaResponse)
+    assert result.title == "Test App"
     client.client.models.generate_content.assert_called_once()
 
 def test_generate_idea_json_error(client):
@@ -81,7 +83,8 @@ def test_extract_idea_from_text_success(client):
 
     result = client.extract_idea_from_text("some long text content")
 
-    assert result["title"] == "Extracted App"
+    assert isinstance(result, IdeaResponse)
+    assert result.title == "Extracted App"
     client.client.models.generate_content.assert_called_once()
 
 def test_extract_idea_from_text_escapes_input(client):
@@ -122,16 +125,17 @@ def test_generate_project_scaffold_success(client):
     })
     client.client.models.generate_content.return_value = mock_response
 
-    idea_data = {
-        "title": "Test App",
-        "description": "Desc",
-        "slug": "test-app",
-        "tech_stack": [],
-        "features": []
-    }
+    idea_data = IdeaResponse(
+        title="Test App",
+        description="Desc",
+        slug="test-app",
+        tech_stack=[],
+        features=[]
+    )
     result = client.generate_project_scaffold(idea_data)
 
-    assert result["run_command"] == "python main.py"
+    assert isinstance(result, ProjectScaffold)
+    assert result.run_command == "python main.py"
 
 def test_generate_project_scaffold_escapes_input(client):
     """Test that scaffold input is escaped."""
@@ -143,13 +147,13 @@ def test_generate_project_scaffold_escapes_input(client):
     })
     client.client.models.generate_content.return_value = mock_response
 
-    idea_data = {
-        "title": "Test <script>alert(1)</script>",
-        "description": "Desc & more",
-        "slug": "test-app",
-        "tech_stack": [],
-        "features": []
-    }
+    idea_data = IdeaResponse(
+        title="Test <script>alert(1)</script>",
+        description="Desc & more",
+        slug="test-app",
+        tech_stack=[],
+        features=[]
+    )
     client.generate_project_scaffold(idea_data)
 
     call_args = client.client.models.generate_content.call_args
@@ -173,21 +177,23 @@ def test_generate_project_scaffold_retry_then_success(client):
         mock_response
     ]
 
-    idea_data = {"title": "Test", "description": "Desc"}
+    idea_data = IdeaResponse(title="Test", description="Desc", slug="test", tech_stack=[], features=[])
     result = client.generate_project_scaffold(idea_data)
 
-    assert result["run_command"] == "python main.py"
+    assert isinstance(result, ProjectScaffold)
+    assert result.run_command == "python main.py"
     assert client.client.models.generate_content.call_count == 2
 
 def test_generate_project_scaffold_fallback(client):
     # All calls fail
     client.client.models.generate_content.side_effect = Exception("API Error")
 
-    idea_data = {"title": "Test App", "description": "Desc"}
+    idea_data = IdeaResponse(title="Test App", description="Desc", slug="test-app", tech_stack=[], features=[])
     # max_retries=1 means attempts: 0 (initial), 1 (retry 1). Total 2.
     result = client.generate_project_scaffold(idea_data, max_retries=1)
 
     # Check for fallback structure
-    assert result["run_command"] == "python main.py"
-    assert any(f["path"] == "main.py" for f in result["files"])
+    assert isinstance(result, ProjectScaffold)
+    assert result.run_command == "python main.py"
+    assert any(f.path == "main.py" for f in result.files)
     assert client.client.models.generate_content.call_count == 2

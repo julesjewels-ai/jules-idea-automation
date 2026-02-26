@@ -2,6 +2,7 @@ from argparse import Namespace
 from unittest.mock import patch, ANY
 import pytest
 from src.cli.commands import handle_manual
+from src.core.models import IdeaResponse
 
 @patch('src.cli.commands._execute_and_watch')
 @patch('src.utils.slugify.slugify')
@@ -19,13 +20,13 @@ def test_handle_manual_basic(mock_slugify, mock_execute):
     handle_manual(args)
 
     mock_slugify.assert_called_once_with("My Title")
-    expected_data = {
-        "title": "My Title",
-        "description": "My Description",
-        "slug": "my-title",
-        "tech_stack": [],
-        "features": []
-    }
+    expected_data = IdeaResponse(
+        title="My Title",
+        description="My Description",
+        slug="my-title",
+        tech_stack=[],
+        features=[]
+    )
     mock_execute.assert_called_once_with(args, expected_data)
 
 @patch('src.cli.commands._execute_and_watch')
@@ -44,32 +45,16 @@ def test_handle_manual_long_title(mock_slugify, mock_execute):
 
     handle_manual(args)
 
-    # Should extract first sentence/prefix
-    expected_title = "This is a very long title that is actually a descri" # 50 chars prefix then split '.'
-    # Wait, the logic is: raw_title[:50].split('.')[0].strip()
-    # "This is a very long title that is actually a descri" -> split('.') -> same string
-
-    # Let's verify the logic in commands.py:
-    # title = raw_title[:50].split('.')[0].strip() or "Manual Idea"
-
-    # "This is a very long title that is actually a descri" (50 chars)
-    # It doesn't contain a dot. So it takes the whole 50 chars.
-
     mock_slugify.assert_called_once()
 
-    expected_data = {
-        "title": ANY, # We'll verify exact logic via the called args
-        "description": long_title,
-        "slug": "this-is-a-very-long",
-        "tech_stack": [],
-        "features": []
-    }
-    mock_execute.assert_called_once_with(args, expected_data)
-
-    # Verify title specifically
+    # We can verify via the called args
     call_args = mock_execute.call_args
     idea_data = call_args[0][1]
-    assert idea_data["title"] == "This is a very long title that is actually a descr"
+
+    assert isinstance(idea_data, IdeaResponse)
+    assert idea_data.description == long_title
+    assert idea_data.slug == "this-is-a-very-long"
+    assert idea_data.title == "This is a very long title that is actually a descr"
 
 @patch('src.cli.commands._execute_and_watch')
 def test_handle_manual_with_lists(mock_execute):
@@ -84,11 +69,11 @@ def test_handle_manual_with_lists(mock_execute):
 
     handle_manual(args)
 
-    expected_data = {
-        "title": "App",
-        "description": "Desc",
-        "slug": "app",
-        "tech_stack": ["python", "react", "typescript"],
-        "features": ["login", "dashboard"]
-    }
+    expected_data = IdeaResponse(
+        title="App",
+        description="Desc",
+        slug="app",
+        tech_stack=["python", "react", "typescript"],
+        features=["login", "dashboard"]
+    )
     mock_execute.assert_called_once_with(args, expected_data)
