@@ -12,10 +12,10 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-from src.cli.parser import create_parser
-from src.cli.commands import dispatch_command
-from src.utils.errors import AppError
-from src.utils.reporter import print_panel, Colors
+from src.cli.parser import create_parser  # noqa: E402
+from src.cli.commands import dispatch_command  # noqa: E402
+from src.utils.errors import AppError  # noqa: E402
+from src.utils.reporter import print_panel, Colors  # noqa: E402
 
 
 def main() -> None:

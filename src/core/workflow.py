@@ -35,8 +35,21 @@ class IdeaWorkflow:
             gemini: GeminiClient instance (created if None)
             jules: JulesClient instance (created if None)
         """
+        # If gemini is not provided, we create one with default cache provider if available
+        # Note: In production code, it's better to pass the configured client in.
+        # Here we follow the pattern of creating default if None.
+
         self.github = github or GitHubClient()
-        self.gemini = gemini or GeminiClient()
+
+        if gemini:
+            self.gemini = gemini
+        else:
+            # Lazy import to avoid circular dependency or unnecessary imports if passed
+            from src.services.gemini import GeminiClient
+            from src.services.cache import FileCacheProvider
+            # Default to using file cache if initializing here
+            self.gemini = GeminiClient(cache_provider=FileCacheProvider())
+
         self.jules = jules or JulesClient()
     
     def execute(

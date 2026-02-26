@@ -36,7 +36,7 @@ class ProjectScaffold(BaseModel):
         template_path = template_dir / filename
         try:
             return template_path.read_text(encoding="utf-8")
-        except Exception as e:
+        except Exception:
             return ""
 
     @classmethod
