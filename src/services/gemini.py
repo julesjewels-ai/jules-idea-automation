@@ -64,23 +64,22 @@ class GeminiClient:
 
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
-    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
-        """Helper to generate content with consistent configuration and error handling."""
+    def _get_cache_key(self, prompt: str, schema: Any) -> Optional[str]:
+        """Generates a cache key based on the prompt, model, and schema."""
+        if not self.cache_provider:
+            return None
+        schema_name = getattr(schema, '__name__', str(schema))
+        prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+        return f"{self.model_name}:{prompt_hash}:{schema_name}"
 
-        # Check cache if available
-        cache_key = ""
-        if self.cache_provider:
-            schema_name = getattr(schema, '__name__', str(schema))
-            prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
-            cache_key = f"{self.model_name}:{prompt_hash}:{schema_name}"
+    def _validate_and_return(self, data: Any, schema: Any) -> dict[str, Any]:
+        """Validates data against the schema and returns a dictionary."""
+        if hasattr(schema, 'model_validate'):
+            return schema.model_validate(data).model_dump()  # type: ignore[no-any-return]
+        return data  # type: ignore[no-any-return]
 
-            cached_data = self.cache_provider.get(cache_key)
-            if cached_data:
-                logger.info(f"Cache hit for key: {cache_key}")
-                if hasattr(schema, 'model_validate'):
-                    return schema.model_validate(cached_data).model_dump()  # type: ignore[no-any-return]
-                return cached_data
-
+    def _safe_generate(self, prompt: str, schema: Any, error_tip: str) -> Any:
+        """Safely executes the API call with error handling."""
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -92,16 +91,7 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            raw = json.loads(response.text or "")
-
-            # Store in cache if available
-            if self.cache_provider and cache_key:
-                self.cache_provider.set(cache_key, raw)
-
-            # Validate against Pydantic schema if available
-            if hasattr(schema, 'model_validate'):
-                return schema.model_validate(raw).model_dump()  # type: ignore[no-any-return]
-            return raw  # type: ignore[no-any-return]
+            return json.loads(response.text or "")
         except json.JSONDecodeError as e:
             raise GenerationError(
                 f"Failed to parse Gemini response: {e}",
@@ -114,6 +104,25 @@ class GeminiClient:
                 f"Unexpected error during generation: {e}",
                 tip="Check your network connection and configuration."
             )
+
+    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
+        """Helper to generate content with consistent configuration and error handling."""
+        # Check cache if available
+        cache_key = self._get_cache_key(prompt, schema)
+
+        if cache_key and self.cache_provider:
+            cached_data = self.cache_provider.get(cache_key)
+            if cached_data:
+                logger.info(f"Cache hit for key: {cache_key}")
+                return self._validate_and_return(cached_data, schema)
+
+        raw = self._safe_generate(prompt, schema, error_tip)
+
+        # Store in cache if available
+        if cache_key and self.cache_provider:
+            self.cache_provider.set(cache_key, raw)
+
+        return self._validate_and_return(raw, schema)
 
     def generate_idea(self, category: Optional[str] = None) -> dict[str, Any]:
         """Generates a unique software idea using Gemini 3.
