@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from typing import Optional, Any
+import time
 
 from src.services.gemini import GeminiClient
 from src.services.github import GitHubClient
@@ -12,6 +13,14 @@ from src.core.readme_builder import build_readme
 from src.core.models import WorkflowResult
 from src.utils.polling import poll_until
 from src.utils.reporter import print_workflow_report
+from src.core.interfaces import EventBus
+from src.core.events import (
+    WorkflowStarted,
+    RepoCreated,
+    ScaffoldGenerated,
+    SessionCreated,
+    WorkflowCompleted
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +35,8 @@ class IdeaWorkflow:
         self,
         github: Optional[GitHubClient] = None,
         gemini: Optional[GeminiClient] = None,
-        jules: Optional[JulesClient] = None
+        jules: Optional[JulesClient] = None,
+        event_bus: Optional[EventBus] = None
     ):
         """Initialize workflow with optional service instances.
         
@@ -34,6 +44,7 @@ class IdeaWorkflow:
             github: GitHubClient instance (created if None)
             gemini: GeminiClient instance (created if None)
             jules: JulesClient instance (created if None)
+            event_bus: EventBus instance for publishing domain events
         """
         # If gemini is not provided, we create one with default cache provider if available
         # Note: In production code, it's better to pass the configured client in.
@@ -51,6 +62,7 @@ class IdeaWorkflow:
             self.gemini = GeminiClient(cache_provider=FileCacheProvider())
 
         self.jules = jules or JulesClient()
+        self.event_bus = event_bus
     
     def execute(
         self,
@@ -70,6 +82,15 @@ class IdeaWorkflow:
         Returns:
             WorkflowResult with repo_url, session info, etc.
         """
+        start_time = time.time()
+
+        if self.event_bus:
+            self.event_bus.publish(WorkflowStarted(
+                idea_title=idea_data['title'],
+                idea_slug=idea_data['slug'],
+                workflow_params={"private": private, "timeout": timeout}
+            ))
+
         if verbose:
             print(f"Processing Idea: {idea_data['title']}")
             print(f"Slug: {idea_data['slug']}")
@@ -79,6 +100,12 @@ class IdeaWorkflow:
         username = self._create_repository(idea_data, private, verbose)
         repo_url = f"https://github.com/{username}/{idea_data['slug']}"
         
+        if self.event_bus:
+            self.event_bus.publish(RepoCreated(
+                repo_url=repo_url,
+                visibility="private" if private else "public"
+            ))
+
         # Step 2: Generate and commit scaffold
         self._generate_scaffold(username, idea_data, verbose)
         
@@ -103,6 +130,13 @@ class IdeaWorkflow:
                 session_url=result.session_url
             )
         
+        if self.event_bus:
+            self.event_bus.publish(WorkflowCompleted(
+                repo_url=repo_url,
+                session_url=result.session_url,
+                duration_seconds=time.time() - start_time
+            ))
+
         return result
     
     def _create_repository(self, idea_data: dict[str, Any], private: bool, verbose: bool) -> str:
@@ -167,6 +201,12 @@ class IdeaWorkflow:
             
             if verbose:
                 print(f"  Created {result['files_created']} files in single commit")
+
+            if self.event_bus:
+                self.event_bus.publish(ScaffoldGenerated(
+                    file_count=result['files_created'],
+                    requirements=scaffold.get('requirements', [])
+                ))
 
     def _process_file_entry(self, file_info: Any) -> Optional[dict[str, str]]:
         """Validate and format a single file entry."""
@@ -242,4 +282,13 @@ class IdeaWorkflow:
         if verbose:
             print("Source found! Creating session in Jules...")
         
-        return self.jules.create_session(source_id, idea_data['description'])
+        session = self.jules.create_session(source_id, idea_data['description'])
+
+        if self.event_bus and session:
+            self.event_bus.publish(SessionCreated(
+                session_id=session.get('name', '').split('/')[-1] if 'name' in session else 'unknown',
+                session_url=f"https://jules.google.com/session/{session.get('name', '').split('/')[-1]}", # Best guess construction
+                source_id=source_id
+            ))
+
+        return session

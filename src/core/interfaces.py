@@ -25,3 +25,40 @@ class CacheProvider(Protocol):
             value: The value to cache (must be JSON-serializable).
         """
         ...
+
+
+class DomainEvent(Protocol):
+    """Protocol for domain events."""
+    pass
+
+
+class EventHandler(Protocol):
+    """Protocol for handling domain events."""
+
+    def handle(self, event: Any) -> None:
+        """Handle a domain event.
+
+        Args:
+            event: The domain event to handle.
+        """
+        ...
+
+
+class EventBus(Protocol):
+    """Protocol for event bus."""
+
+    def subscribe(self, handler: EventHandler) -> None:
+        """Subscribe a handler to the event bus.
+
+        Args:
+            handler: The handler to subscribe.
+        """
+        ...
+
+    def publish(self, event: Any) -> None:
+        """Publish an event to the event bus.
+
+        Args:
+            event: The event to publish.
+        """
+        ...
