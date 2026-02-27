@@ -11,4 +11,4 @@ ruff
 pydocstyle
 types-requests
 types-beautifulsoup4
-iniconfig<2.0.0
+iniconfig<3.0.0
