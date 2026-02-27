@@ -64,23 +64,26 @@ class GeminiClient:
 
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
-    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
-        """Helper to generate content with consistent configuration and error handling."""
+    def _get_cached_content(self, prompt: str, schema: Any) -> tuple[Optional[dict[str, Any]], str]:
+        """Checks the cache for existing content and returns the data and cache key."""
+        if not self.cache_provider:
+            return None, ""
 
-        # Check cache if available
-        cache_key = ""
-        if self.cache_provider:
-            schema_name = getattr(schema, '__name__', str(schema))
-            prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
-            cache_key = f"{self.model_name}:{prompt_hash}:{schema_name}"
+        schema_name = getattr(schema, '__name__', str(schema))
+        prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+        cache_key = f"{self.model_name}:{prompt_hash}:{schema_name}"
 
-            cached_data = self.cache_provider.get(cache_key)
-            if cached_data:
-                logger.info(f"Cache hit for key: {cache_key}")
-                if hasattr(schema, 'model_validate'):
-                    return schema.model_validate(cached_data).model_dump()  # type: ignore[no-any-return]
-                return cached_data
+        cached_data = self.cache_provider.get(cache_key)
+        if cached_data:
+            logger.info(f"Cache hit for key: {cache_key}")
+            if hasattr(schema, 'model_validate'):
+                return schema.model_validate(cached_data).model_dump(), cache_key  # type: ignore[no-any-return]
+            return cached_data, cache_key
 
+        return None, cache_key
+
+    def _fetch_from_api(self, prompt: str, schema: Any, error_tip: str, cache_key: str) -> dict[str, Any]:
+        """Fetches content from Gemini API and handles errors/caching."""
         try:
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -114,6 +117,16 @@ class GeminiClient:
                 f"Unexpected error during generation: {e}",
                 tip="Check your network connection and configuration."
             )
+
+    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
+        """Helper to generate content with consistent configuration and error handling."""
+
+        # Check cache if available
+        cached_data, cache_key = self._get_cached_content(prompt, schema)
+        if cached_data:
+            return cached_data
+
+        return self._fetch_from_api(prompt, schema, error_tip, cache_key)
 
     def generate_idea(self, category: Optional[str] = None) -> dict[str, Any]:
         """Generates a unique software idea using Gemini 3.
