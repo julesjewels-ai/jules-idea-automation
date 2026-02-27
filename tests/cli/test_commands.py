@@ -1,11 +1,8 @@
 
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from src.cli.commands import handle_list_sources
-from src.utils.reporter import Colors
 
 # Ensure module is loaded for patching
-import src.services.jules
 
 @patch('src.cli.commands.Spinner')
 @patch('src.services.jules.JulesClient')

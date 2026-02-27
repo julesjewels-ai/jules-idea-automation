@@ -1,6 +1,5 @@
 from argparse import Namespace
 from unittest.mock import patch, ANY
-import pytest
 from src.cli.commands import handle_manual
 
 @patch('src.cli.commands._execute_and_watch')

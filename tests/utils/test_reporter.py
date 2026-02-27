@@ -1,4 +1,3 @@
-import pytest
 from src.utils.reporter import print_panel, strip_ansi, Colors
 
 def test_print_panel_basic(capsys):
