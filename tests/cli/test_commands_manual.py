@@ -1,11 +1,13 @@
+"""Tests for manual command handler."""
+
 from argparse import Namespace
-from unittest.mock import patch, ANY
+from unittest.mock import patch, ANY, MagicMock
 import pytest
 from src.cli.commands import handle_manual
 
 @patch('src.cli.commands._execute_and_watch')
 @patch('src.utils.slugify.slugify')
-def test_handle_manual_basic(mock_slugify, mock_execute):
+def test_handle_manual_basic(mock_slugify: MagicMock, mock_execute: MagicMock) -> None:
     """Test basic manual command with explicit title and description."""
     mock_slugify.return_value = "my-title"
     args = Namespace(
@@ -13,7 +15,10 @@ def test_handle_manual_basic(mock_slugify, mock_execute):
         description="My Description",
         slug=None,
         tech_stack=None,
-        features=None
+        features=None,
+        public=False,
+        timeout=1800,
+        watch=False
     )
 
     handle_manual(args)
@@ -30,7 +35,7 @@ def test_handle_manual_basic(mock_slugify, mock_execute):
 
 @patch('src.cli.commands._execute_and_watch')
 @patch('src.utils.slugify.slugify')
-def test_handle_manual_long_title(mock_slugify, mock_execute):
+def test_handle_manual_long_title(mock_slugify: MagicMock, mock_execute: MagicMock) -> None:
     """Test handling of long titles (description-as-title pattern)."""
     long_title = "This is a very long title that is actually a description of the project. It goes on and on to exceed the limit. It definitely needs to be more than 100 characters to trigger the logic."
     mock_slugify.return_value = "this-is-a-very-long"
@@ -39,26 +44,26 @@ def test_handle_manual_long_title(mock_slugify, mock_execute):
         description=None,
         slug=None,
         tech_stack=None,
-        features=None
+        features=None,
+        public=False,
+        timeout=1800,
+        watch=False
     )
 
     handle_manual(args)
 
     # Should extract first sentence/prefix
-    expected_title = "This is a very long title that is actually a descri" # 50 chars prefix then split '.'
-    # Wait, the logic is: raw_title[:50].split('.')[0].strip()
-    # "This is a very long title that is actually a descri" -> split('.') -> same string
+    # The actual behavior is slicing at 50 chars, no matter if there is a dot or not if the title is > 100.
+    # The previous test was asserting "descri" (51 chars), but it's sliced at 50.
+    expected_title = "This is a very long title that is actually a descr"
 
-    # Let's verify the logic in commands.py:
-    # title = raw_title[:50].split('.')[0].strip() or "Manual Idea"
-
-    # "This is a very long title that is actually a descri" (50 chars)
+    # "This is a very long title that is actually a descr" (50 chars)
     # It doesn't contain a dot. So it takes the whole 50 chars.
 
     mock_slugify.assert_called_once()
 
     expected_data = {
-        "title": ANY, # We'll verify exact logic via the called args
+        "title": ANY,  # We'll verify exact logic via the called args
         "description": long_title,
         "slug": "this-is-a-very-long",
         "tech_stack": [],
@@ -69,17 +74,20 @@ def test_handle_manual_long_title(mock_slugify, mock_execute):
     # Verify title specifically
     call_args = mock_execute.call_args
     idea_data = call_args[0][1]
-    assert idea_data["title"] == "This is a very long title that is actually a descr"
+    assert idea_data["title"] == expected_title
 
 @patch('src.cli.commands._execute_and_watch')
-def test_handle_manual_with_lists(mock_execute):
+def test_handle_manual_with_lists(mock_execute: MagicMock) -> None:
     """Test parsing of tech stack and features."""
     args = Namespace(
         title="App",
         description="Desc",
         slug="app",
         tech_stack="python, react,  typescript ",
-        features="login,  dashboard"
+        features="login,  dashboard",
+        public=False,
+        timeout=1800,
+        watch=False
     )
 
     handle_manual(args)

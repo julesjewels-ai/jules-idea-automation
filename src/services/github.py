@@ -1,3 +1,5 @@
+"""GitHub API client service."""
+
 from __future__ import annotations
 
 import os
@@ -6,8 +8,19 @@ import base64
 from typing import Optional, Any
 from src.utils.errors import ConfigurationError
 
+
 class GitHubClient:
+    """Client for interacting with the GitHub API."""
+
     def __init__(self, token: Optional[str] = None) -> None:
+        """Initialize the GitHub client.
+
+        Args:
+            token: The GitHub Personal Access Token (optional, defaults to env var).
+
+        Raises:
+            ConfigurationError: If the token is missing.
+        """
         self.token = token or os.environ.get("GITHUB_TOKEN")
         if not self.token:
             raise ConfigurationError(
@@ -22,25 +35,45 @@ class GitHubClient:
         }
 
     def get_user(self) -> dict[str, Any]:
-        """Returns the authenticated user's details."""
+        """Return the authenticated user's details."""
         response = requests.get(f"{self.base_url}/user", headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
-        """Creates a new repository."""
+        """Create a new repository.
+
+        Args:
+            name: The name of the repository.
+            description: The description of the repository.
+            private: Whether the repository should be private (default: True).
+
+        Returns:
+            The created repository details.
+        """
         payload = {
             "name": name,
             "description": description,
             "private": private,
-            "auto_init": False # We will add content manually
+            "auto_init": False  # We will add content manually
         }
         response = requests.post(f"{self.base_url}/user/repos", headers=self.headers, json=payload, timeout=30)
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
 
     def create_file(self, owner: str, repo: str, path: str, content: str, message: str) -> dict[str, Any]:
-        """Creates or updates a file in the repository."""
+        """Create or updates a file in the repository.
+
+        Args:
+            owner: Repository owner.
+            repo: Repository name.
+            path: Path to the file.
+            content: Content of the file.
+            message: Commit message.
+
+        Returns:
+            The created file details.
+        """
         url = f"{self.base_url}/repos/{owner}/{repo}/contents/{path}"
         
         # GitHub API requires content to be base64 encoded
@@ -56,7 +89,7 @@ class GitHubClient:
         return response.json()  # type: ignore[no-any-return]
 
     def create_files(self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main") -> dict[str, Any]:
-        """Creates multiple files in a single commit using the Git Data API.
+        """Create multiple files in a single commit using the Git Data API.
         
         Args:
             owner: Repository owner
@@ -64,6 +97,9 @@ class GitHubClient:
             files: List of dicts with 'path' and 'content' keys
             message: Commit message
             branch: Target branch (default: main)
+
+        Returns:
+            A dictionary with the commit SHA and number of files created.
         """
         latest_commit_sha = self._get_latest_commit_sha(owner, repo, branch)
         base_tree_sha = self._get_tree_sha(owner, repo, latest_commit_sha)

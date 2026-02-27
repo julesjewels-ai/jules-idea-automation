@@ -1,3 +1,5 @@
+"""Behavioral tests for workflow execution."""
+
 import pytest
 from pytest_mock import MockerFixture
 from src.core.workflow import IdeaWorkflow
@@ -10,6 +12,7 @@ from typing import Any
 
 @pytest.fixture
 def mock_clients(mocker: MockerFixture) -> dict[str, MagicMock]:
+    """Create mock clients for testing."""
     return {
         "github": mocker.create_autospec(GitHubClient, instance=True),
         "gemini": mocker.create_autospec(GeminiClient, instance=True),
@@ -18,6 +21,7 @@ def mock_clients(mocker: MockerFixture) -> dict[str, MagicMock]:
 
 @pytest.fixture
 def idea_data() -> dict[str, Any]:
+    """Create sample idea data."""
     return {
         "title": "Test Idea",
         "description": "A test description",
@@ -41,6 +45,7 @@ def test_execute_behavior(
     poll_success: bool,
     expected_result: str
 ) -> None:
+    """Test the execute method behavior under different scenarios."""
     # 1. Setup Mocks (Namespace Verified)
     # Patch imported functions in src.core.workflow
     mock_poll = mocker.patch("src.core.workflow.poll_until")
@@ -95,7 +100,7 @@ def test_execute_behavior(
     # Verify Scaffold creation
     github.create_files.assert_called_once()
     files_arg = github.create_files.call_args[1]["files"]
-    assert len(files_arg) == 2 # main.py and requirements.txt
+    assert len(files_arg) == 2  # main.py and requirements.txt
     assert files_arg[0]["path"] == "main.py"
     assert files_arg[1]["path"] == "requirements.txt"
 

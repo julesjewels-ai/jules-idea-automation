@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Jules Automation Tool - Entry Point
+Jules Automation Tool - Entry Point.
 
 This is the main entry point for the CLI.
 It handles only orchestration - all business logic is in src/
@@ -19,7 +19,7 @@ from src.utils.reporter import print_panel, Colors  # noqa: E402
 
 
 def main() -> None:
-    """Main entry point - orchestration only."""
+    """Run main entry point - orchestration only."""
     parser = create_parser()
     args = parser.parse_args()
     

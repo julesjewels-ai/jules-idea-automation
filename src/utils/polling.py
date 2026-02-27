@@ -14,16 +14,16 @@ def poll_until(
     interval: int = 10,
     on_poll: Optional[Callable[[int], None]] = None
 ) -> bool:
-    """Polls until a condition is met or timeout is reached.
+    """Poll until a condition is met or timeout is reached.
 
     Args:
-        condition: Callable that returns True when done
-        timeout: Maximum seconds to wait
-        interval: Seconds between polls
-        on_poll: Optional callback with elapsed time
+        condition: Callable that returns True when done.
+        timeout: Maximum seconds to wait (default: 1800).
+        interval: Seconds between polls (default: 10).
+        on_poll: Optional callback with elapsed time.
 
     Returns:
-        True if condition met, False if timeout
+        True if condition met, False if timeout.
     """
     elapsed = 0
     while elapsed < timeout:
@@ -37,23 +37,23 @@ def poll_until(
 
 
 def poll_with_result(
-    check: Callable[[], tuple[bool, T]],
+    check: Callable[[], tuple[bool, Optional[T]]],
     timeout: int = 1800,
     interval: int = 30,
     on_poll: Optional[Callable[[int, str], None]] = None,
     status_extractor: Optional[Callable[[], str]] = None
 ) -> tuple[bool, Optional[T], int]:
-    """Polls until completion, returning a result.
+    """Poll until completion, returning a result.
 
     Args:
-        check: Callable that returns (is_complete, result)
-        timeout: Maximum seconds to wait
-        interval: Seconds between polls
-        on_poll: Callback with (elapsed, status_message)
-        status_extractor: Callable to get current status message
+        check: Callable that returns (is_complete, result).
+        timeout: Maximum seconds to wait (default: 1800).
+        interval: Seconds between polls (default: 30).
+        on_poll: Callback with (elapsed, status_message).
+        status_extractor: Callable to get current status message.
 
     Returns:
-        Tuple of (completed, result or None, elapsed_time)
+        Tuple of (completed, result or None, elapsed_time).
     """
     elapsed = 0
     while elapsed < timeout:

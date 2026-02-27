@@ -1,3 +1,5 @@
+"""Gemini API client service."""
+
 from __future__ import annotations
 
 import os
@@ -36,6 +38,15 @@ class GeminiClient:
         api_key: Optional[str] = None,
         cache_provider: Optional[CacheProvider] = None
     ) -> None:
+        """Initialize the Gemini client.
+
+        Args:
+            api_key: The Gemini API key (optional, defaults to env var).
+            cache_provider: Optional cache provider for caching responses.
+
+        Raises:
+            ConfigurationError: If API key is missing.
+        """
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -51,7 +62,7 @@ class GeminiClient:
         self.cache_provider = cache_provider
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
-        """Maps Gemini API errors to user-friendly GenerationError."""
+        """Map Gemini API errors to user-friendly GenerationError."""
         tip = "Check your internet connection and API status."
         err_msg = str(e)
 
@@ -65,8 +76,7 @@ class GeminiClient:
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
     def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
-        """Helper to generate content with consistent configuration and error handling."""
-
+        """Generate content with consistent configuration and error handling (Helper)."""
         # Check cache if available
         cache_key = ""
         if self.cache_provider:
@@ -116,10 +126,13 @@ class GeminiClient:
             )
 
     def generate_idea(self, category: Optional[str] = None) -> dict[str, Any]:
-        """Generates a unique software idea using Gemini 3.
+        """Generate a unique software idea using Gemini 3.
 
         Args:
-            category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
+            category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml).
+
+        Returns:
+            A dictionary containing the generated idea.
         """
         base_prompt = CATEGORY_PROMPTS.get(
             category or "default", CATEGORY_PROMPTS["default"])
@@ -132,7 +145,14 @@ class GeminiClient:
         )
 
     def extract_idea_from_text(self, text: str) -> dict[str, Any]:
-        """Extracts the core app idea from the provided text."""
+        """Extract the core app idea from the provided text.
+
+        Args:
+            text: The text content to analyze.
+
+        Returns:
+            A dictionary containing the extracted idea.
+        """
         # Truncate text if it's too long to avoid token limits
         max_chars = 100000
         truncated_text = text[:max_chars]
@@ -157,7 +177,7 @@ class GeminiClient:
         )
 
     def generate_project_scaffold(self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
-        """Generates a complete MVP project scaffold for the given idea.
+        """Generate a complete MVP project scaffold for the given idea.
 
         Args:
             idea_data: Dict with title, description, slug, tech_stack, features

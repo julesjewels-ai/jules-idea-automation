@@ -228,7 +228,17 @@ def handle_manual(args: Namespace) -> None:
     """Handle the manual command."""
     from src.utils.slugify import slugify
 
-    title, description = _parse_title_and_description(args)
+    # Parse title and description
+    raw_title = args.title
+
+    if len(raw_title) > 100:
+        # If the title is too long, it's likely a full description
+        description = raw_title
+        # Use first sentence or prefix as a title
+        title = raw_title[:50].split('.')[0].strip() or "Manual Idea"
+    else:
+        title = raw_title
+        description = args.description or raw_title
 
     # Generate slug from title if not provided
     slug = args.slug or slugify(title)
