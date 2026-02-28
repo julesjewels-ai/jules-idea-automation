@@ -51,10 +51,12 @@ env/
 .pytest_cache/
 .mypy_cache/
 .coverage
+.cache/
 
 # Internal / maintenance
 .Jules/
 .benchmarks/
+.jules_history.jsonl
 
 # Media
 *.mp4
