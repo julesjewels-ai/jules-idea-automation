@@ -1,5 +1,9 @@
 # Jules Automation Tool
 
+<div align="center">
+  <img src="assets/jules_hero_banner.png" alt="Jules Automation Tool Banner" width="100%">
+</div>
+
 [![CI](https://github.com/julesjewels-ai/jules-idea-automation/actions/workflows/ci.yml/badge.svg)](https://github.com/julesjewels-ai/jules-idea-automation/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
@@ -76,6 +80,8 @@ python main.py guide
 
 **🤖 Agent Mode** - Let Gemini AI generate ideas:
 
+<img src="assets/agent_mode_icon.png" alt="Agent Mode Banner" width="100%" />
+
 ```bash
 # Generate a random idea
 python main.py agent
@@ -89,6 +95,8 @@ python main.py agent --watch
 
 **🌐 Website Mode** - Extract ideas from websites:
 
+<img src="assets/website_mode_icon.png" alt="Website Mode Banner" width="100%" />
+
 ```bash
 # Extract idea from a website
 python main.py website --url https://example.com
@@ -98,6 +106,8 @@ python main.py website --url https://example.com --watch
 ```
 
 **✍️ Manual Mode** - Provide your own custom idea:
+
+<img src="assets/manual_mode_icon.png" alt="Manual Mode Banner" width="100%" />
 
 ```bash
 # Basic (title only)
