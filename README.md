@@ -14,6 +14,30 @@ This tool acts as an "Idea Factory" that:
 3. **Starts Jules:** Creates a Jules session linked to the new repository
 4. **Audit Logging:** Keeps a persistent local history of your workflows in `.jules_history.jsonl`
 
+### Tool Workflow
+
+```mermaid
+flowchart TD
+    A[Input Modes] --> B{Jules CLI}
+    
+    subgraph Input Sources
+    A1(Agent: AI Generation) -.-> A
+    A2(Website: Extraction) -.-> A
+    A3(Manual: Custom Ideas) -.-> A
+    end
+
+    B --> C[Draft Project Specifications]
+    C --> D[Create GitHub Repository]
+    D --> E[Initialize Jules Session]
+    
+    B -.-> F[(Local Audit Log)]
+    
+    style B fill:#6366f1,stroke:#3730a3,stroke-width:2px,color:#fff
+    style A1 fill:#e0e7ff,stroke:#4f46e5,color:#333
+    style A2 fill:#dbeafe,stroke:#2563eb,color:#333
+    style A3 fill:#dcfce7,stroke:#16a34a,color:#333
+```
+
 ## Prerequisites
 
 Set these API keys in a `.env` file:
