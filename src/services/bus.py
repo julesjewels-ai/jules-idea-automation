@@ -47,3 +47,20 @@ class LocalEventBus(EventBus):
                 # from crashing the entire workflow or other handlers.
                 logger.error(f"Error handling event {event_type.__name__} in {handler.__class__.__name__}: {e}")
                 # We don't raise here to allow other handlers to run.
+
+
+class NullEventBus(EventBus):
+    """Null Object implementation of the EventBus protocol.
+    
+    Used as a safe default when no event bus is provided, preventing
+    the need for null checks throughout the codebase.
+    """
+
+    def subscribe(self, event_type: type, handler: EventHandler) -> None:
+        """Do nothing when subscribing."""
+        pass
+
+    def publish(self, event: Any) -> None:
+        """Do nothing when publishing."""
+        pass
+

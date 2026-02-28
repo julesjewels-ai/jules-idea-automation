@@ -45,7 +45,12 @@ class IdeaWorkflow:
         # Here we follow the pattern of creating default if None.
 
         self.github = github or GitHubClient()
-        self.event_bus = event_bus
+        
+        if event_bus:
+            self.event_bus = event_bus
+        else:
+            from src.services.bus import NullEventBus
+            self.event_bus = NullEventBus()
 
         if gemini:
             self.gemini = gemini
@@ -81,15 +86,14 @@ class IdeaWorkflow:
             print(f"Slug: {idea_data['slug']}")
             print("-" * 40)
         
-        if self.event_bus:
-            self.event_bus.publish(
-                WorkflowStarted(
-                    event_id=str(uuid.uuid4()),
-                    idea_title=idea_data['title'],
-                    idea_slug=idea_data['slug'],
-                    category=idea_data.get('category')
-                )
+        self.event_bus.publish(
+            WorkflowStarted(
+                event_id=str(uuid.uuid4()),
+                idea_title=idea_data['title'],
+                idea_slug=idea_data['slug'],
+                category=idea_data.get('category')
             )
+        )
 
         # Step 1: Create GitHub repository
         username = self._create_repository(idea_data, private, verbose)
@@ -119,17 +123,16 @@ class IdeaWorkflow:
                 session_url=result.session_url
             )
         
-        if self.event_bus:
-            self.event_bus.publish(
-                WorkflowCompleted(
-                    event_id=str(uuid.uuid4()),
-                    idea_title=idea_data['title'],
-                    idea_slug=idea_data['slug'],
-                    repo_url=repo_url,
-                    session_id=result.session_id,
-                    session_url=result.session_url
-                )
+        self.event_bus.publish(
+            WorkflowCompleted(
+                event_id=str(uuid.uuid4()),
+                idea_title=idea_data['title'],
+                idea_slug=idea_data['slug'],
+                repo_url=repo_url,
+                session_id=result.session_id,
+                session_url=result.session_url
             )
+        )
 
         return result
     
