@@ -1,3 +1,3 @@
-Target: IdeaWorkflow._prepare_scaffold_files in src/core/workflow.py
-Delta: Complexity Score 8 -> 6
-Summary: Extracted file validation and formatting logic into `_process_file_entry` helper method, reducing nesting and improving readability.
+Target: GeminiClient._generate_content in src/services/gemini.py
+Delta: Complexity Score 11 -> 2
+Summary: Extracted caching and API fetching logic into `_get_cached_content` and `_fetch_from_api` helper methods, reducing the main method's complexity and improving separation of concerns.
