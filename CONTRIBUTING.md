@@ -15,8 +15,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # Install dev dependencies
-pip install pytest black isort flake8
+pip install pytest black isort ruff flake8
 ```
+
+## Architecture
+
+Before writing new features or modifying the core structure, please read the [Architecture Guide](docs/architecture.md) to understand our use of SOLID principles, Dependency Injection, and the internal Event Bus.
 
 ## Running Tests
 
@@ -28,7 +32,7 @@ python -m pytest tests/ -v
 
 ## Code Style
 
-This project uses **Black** for formatting and **isort** for import ordering:
+This project uses **Black** for formatting, **isort** for import ordering, and **Ruff** / **Flake8** for linting:
 
 ```bash
 # Format code
@@ -38,6 +42,7 @@ black --line-length 120 .
 isort --profile black --line-length 120 .
 
 # Lint
+ruff check src/ tests/
 flake8 src/ tests/
 ```
 

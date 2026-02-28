@@ -9,9 +9,10 @@ A Python CLI tool that automates the software development lifecycle by generatin
 ## Overview
 
 This tool acts as an "Idea Factory" that:
-1. **Generates Ideas:** Uses Google's Gemini 3 to generate or extract software concepts
+1. **Generates Ideas:** Uses Google's Gemini 3 to generate or extract software concepts (with built-in API caching for speed and cost-efficiency)
 2. **Creates Repos:** Automatically creates a GitHub repository with MVP scaffold
 3. **Starts Jules:** Creates a Jules session linked to the new repository
+4. **Audit Logging:** Keeps a persistent local history of your workflows in `.jules_history.jsonl`
 
 ## Prerequisites
 
@@ -113,10 +114,12 @@ python main.py guide --workflow agent
 
 ```
 main.py              # Entry point (orchestration only)
+.cache/              # Local cache directory for Gemini API responses
+.jules_history.jsonl # Local audit log of started and completed workflows
 src/
 ├── cli/             # Argument parsing, command handlers
-├── core/            # Workflow, models, README builder
-├── services/        # Gemini, GitHub, Jules, Scraper
+├── core/            # Workflow, models, README builder, Event Bus
+├── services/        # Gemini, GitHub, Jules, Scraper, Cache
 └── utils/           # Polling, reporter
 ```
 
