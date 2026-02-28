@@ -1,3 +1,3 @@
-Target: GeminiClient._generate_content in src/services/gemini.py
-Delta: Complexity Score 11 -> 2
-Summary: Extracted caching and API fetching logic into `_get_cached_content` and `_fetch_from_api` helper methods, reducing the main method's complexity and improving separation of concerns.
+Target: GeminiClient._fetch_from_api in src/services/gemini.py
+Delta: Complexity Score 8 -> 4
+Summary: Extracted response parsing, caching, and validation logic from `_fetch_from_api` into a new `_process_api_response` helper method, reducing the cyclomatic complexity of `_fetch_from_api` by flattening the main execution path.

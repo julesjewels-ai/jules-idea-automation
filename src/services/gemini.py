@@ -77,10 +77,24 @@ class GeminiClient:
         if cached_data:
             logger.info(f"Cache hit for key: {cache_key}")
             if hasattr(schema, 'model_validate'):
-                return schema.model_validate(cached_data).model_dump(), cache_key  # type: ignore[no-any-return]
+                return schema.model_validate(cached_data).model_dump(), cache_key
             return cached_data, cache_key
 
         return None, cache_key
+
+    def _process_api_response(self, text: Optional[str], schema: Any, cache_key: str, error_tip: str) -> dict[str, Any]:
+        """Parses, caches, and validates the API response."""
+        try:
+            raw = json.loads(text or "")
+        except json.JSONDecodeError as e:
+            raise GenerationError(f"Failed to parse Gemini response: {e}", tip=error_tip)
+
+        if self.cache_provider and cache_key:
+            self.cache_provider.set(cache_key, raw)
+
+        if hasattr(schema, 'model_validate'):
+            return schema.model_validate(raw).model_dump()  # type: ignore[no-any-return]
+        return raw  # type: ignore[no-any-return]
 
     def _fetch_from_api(self, prompt: str, schema: Any, error_tip: str, cache_key: str) -> dict[str, Any]:
         """Fetches content from Gemini API and handles errors/caching."""
@@ -95,23 +109,11 @@ class GeminiClient:
                     response_schema=schema
                 ),
             )
-            raw = json.loads(response.text or "")
-
-            # Store in cache if available
-            if self.cache_provider and cache_key:
-                self.cache_provider.set(cache_key, raw)
-
-            # Validate against Pydantic schema if available
-            if hasattr(schema, 'model_validate'):
-                return schema.model_validate(raw).model_dump()  # type: ignore[no-any-return]
-            return raw  # type: ignore[no-any-return]
-        except json.JSONDecodeError as e:
-            raise GenerationError(
-                f"Failed to parse Gemini response: {e}",
-                tip=error_tip
-            )
+            return self._process_api_response(response.text, schema, cache_key, error_tip)
         except errors.APIError as e:
             raise self._map_api_error(e)
+        except GenerationError:
+            raise
         except Exception as e:
             raise GenerationError(
                 f"Unexpected error during generation: {e}",
