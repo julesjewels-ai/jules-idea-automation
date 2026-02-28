@@ -1,7 +1,5 @@
-import pytest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import patch
 from src.cli.commands import watch_session
-import src.services.jules
 
 @patch('src.services.jules.JulesClient')
 @patch('src.cli.commands.Spinner')

@@ -27,3 +27,15 @@ class JulesApiError(AppError):
     """Raised when the Jules API returns an error."""
 
     pass
+
+
+class EventBusError(AppError):
+    """Raised when an error occurs in the EventBus."""
+
+    pass
+
+
+class AuditError(AppError):
+    """Raised when an error occurs during audit logging."""
+
+    pass

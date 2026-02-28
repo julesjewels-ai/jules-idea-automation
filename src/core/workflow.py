@@ -10,8 +10,11 @@ from src.services.github import GitHubClient
 from src.services.jules import JulesClient
 from src.core.readme_builder import build_readme
 from src.core.models import WorkflowResult
+from src.core.interfaces import EventBus
+from src.core.events import WorkflowStarted, WorkflowCompleted
 from src.utils.polling import poll_until
 from src.utils.reporter import print_workflow_report
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +29,8 @@ class IdeaWorkflow:
         self,
         github: Optional[GitHubClient] = None,
         gemini: Optional[GeminiClient] = None,
-        jules: Optional[JulesClient] = None
+        jules: Optional[JulesClient] = None,
+        event_bus: Optional[EventBus] = None
     ):
         """Initialize workflow with optional service instances.
         
@@ -34,12 +38,14 @@ class IdeaWorkflow:
             github: GitHubClient instance (created if None)
             gemini: GeminiClient instance (created if None)
             jules: JulesClient instance (created if None)
+            event_bus: EventBus instance (optional)
         """
         # If gemini is not provided, we create one with default cache provider if available
         # Note: In production code, it's better to pass the configured client in.
         # Here we follow the pattern of creating default if None.
 
         self.github = github or GitHubClient()
+        self.event_bus = event_bus
 
         if gemini:
             self.gemini = gemini
@@ -75,6 +81,16 @@ class IdeaWorkflow:
             print(f"Slug: {idea_data['slug']}")
             print("-" * 40)
         
+        if self.event_bus:
+            self.event_bus.publish(
+                WorkflowStarted(
+                    event_id=str(uuid.uuid4()),
+                    idea_title=idea_data['title'],
+                    idea_slug=idea_data['slug'],
+                    category=idea_data.get('category')
+                )
+            )
+
         # Step 1: Create GitHub repository
         username = self._create_repository(idea_data, private, verbose)
         repo_url = f"https://github.com/{username}/{idea_data['slug']}"
@@ -103,6 +119,18 @@ class IdeaWorkflow:
                 session_url=result.session_url
             )
         
+        if self.event_bus:
+            self.event_bus.publish(
+                WorkflowCompleted(
+                    event_id=str(uuid.uuid4()),
+                    idea_title=idea_data['title'],
+                    idea_slug=idea_data['slug'],
+                    repo_url=repo_url,
+                    session_id=result.session_id,
+                    session_url=result.session_url
+                )
+            )
+
         return result
     
     def _create_repository(self, idea_data: dict[str, Any], private: bool, verbose: bool) -> str:

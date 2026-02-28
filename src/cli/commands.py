@@ -105,12 +105,21 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
     from src.core.workflow import IdeaWorkflow
     from src.services.gemini import GeminiClient
     from src.services.cache import FileCacheProvider
+    from src.services.bus import LocalEventBus
+    from src.services.audit import JsonFileAuditLogger
+    from src.core.events import WorkflowStarted, WorkflowCompleted
 
     print_idea_summary(idea_data)
 
     cache = FileCacheProvider()
     gemini = GeminiClient(cache_provider=cache)
-    workflow = IdeaWorkflow(gemini=gemini)
+
+    event_bus = LocalEventBus()
+    audit_logger = JsonFileAuditLogger()
+    event_bus.subscribe(WorkflowStarted, audit_logger)
+    event_bus.subscribe(WorkflowCompleted, audit_logger)
+
+    workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus)
 
     result = workflow.execute(
         idea_data,

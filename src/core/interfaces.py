@@ -3,6 +3,39 @@
 from typing import Protocol, Optional, Any
 
 
+class EventHandler(Protocol):
+    """Protocol for event handlers."""
+
+    def handle(self, event: Any) -> None:
+        """Handle an event.
+
+        Args:
+            event: The domain event to handle.
+        """
+        ...
+
+
+class EventBus(Protocol):
+    """Protocol for the application event bus."""
+
+    def subscribe(self, event_type: type, handler: EventHandler) -> None:
+        """Subscribe a handler to an event type.
+
+        Args:
+            event_type: The type of event to subscribe to.
+            handler: The handler to call when the event is published.
+        """
+        ...
+
+    def publish(self, event: Any) -> None:
+        """Publish an event to all subscribers.
+
+        Args:
+            event: The domain event to publish.
+        """
+        ...
+
+
 class CacheProvider(Protocol):
     """Protocol for caching mechanism."""
 
