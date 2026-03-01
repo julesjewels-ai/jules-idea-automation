@@ -1,6 +1,40 @@
 """Core interfaces and protocols for the Jules Automation Tool."""
 
-from typing import Protocol, Optional, Any
+from typing import Protocol, Optional, Any, TypeVar
+
+
+T = TypeVar('T')
+
+
+class ProjectRepository(Protocol[T]):
+    """Protocol for the repository pattern."""
+
+    def save(self, item: T) -> None:
+        """Save an item to the repository.
+
+        Args:
+            item: The domain model to save.
+        """
+        ...
+
+    def get(self, item_id: str) -> Optional[T]:
+        """Retrieve an item from the repository.
+
+        Args:
+            item_id: The unique identifier of the item.
+
+        Returns:
+            The retrieved item, or None if not found.
+        """
+        ...
+
+    def list_all(self) -> list[T]:
+        """List all items in the repository.
+
+        Returns:
+            A list of all items in the repository.
+        """
+        ...
 
 
 class EventHandler(Protocol):

@@ -10,7 +10,7 @@ from src.services.github import GitHubClient
 from src.services.jules import JulesClient
 from src.core.readme_builder import build_readme
 from src.core.models import WorkflowResult
-from src.core.interfaces import EventBus
+from src.core.interfaces import EventBus, ProjectRepository
 from src.core.events import WorkflowStarted, WorkflowCompleted
 from src.utils.polling import poll_until
 from src.utils.reporter import print_workflow_report
@@ -30,7 +30,8 @@ class IdeaWorkflow:
         github: Optional[GitHubClient] = None,
         gemini: Optional[GeminiClient] = None,
         jules: Optional[JulesClient] = None,
-        event_bus: Optional[EventBus] = None
+        event_bus: Optional[EventBus] = None,
+        repository: Optional[ProjectRepository[WorkflowResult]] = None
     ):
         """Initialize workflow with optional service instances.
         
@@ -39,6 +40,7 @@ class IdeaWorkflow:
             gemini: GeminiClient instance (created if None)
             jules: JulesClient instance (created if None)
             event_bus: EventBus instance (optional)
+            repository: Repository for persisting workflow results (optional)
         """
         # If gemini is not provided, we create one with default cache provider if available
         # Note: In production code, it's better to pass the configured client in.
@@ -62,6 +64,7 @@ class IdeaWorkflow:
             self.gemini = GeminiClient(cache_provider=FileCacheProvider())
 
         self.jules = jules or JulesClient()
+        self.repository = repository
     
     def execute(
         self,
@@ -114,6 +117,12 @@ class IdeaWorkflow:
             session_url=session.get('url') if session else None
         )
         
+        if self.repository:
+            try:
+                self.repository.save(result)
+            except Exception as e:
+                logger.error(f"Failed to persist workflow result: {e}")
+
         if verbose:
             print_workflow_report(
                 title=idea_data['title'],

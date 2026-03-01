@@ -107,7 +107,9 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
     from src.services.cache import FileCacheProvider
     from src.services.bus import LocalEventBus
     from src.services.audit import JsonFileAuditLogger
+    from src.services.repository import JsonProjectRepository
     from src.core.events import WorkflowStarted, WorkflowCompleted
+    from src.core.models import WorkflowResult
 
     print_idea_summary(idea_data)
 
@@ -119,7 +121,9 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
     event_bus.subscribe(WorkflowStarted, audit_logger)
     event_bus.subscribe(WorkflowCompleted, audit_logger)
 
-    workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus)
+    repository = JsonProjectRepository(".jules_repository.jsonl", WorkflowResult)
+
+    workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus, repository=repository)
 
     result = workflow.execute(
         idea_data,
