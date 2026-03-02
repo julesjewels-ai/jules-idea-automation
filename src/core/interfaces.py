@@ -1,6 +1,29 @@
 """Core interfaces and protocols for the Jules Automation Tool."""
 
-from typing import Protocol, Optional, Any
+from typing import Protocol, Optional, Any, TypeVar
+
+
+T = TypeVar('T')
+
+
+class ProjectRepository(Protocol[T]):
+    """Protocol for data persistence of domain models."""
+
+    def save(self, item: T) -> None:
+        """Save an item to the repository.
+
+        Args:
+            item: The domain model instance to save.
+        """
+        ...
+
+    def get_all(self) -> list[T]:
+        """Retrieve all items from the repository.
+
+        Returns:
+            A list of all saved domain model instances.
+        """
+        ...
 
 
 class EventHandler(Protocol):
