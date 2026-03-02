@@ -77,7 +77,7 @@ class GeminiClient:
         if cached_data:
             logger.info(f"Cache hit for key: {cache_key}")
             if hasattr(schema, 'model_validate'):
-                return schema.model_validate(cached_data).model_dump(), cache_key  # type: ignore[no-any-return]
+                return schema.model_validate(cached_data).model_dump(), cache_key
             return cached_data, cache_key
 
         return None, cache_key

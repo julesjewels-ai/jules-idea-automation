@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from src.utils.security import validate_url, ScrapingError
 
+__all__ = ["scrape_text", "MIN_CONTENT_LENGTH", "BLOCKED_INDICATORS", "ScrapingError"]
 
 # Minimum characters required to consider the page has meaningful content
 MIN_CONTENT_LENGTH = 200
