@@ -47,7 +47,7 @@ class GeminiClient:
             api_key=self.api_key,
             http_options={'api_version': 'v1beta'}
         )
-        self.model_name = "gemini-3-pro-preview"
+        self.models = ["gemini-3-pro-preview", "gemini-2.5-flash"]
         self.cache_provider = cache_provider
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
@@ -61,6 +61,8 @@ class GeminiClient:
             tip = "You have exceeded your API quota. Try again later."
         elif "403" in err_msg:
             tip = "You don't have permission to access this model."
+        elif "503" in err_msg or "UNAVAILABLE" in err_msg:
+            tip = "The Gemini API is currently overloaded. Please wait a few minutes and try again."
 
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
@@ -71,7 +73,7 @@ class GeminiClient:
 
         schema_name = getattr(schema, '__name__', str(schema))
         prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
-        cache_key = f"{self.model_name}:{prompt_hash}:{schema_name}"
+        cache_key = f"{self.models[0]}:{prompt_hash}:{schema_name}"
 
         cached_data = self.cache_provider.get(cache_key)
         if cached_data:
@@ -98,27 +100,48 @@ class GeminiClient:
 
     def _fetch_from_api(self, prompt: str, schema: Any, error_tip: str, cache_key: str) -> dict[str, Any]:
         """Fetches content from Gemini API and handles errors/caching."""
-        try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    thinking_config=types.ThinkingConfig(
-                        include_thoughts=True),
-                    response_mime_type="application/json",
-                    response_schema=schema
-                ),
-            )
-            return self._process_api_response(response.text, schema, cache_key, error_tip)
-        except errors.APIError as e:
-            raise self._map_api_error(e)
-        except GenerationError:
-            raise
-        except Exception as e:
-            raise GenerationError(
-                f"Unexpected error during generation: {e}",
-                tip="Check your network connection and configuration."
-            )
+        last_api_error = None
+        for i, model in enumerate(self.models):
+            try:
+                use_thinking = "pro" in model or "think" in model
+                config_kwargs: dict[str, Any] = {
+                    "response_mime_type": "application/json",
+                    "response_schema": schema
+                }
+                if use_thinking:
+                    config_kwargs["thinking_config"] = types.ThinkingConfig(include_thoughts=True)
+
+                if i > 0:
+                    logger.warning(f"Primary model failed. Falling back to {model}...")
+
+                response = self.client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(**config_kwargs),
+                )
+                return self._process_api_response(response.text, schema, cache_key, error_tip)
+            except errors.APIError as e:
+                err_msg = str(e)
+                last_api_error = e
+                if "503" in err_msg or "UNAVAILABLE" in err_msg:
+                    logger.warning(f"Model {model} returned 503 UNAVAILABLE.")
+                    continue
+                raise self._map_api_error(e)
+            except GenerationError:
+                raise
+            except Exception as e:
+                raise GenerationError(
+                    f"Unexpected error during generation: {e}",
+                    tip="Check your network connection and configuration."
+                )
+
+        if last_api_error:
+            raise self._map_api_error(last_api_error)
+
+        raise GenerationError(
+            "All model generation attempts failed.",
+            tip="Check your internet connection and API status."
+        )
 
     def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
         """Helper to generate content with consistent configuration and error handling."""

@@ -230,10 +230,34 @@ class IdeaWorkflow:
             if processed_file:
                 files_to_create.append(processed_file)
 
-        if scaffold.get('requirements'):
+        raw_requirements = scaffold.get('requirements')
+        if raw_requirements:
+            # Normalize requirements from various formats the LLM may return:
+            # - list[str]  (expected): ["pytest", "requests"]
+            # - dict       (flash fallback): {"pytest": ">=7", "requests": "*"}
+            # - list[dict] (unusual): [{"package": "pytest", "version": ">=7"}]
+            if isinstance(raw_requirements, dict):
+                req_lines = [
+                    f"{k}{v}" if v and v.strip() not in ('*', 'latest') else k
+                    for k, v in raw_requirements.items()
+                ]
+            elif isinstance(raw_requirements, list):
+                req_lines = []
+                for item in raw_requirements:
+                    if isinstance(item, str):
+                        req_lines.append(item)
+                    elif isinstance(item, dict):
+                        name = item.get('package') or item.get('name') or ''
+                        version = item.get('version') or item.get('constraint') or ''
+                        req_lines.append(f"{name}{version}" if version else name)
+                    else:
+                        req_lines.append(str(item))
+            else:
+                req_lines = [str(raw_requirements)]
+
             files_to_create.append({
                 'path': 'requirements.txt',
-                'content': '\n'.join(scaffold['requirements'])
+                'content': '\n'.join(line for line in req_lines if line)
             })
 
         return files_to_create

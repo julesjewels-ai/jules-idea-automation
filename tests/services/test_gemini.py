@@ -53,13 +53,8 @@ def test_generate_idea_json_error(client):
 
 def test_generate_idea_api_error(client):
     # Simulate an API error (e.g., invalid key)
-    # google-genai 0.8.0 APIError expects 'response' argument, not 'response_json'
-    mock_response = MagicMock()
-    mock_response.json.return_value = {"error": {"message": "400 API key not valid"}}
-    mock_response.status_code = 400
-
     client.client.models.generate_content.side_effect = errors.APIError(
-        code=400, response=mock_response
+        code=400, response_json={"error": {"message": "400 API key not valid"}}
     )
 
     with pytest.raises(GenerationError) as excinfo:
@@ -67,6 +62,46 @@ def test_generate_idea_api_error(client):
 
     assert "Gemini API Error" in str(excinfo.value)
     assert "Your GEMINI_API_KEY seems invalid" in excinfo.value.tip
+
+def test_generate_idea_api_error_503_fallback(client):
+    """Test that a 503 error falls back to the second model, which also fails."""
+    client.client.models.generate_content.side_effect = errors.APIError(
+        code=503, response_json={"error": {"message": "503 UNAVAILABLE"}}
+    )
+
+    with pytest.raises(GenerationError) as excinfo:
+        client.generate_idea()
+
+    assert "Gemini API Error" in str(excinfo.value)
+    assert "currently overloaded" in excinfo.value.tip
+    assert client.client.models.generate_content.call_count == 2
+
+def test_generate_idea_api_error_503_fallback_success(client):
+    """Test that a 503 error falls back to the second model which succeeds."""
+    api_error = errors.APIError(code=503, response_json={"error": {"message": "503 UNAVAILABLE"}})
+
+    mock_success_response = MagicMock()
+    mock_success_response.text = json.dumps({
+        "title": "Fallback App",
+        "description": "App",
+        "slug": "fallback",
+        "tech_stack": [],
+        "features": []
+    })
+
+    client.client.models.generate_content.side_effect = [
+        api_error,
+        mock_success_response
+    ]
+
+    result = client.generate_idea()
+
+    assert result["title"] == "Fallback App"
+    assert client.client.models.generate_content.call_count == 2
+    
+    calls = client.client.models.generate_content.call_args_list
+    assert calls[0].kwargs["model"] == "gemini-3-pro-preview"
+    assert calls[1].kwargs["model"] == "gemini-2.5-flash"
 
 def test_extract_idea_from_text_success(client):
     mock_response = MagicMock()
