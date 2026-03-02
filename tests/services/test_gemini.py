@@ -54,7 +54,7 @@ def test_generate_idea_json_error(client):
 def test_generate_idea_api_error(client):
     # Simulate an API error (e.g., invalid key)
     mock_response = MagicMock()
-    mock_response.json.return_value = {"error": {"message": "400 API key not valid"}}
+    mock_response.body_segments = [{"error": {"message": "400 API key not valid"}}]
 
     client.client.models.generate_content.side_effect = errors.APIError(
         code=400, response=mock_response
@@ -69,7 +69,7 @@ def test_generate_idea_api_error(client):
 def test_generate_idea_api_error_503_fallback(client):
     """Test that a 503 error falls back to the second model, which also fails."""
     mock_response = MagicMock()
-    mock_response.json.return_value = {"error": {"message": "503 UNAVAILABLE"}}
+    mock_response.body_segments = [{"error": {"message": "503 UNAVAILABLE"}}]
 
     client.client.models.generate_content.side_effect = errors.APIError(
         code=503, response=mock_response
@@ -85,7 +85,7 @@ def test_generate_idea_api_error_503_fallback(client):
 def test_generate_idea_api_error_503_fallback_success(client):
     """Test that a 503 error falls back to the second model which succeeds."""
     mock_response = MagicMock()
-    mock_response.json.return_value = {"error": {"message": "503 UNAVAILABLE"}}
+    mock_response.body_segments = [{"error": {"message": "503 UNAVAILABLE"}}]
 
     api_error = errors.APIError(
         code=503, response=mock_response
