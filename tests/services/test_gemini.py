@@ -6,28 +6,33 @@ from google.genai import errors
 from src.services.gemini import GeminiClient
 from src.utils.errors import ConfigurationError, GenerationError
 
+from typing import Any
+
+import typing
+import unittest.mock
+
 @pytest.fixture
-def mock_genai_client():
+def mock_genai_client() -> typing.Generator[unittest.mock.MagicMock, None, None]:
     with patch("src.services.gemini.genai.Client") as mock:
         yield mock
 
 @pytest.fixture
-def client(mock_genai_client):
+def client(mock_genai_client: Any) -> GeminiClient:
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
         return GeminiClient()
 
-def test_init_raises_error_without_api_key():
+def test_init_raises_error_without_api_key() -> None:
     # Ensure environment is clean
     with patch.dict(os.environ, {}, clear=True):
         with pytest.raises(ConfigurationError):
             GeminiClient(api_key=None)
 
-def test_init_with_env_var():
+def test_init_with_env_var() -> None:
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
         client = GeminiClient()
         assert client.api_key == "test_key"
 
-def test_generate_idea_success(client):
+def test_generate_idea_success(client: Any) -> None:
     mock_response = MagicMock()
     mock_response.text = json.dumps({
         "title": "Test App",
@@ -43,7 +48,7 @@ def test_generate_idea_success(client):
     assert result["title"] == "Test App"
     client.client.models.generate_content.assert_called_once()
 
-def test_generate_idea_json_error(client):
+def test_generate_idea_json_error(client: Any) -> None:
     mock_response = MagicMock()
     mock_response.text = "invalid json"
     client.client.models.generate_content.return_value = mock_response
@@ -51,34 +56,60 @@ def test_generate_idea_json_error(client):
     with pytest.raises(GenerationError):
         client.generate_idea()
 
-def test_generate_idea_api_error(client):
+def test_generate_idea_api_error(client: Any) -> None:
     # Simulate an API error (e.g., invalid key)
-    client.client.models.generate_content.side_effect = errors.APIError(
-        code=400, response_json={"error": {"message": "400 API key not valid"}}
-    )
+    # Mocking APIError properly for google.genai 0.8.0
+    class MockAPIError(errors.APIError): # type: ignore[misc]
+        def __init__(self, message: str, code: int):
+            self.message = message
+            self.code = code
+            super(Exception, self).__init__(message) # type: ignore[misc]
+
+        def __str__(self) -> str:
+            return self.message
+
+    mock_error = MockAPIError("400 API key not valid", 400)
+    client.client.models.generate_content.side_effect = mock_error
 
     with pytest.raises(GenerationError) as excinfo:
         client.generate_idea()
 
     assert "Gemini API Error" in str(excinfo.value)
-    assert "Your GEMINI_API_KEY seems invalid" in excinfo.value.tip
+    assert excinfo.value.tip is not None and "Your GEMINI_API_KEY seems invalid" in excinfo.value.tip
 
-def test_generate_idea_api_error_503_fallback(client):
+def test_generate_idea_api_error_503_fallback(client: Any) -> None:
     """Test that a 503 error falls back to the second model, which also fails."""
-    client.client.models.generate_content.side_effect = errors.APIError(
-        code=503, response_json={"error": {"message": "503 UNAVAILABLE"}}
-    )
+    class MockAPIError(errors.APIError): # type: ignore[misc]
+        def __init__(self, message: str, code: int):
+            self.message = message
+            self.code = code
+            super(Exception, self).__init__(message) # type: ignore[misc]
+
+        def __str__(self) -> str:
+            return self.message
+
+    mock_error = MockAPIError("503 UNAVAILABLE", 503)
+    client.client.models.generate_content.side_effect = mock_error
 
     with pytest.raises(GenerationError) as excinfo:
         client.generate_idea()
 
     assert "Gemini API Error" in str(excinfo.value)
-    assert "currently overloaded" in excinfo.value.tip
+    assert excinfo.value.tip is not None and "currently overloaded" in excinfo.value.tip
     assert client.client.models.generate_content.call_count == 2
 
-def test_generate_idea_api_error_503_fallback_success(client):
+def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     """Test that a 503 error falls back to the second model which succeeds."""
-    api_error = errors.APIError(code=503, response_json={"error": {"message": "503 UNAVAILABLE"}})
+    class MockAPIError(errors.APIError): # type: ignore[misc]
+        def __init__(self, message: str, code: int):
+            self.message = message
+            self.code = code
+            super(Exception, self).__init__(message) # type: ignore[misc]
+
+        def __str__(self) -> str:
+            return self.message
+
+    api_error = MockAPIError("503 UNAVAILABLE", 503)
 
     mock_success_response = MagicMock()
     mock_success_response.text = json.dumps({
@@ -103,7 +134,7 @@ def test_generate_idea_api_error_503_fallback_success(client):
     assert calls[0].kwargs["model"] == "gemini-3-pro-preview"
     assert calls[1].kwargs["model"] == "gemini-2.5-flash"
 
-def test_extract_idea_from_text_success(client):
+def test_extract_idea_from_text_success(client: Any) -> None:
     mock_response = MagicMock()
     mock_response.text = json.dumps({
         "title": "Extracted App",
@@ -119,7 +150,7 @@ def test_extract_idea_from_text_success(client):
     assert result["title"] == "Extracted App"
     client.client.models.generate_content.assert_called_once()
 
-def test_extract_idea_from_text_escapes_input(client):
+def test_extract_idea_from_text_escapes_input(client: Any) -> None:
     """Test that input text is escaped to prevent prompt injection."""
     mock_response = MagicMock()
     mock_response.text = json.dumps({
@@ -148,7 +179,7 @@ def test_extract_idea_from_text_escapes_input(client):
     # Check that raw malicious tag is NOT present
     assert malicious_input not in prompt
 
-def test_generate_project_scaffold_success(client):
+def test_generate_project_scaffold_success(client: Any) -> None:
     mock_response = MagicMock()
     mock_response.text = json.dumps({
         "files": [],
@@ -168,7 +199,7 @@ def test_generate_project_scaffold_success(client):
 
     assert result["run_command"] == "python main.py"
 
-def test_generate_project_scaffold_escapes_input(client):
+def test_generate_project_scaffold_escapes_input(client: Any) -> None:
     """Test that scaffold input is escaped."""
     mock_response = MagicMock()
     mock_response.text = json.dumps({
@@ -194,7 +225,7 @@ def test_generate_project_scaffold_escapes_input(client):
     assert "Desc &amp; more" in prompt
     assert "<project_title>" in prompt
 
-def test_generate_project_scaffold_retry_then_success(client):
+def test_generate_project_scaffold_retry_then_success(client: Any) -> None:
     # First call raises exception, second call succeeds
     mock_response = MagicMock()
     mock_response.text = json.dumps({
@@ -214,7 +245,7 @@ def test_generate_project_scaffold_retry_then_success(client):
     assert result["run_command"] == "python main.py"
     assert client.client.models.generate_content.call_count == 2
 
-def test_generate_project_scaffold_fallback(client):
+def test_generate_project_scaffold_fallback(client: Any) -> None:
     # All calls fail
     client.client.models.generate_content.side_effect = Exception("API Error")
 
