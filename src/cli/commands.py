@@ -40,7 +40,7 @@ def handle_agent(args: Namespace) -> None:
     with Spinner(msg, success_message="Idea generated"):
         idea_data = gemini.generate_idea(category=category)
 
-    _execute_and_watch(args, idea_data)
+    _execute_and_watch(args, idea_data, gemini=gemini)
 
 
 def handle_website(args: Namespace) -> None:
@@ -61,7 +61,7 @@ def handle_website(args: Namespace) -> None:
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
         idea_data = gemini.extract_idea_from_text(text)
 
-    _execute_and_watch(args, idea_data)
+    _execute_and_watch(args, idea_data, gemini=gemini)
 
 
 def handle_status(args: Namespace) -> None:
@@ -95,24 +95,29 @@ def handle_status(args: Namespace) -> None:
         )
 
 
-def _execute_and_watch(args: Namespace, idea_data: dict[str, Any]) -> None:
+def _execute_and_watch(
+    args: Namespace,
+    idea_data: dict[str, Any],
+    gemini: Optional[Any] = None
+) -> None:
     """Execute the workflow and watch the session if requested.
 
     Args:
         args: Command line arguments containing public and timeout settings
         idea_data: The idea data to process
+        gemini: Optional pre-constructed GeminiClient (avoids re-creation)
     """
     from src.core.workflow import IdeaWorkflow
-    from src.services.gemini import GeminiClient
-    from src.services.cache import FileCacheProvider
     from src.services.bus import LocalEventBus
     from src.services.audit import JsonFileAuditLogger
     from src.core.events import WorkflowStarted, WorkflowCompleted
 
     print_idea_summary(idea_data)
 
-    cache = FileCacheProvider()
-    gemini = GeminiClient(cache_provider=cache)
+    if gemini is None:
+        from src.services.gemini import GeminiClient
+        from src.services.cache import FileCacheProvider
+        gemini = GeminiClient(cache_provider=FileCacheProvider())
 
     event_bus = LocalEventBus()
     audit_logger = JsonFileAuditLogger()
