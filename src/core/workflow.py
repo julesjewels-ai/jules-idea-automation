@@ -19,6 +19,36 @@ import uuid
 logger = logging.getLogger(__name__)
 
 
+def _normalize_requirements(raw: Any) -> list[str]:
+    """Normalize requirements from various LLM return formats to a flat list.
+
+    Supported formats:
+        - list[str]  (expected): ["pytest", "requests"]
+        - dict       (flash fallback): {"pytest": ">=7", "requests": "*"}
+        - list[dict] (unusual): [{"package": "pytest", "version": ">=7"}]
+        - scalar     (edge case): "pytest"
+    """
+    if isinstance(raw, dict):
+        return [
+            f"{k}{v}" if v and v.strip() not in ('*', 'latest') else k
+            for k, v in raw.items()
+        ]
+
+    if isinstance(raw, list):
+        lines: list[str] = []
+        for item in raw:
+            if isinstance(item, str):
+                lines.append(item)
+            elif isinstance(item, dict):
+                name = item.get('package') or item.get('name') or ''
+                version = item.get('version') or item.get('constraint') or ''
+                lines.append(f"{name}{version}" if version else name)
+            else:
+                lines.append(str(item))
+        return lines
+
+    return [str(raw)]
+
 class IdeaWorkflow:
     """Orchestrates the creation of a GitHub repo and Jules session from an idea.
     
@@ -232,29 +262,7 @@ class IdeaWorkflow:
 
         raw_requirements = scaffold.get('requirements')
         if raw_requirements:
-            # Normalize requirements from various formats the LLM may return:
-            # - list[str]  (expected): ["pytest", "requests"]
-            # - dict       (flash fallback): {"pytest": ">=7", "requests": "*"}
-            # - list[dict] (unusual): [{"package": "pytest", "version": ">=7"}]
-            if isinstance(raw_requirements, dict):
-                req_lines = [
-                    f"{k}{v}" if v and v.strip() not in ('*', 'latest') else k
-                    for k, v in raw_requirements.items()
-                ]
-            elif isinstance(raw_requirements, list):
-                req_lines = []
-                for item in raw_requirements:
-                    if isinstance(item, str):
-                        req_lines.append(item)
-                    elif isinstance(item, dict):
-                        name = item.get('package') or item.get('name') or ''
-                        version = item.get('version') or item.get('constraint') or ''
-                        req_lines.append(f"{name}{version}" if version else name)
-                    else:
-                        req_lines.append(str(item))
-            else:
-                req_lines = [str(raw_requirements)]
-
+            req_lines = _normalize_requirements(raw_requirements)
             files_to_create.append({
                 'path': 'requirements.txt',
                 'content': '\n'.join(line for line in req_lines if line)
