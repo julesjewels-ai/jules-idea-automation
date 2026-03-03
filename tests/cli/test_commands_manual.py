@@ -1,10 +1,11 @@
 from argparse import Namespace
+from typing import Any
 from unittest.mock import patch, ANY
 from src.cli.commands import handle_manual
 
 @patch('src.cli.commands._execute_and_watch')
 @patch('src.utils.slugify.slugify')
-def test_handle_manual_basic(mock_slugify, mock_execute):
+def test_handle_manual_basic(mock_slugify: Any, mock_execute: Any) -> None:
     """Test basic manual command with explicit title and description."""
     mock_slugify.return_value = "my-title"
     args = Namespace(
@@ -29,7 +30,7 @@ def test_handle_manual_basic(mock_slugify, mock_execute):
 
 @patch('src.cli.commands._execute_and_watch')
 @patch('src.utils.slugify.slugify')
-def test_handle_manual_long_title(mock_slugify, mock_execute):
+def test_handle_manual_long_title(mock_slugify: Any, mock_execute: Any) -> None:
     """Test handling of long titles (description-as-title pattern)."""
     long_title = "This is a very long title that is actually a description of the project. It goes on and on to exceed the limit. It definitely needs to be more than 100 characters to trigger the logic."
     mock_slugify.return_value = "this-is-a-very-long"
@@ -71,7 +72,7 @@ def test_handle_manual_long_title(mock_slugify, mock_execute):
     assert idea_data["title"] == "This is a very long title that is actually a descr"
 
 @patch('src.cli.commands._execute_and_watch')
-def test_handle_manual_with_lists(mock_execute):
+def test_handle_manual_with_lists(mock_execute: Any) -> None:
     """Test parsing of tech stack and features."""
     args = Namespace(
         title="App",

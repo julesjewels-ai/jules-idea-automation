@@ -1,17 +1,18 @@
 """Tests for GitHubClient."""
 
 import pytest
+from typing import Any
 from unittest.mock import patch, MagicMock
 from src.services.github import GitHubClient
 
 
 @pytest.fixture
-def github_client(monkeypatch):
+def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
     return GitHubClient()
 
 
-def test_create_files_success(github_client):
+def test_create_files_success(github_client: Any) -> None:
     owner = "test-owner"
     repo = "test-repo"
     branch = "main"
@@ -31,7 +32,7 @@ def test_create_files_success(github_client):
 
     with patch("src.services.github.requests") as mock_requests:
         # Build a response factory
-        def make_response(json_data, status_code=200):
+        def make_response(json_data: Any, status_code: int = 200) -> MagicMock:
             resp = MagicMock()
             resp.json.return_value = json_data
             resp.status_code = status_code

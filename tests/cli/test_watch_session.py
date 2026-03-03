@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import patch
 from src.cli.commands import watch_session
 
@@ -6,7 +7,7 @@ from src.cli.commands import watch_session
 @patch('src.utils.polling.time.sleep') # Speed up tests
 @patch('src.cli.commands.print_watch_complete')
 @patch('src.cli.commands.print_watch_timeout')
-def test_watch_session_success(mock_timeout_print, mock_complete_print, mock_sleep, mock_spinner_cls, mock_jules_cls):
+def test_watch_session_success(mock_timeout_print: Any, mock_complete_print: Any, mock_sleep: Any, mock_spinner_cls: Any, mock_jules_cls: Any) -> None:
     # Setup
     mock_jules = mock_jules_cls.return_value
     # is_session_complete returns (is_complete, pr_url)
@@ -33,7 +34,7 @@ def test_watch_session_success(mock_timeout_print, mock_complete_print, mock_sle
 @patch('src.utils.polling.time.sleep')
 @patch('src.cli.commands.print_watch_complete')
 @patch('src.cli.commands.print_watch_timeout')
-def test_watch_session_timeout(mock_timeout_print, mock_complete_print, mock_sleep, mock_spinner_cls, mock_jules_cls):
+def test_watch_session_timeout(mock_timeout_print: Any, mock_complete_print: Any, mock_sleep: Any, mock_spinner_cls: Any, mock_jules_cls: Any) -> None:
     # Setup
     mock_jules = mock_jules_cls.return_value
     mock_jules.is_session_complete.return_value = (False, None)
