@@ -1,6 +1,8 @@
 """Core interfaces and protocols for the Jules Automation Tool."""
 
-from typing import Protocol, Optional, Any
+from typing import Protocol, Optional, Any, TypeVar, Generic
+
+T = TypeVar('T')
 
 
 class EventHandler(Protocol):
@@ -56,5 +58,36 @@ class CacheProvider(Protocol):
         Args:
             key: The unique cache key.
             value: The value to cache (must be JSON-serializable).
+        """
+        ...
+
+
+class ProjectRepository(Protocol, Generic[T]):
+    """Protocol for project repositories."""
+
+    def save(self, item: T) -> None:
+        """Save an item to the repository.
+
+        Args:
+            item: The item to save.
+        """
+        ...
+
+    def get(self, key: str) -> Optional[T]:
+        """Retrieve an item from the repository.
+
+        Args:
+            key: The unique key for the item.
+
+        Returns:
+            The retrieved item, or None if not found.
+        """
+        ...
+
+    def list_all(self) -> list[T]:
+        """List all items in the repository.
+
+        Returns:
+            A list of all items.
         """
         ...

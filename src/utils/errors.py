@@ -39,3 +39,9 @@ class AuditError(AppError):
     """Raised when an error occurs during audit logging."""
 
     pass
+
+
+class RepositoryError(AppError):
+    """Raised for domain errors related to data persistence or retrieval."""
+
+    pass
