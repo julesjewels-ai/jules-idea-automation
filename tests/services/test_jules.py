@@ -1,9 +1,11 @@
 """Tests for JulesClient."""
 
-import pytest
 from typing import Any
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 import requests
+
 from src.services.jules import JulesClient
 from src.utils.errors import JulesApiError
 
@@ -86,9 +88,7 @@ def test_jules_client_json_error() -> None:
     with patch("src.services.jules.requests.request") as mock_request:
         error_json = {"error": {"message": "Custom API Error"}}
         mock_resp = MagicMock()
-        mock_resp.raise_for_status.side_effect = _make_http_error(
-            400, "Bad Request", json_data=error_json
-        )
+        mock_resp.raise_for_status.side_effect = _make_http_error(400, "Bad Request", json_data=error_json)
         mock_request.return_value = mock_resp
 
         with pytest.raises(JulesApiError) as excinfo:

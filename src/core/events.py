@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -19,7 +19,7 @@ class WorkflowStarted(DomainEvent):
 
     idea_title: str
     idea_slug: str
-    category: Optional[str] = None
+    category: str | None = None
 
 
 class WorkflowCompleted(DomainEvent):
@@ -28,5 +28,5 @@ class WorkflowCompleted(DomainEvent):
     idea_title: str
     idea_slug: str
     repo_url: str
-    session_id: Optional[str] = None
-    session_url: Optional[str] = None
+    session_id: str | None = None
+    session_url: str | None = None

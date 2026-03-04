@@ -1,8 +1,11 @@
 """Web scraping utilities with content validation."""
 
+from __future__ import annotations
+
 import requests
 from bs4 import BeautifulSoup
-from src.utils.security import validate_url, ScrapingError
+
+from src.utils.security import ScrapingError, validate_url
 
 __all__ = ["scrape_text", "ScrapingError", "MIN_CONTENT_LENGTH", "BLOCKED_INDICATORS"]
 
@@ -36,6 +39,7 @@ def scrape_text(url: str) -> str:
     Raises:
         ScrapingError: If the page cannot be scraped or has
                       insufficient content
+
     """
     validate_url(url)
 
@@ -49,10 +53,7 @@ def scrape_text(url: str) -> str:
     except Exception as e:
         if isinstance(e, ScrapingError):
             raise
-        raise ScrapingError(
-            f"Failed to scrape {url}: {e}",
-            tip="An unexpected error occurred during scraping."
-        )
+        raise ScrapingError(f"Failed to scrape {url}: {e}", tip="An unexpected error occurred during scraping.")
 
 
 def _extract_text(content: bytes) -> str:
@@ -63,13 +64,12 @@ def _extract_text(content: bytes) -> str:
 
     Returns:
         Cleaned text
+
     """
-    soup = BeautifulSoup(content, 'html.parser')
+    soup = BeautifulSoup(content, "html.parser")
 
     # Remove script, style, nav, header, footer elements
-    for element in soup([
-        "script", "style", "nav", "header", "footer", "aside"
-    ]):
+    for element in soup(["script", "style", "nav", "header", "footer", "aside"]):
         element.decompose()
 
     # Get text
@@ -80,7 +80,7 @@ def _extract_text(content: bytes) -> str:
     # Break multi-headlines into a line each
     chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
     # Drop blank lines
-    text = '\n'.join(chunk for chunk in chunks if chunk)
+    text = "\n".join(chunk for chunk in chunks if chunk)
 
     return text
 
@@ -96,14 +96,10 @@ def _fetch_response(url: str) -> requests.Response:
 
     Raises:
         ScrapingError: If the network request fails
+
     """
     try:
-        headers = {
-            'User-Agent': (
-                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
-                'AppleWebKit/537.36'
-            )
-        }
+        headers = {"User-Agent": ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")}
         response = requests.get(url, timeout=15, headers=headers)
         response.raise_for_status()
         return response
@@ -111,31 +107,21 @@ def _fetch_response(url: str) -> requests.Response:
     except requests.exceptions.HTTPError as e:
         tip = "Check if the URL is correct and accessible in your browser."
         if e.response.status_code == 403:
-            tip = (
-                "The website is blocking automated access (403 Forbidden). "
-                "Try a different source."
-            )
+            tip = "The website is blocking automated access (403 Forbidden). Try a different source."
         elif e.response.status_code == 404:
             tip = "The page was not found (404). Check the URL for typos."
         raise ScrapingError(f"HTTP error accessing {url}: {e}", tip=tip)
     except requests.exceptions.Timeout:
         raise ScrapingError(
             f"Timeout accessing {url}",
-            tip=(
-                "The website is taking too long to respond. "
-                "It might be down or blocking connections."
-            )
+            tip=("The website is taking too long to respond. It might be down or blocking connections."),
         )
     except requests.exceptions.RequestException as e:
         raise ScrapingError(
-            f"Network error accessing {url}: {e}",
-            tip="Check your internet connection and DNS settings."
+            f"Network error accessing {url}: {e}", tip="Check your internet connection and DNS settings."
         )
     except Exception as e:
-        raise ScrapingError(
-            f"Failed to scrape {url}: {e}",
-            tip="An unexpected error occurred during scraping."
-        )
+        raise ScrapingError(f"Failed to scrape {url}: {e}", tip="An unexpected error occurred during scraping.")
 
 
 def _validate_content(text: str, url: str) -> None:
@@ -147,6 +133,7 @@ def _validate_content(text: str, url: str) -> None:
 
     Raises:
         ScrapingError: If content is insufficient or appears blocked
+
     """
     # Check minimum length
     if len(text) < MIN_CONTENT_LENGTH:
@@ -155,10 +142,7 @@ def _validate_content(text: str, url: str) -> None:
             f"Only {len(text)} characters extracted "
             f"(minimum: {MIN_CONTENT_LENGTH}). "
             "The page may require authentication or JavaScript.",
-            tip=(
-                "The page content is too short. Try a different URL or "
-                "ensure the page doesn't require login/JS."
-            )
+            tip=("The page content is too short. Try a different URL or ensure the page doesn't require login/JS."),
         )
 
     # Check for blocked/login indicators in first portion of text
@@ -167,10 +151,6 @@ def _validate_content(text: str, url: str) -> None:
         # Only flag if the indicator appears prominently (not just in passing)
         if text_lower.count(indicator) >= 2:
             raise ScrapingError(
-                f"Page at {url} appears to require authentication "
-                f"or is blocked. Detected '{indicator}' indicators.",
-                tip=(
-                    "The website seems to require login or has blocked "
-                    "the scraper. Try a public, static page."
-                )
+                f"Page at {url} appears to require authentication or is blocked. Detected '{indicator}' indicators.",
+                tip=("The website seems to require login or has blocked the scraper. Try a public, static page."),
             )

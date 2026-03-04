@@ -1,5 +1,7 @@
 from typing import Any
-from src.utils.reporter import print_panel, strip_ansi, Colors
+
+from src.utils.reporter import Colors, print_panel, strip_ansi
+
 
 def test_print_panel_basic(capsys: Any) -> None:
     """Test basic print_panel functionality."""
@@ -20,7 +22,7 @@ def test_print_panel_basic(capsys: Any) -> None:
 
     # Verify width (approximately, by checking line lengths)
     # The output contains ANSI codes, so we should strip them for length checks
-    clean_lines = [strip_ansi(line) for line in output.split('\n') if line.strip()]
+    clean_lines = [strip_ansi(line) for line in output.split("\n") if line.strip()]
 
     # Top border should contain the title
     assert title in clean_lines[0]
@@ -36,16 +38,17 @@ def test_print_panel_basic(capsys: Any) -> None:
     # Top border length might vary slightly due to title placement logic but roughly matches width.
     assert len(clean_lines[0]) == width
 
+
 def test_print_panel_wrapping(capsys: Any) -> None:
     """Test print_panel wrapping functionality."""
     content = "This is a very long line that should be wrapped because it exceeds the width."
-    width = 20 # Small width to force wrapping
+    width = 20  # Small width to force wrapping
 
     print_panel(content, width=width)
 
     captured = capsys.readouterr()
     output = captured.out
-    clean_lines = [strip_ansi(line) for line in output.split('\n') if line.strip()]
+    clean_lines = [strip_ansi(line) for line in output.split("\n") if line.strip()]
 
     # Should have multiple content lines
     # Top border, bottom border, plus wrapped lines.

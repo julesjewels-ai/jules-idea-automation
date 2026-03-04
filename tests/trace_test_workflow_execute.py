@@ -1,12 +1,15 @@
+from typing import Any
+from unittest.mock import MagicMock
+
 import pytest
 from pytest_mock import MockerFixture
-from src.core.workflow import IdeaWorkflow
+
 from src.core.models import WorkflowResult
-from src.services.github import GitHubClient
+from src.core.workflow import IdeaWorkflow
 from src.services.gemini import GeminiClient
+from src.services.github import GitHubClient
 from src.services.jules import JulesClient
-from unittest.mock import MagicMock
-from typing import Any
+
 
 @pytest.fixture
 def mock_clients(mocker: MockerFixture) -> dict[str, MagicMock]:
@@ -15,6 +18,7 @@ def mock_clients(mocker: MockerFixture) -> dict[str, MagicMock]:
         "gemini": mocker.create_autospec(GeminiClient, instance=True),
         "jules": mocker.create_autospec(JulesClient, instance=True),
     }
+
 
 @pytest.fixture
 def idea_data() -> dict[str, Any]:
@@ -26,11 +30,15 @@ def idea_data() -> dict[str, Any]:
         "features": ["feature1"],
     }
 
-@pytest.mark.parametrize("scenario, private_flag, verbose_flag, poll_success, expected_result", [
-    ("happy_path", True, True, True, "success"),
-    ("public_repo_quiet", False, False, True, "success"),
-    ("jules_timeout", True, True, False, "timeout_error"),
-])
+
+@pytest.mark.parametrize(
+    "scenario, private_flag, verbose_flag, poll_success, expected_result",
+    [
+        ("happy_path", True, True, True, "success"),
+        ("public_repo_quiet", False, False, True, "success"),
+        ("jules_timeout", True, True, False, "timeout_error"),
+    ],
+)
 def test_execute_behavior(
     mocker: MockerFixture,
     mock_clients: dict[str, MagicMock],
@@ -39,7 +47,7 @@ def test_execute_behavior(
     private_flag: bool,
     verbose_flag: bool,
     poll_success: bool,
-    expected_result: str
+    expected_result: str,
 ) -> None:
     # 1. Setup Mocks (Namespace Verified)
     # Patch imported functions in src.core.workflow
@@ -54,11 +62,9 @@ def test_execute_behavior(
 
     github.get_user.return_value = {"login": "testuser"}
     gemini.generate_project_scaffold.return_value = {
-        "files": [
-            {"path": "main.py", "content": "print('hello')", "description": "Main file"}
-        ],
+        "files": [{"path": "main.py", "content": "print('hello')", "description": "Main file"}],
         "requirements": ["requests"],
-        "run_command": "python main.py"
+        "run_command": "python main.py",
     }
     mock_build_readme.return_value = "# README"
 
@@ -81,11 +87,7 @@ def test_execute_behavior(
 
     # Verify side effects
     github.get_user.assert_called()
-    github.create_repo.assert_called_once_with(
-        name="test-idea",
-        description="A test description",
-        private=private_flag
-    )
+    github.create_repo.assert_called_once_with(name="test-idea", description="A test description", private=private_flag)
     gemini.generate_project_scaffold.assert_called_once_with(idea_data)
 
     # Verify README creation
@@ -95,7 +97,7 @@ def test_execute_behavior(
     # Verify Scaffold creation
     github.create_files.assert_called_once()
     files_arg = github.create_files.call_args[1]["files"]
-    assert len(files_arg) == 2 # main.py and requirements.txt
+    assert len(files_arg) == 2  # main.py and requirements.txt
     assert files_arg[0]["path"] == "main.py"
     assert files_arg[1]["path"] == "requirements.txt"
 

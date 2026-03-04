@@ -3,16 +3,13 @@
 from __future__ import annotations
 
 import time
-from typing import Callable, TypeVar, Optional
+from typing import Callable, TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def poll_until(
-    condition: Callable[[], bool],
-    timeout: int = 1800,
-    interval: int = 10,
-    on_poll: Optional[Callable[[int], None]] = None
+    condition: Callable[[], bool], timeout: int = 1800, interval: int = 10, on_poll: Callable[[int], None] | None = None
 ) -> bool:
     """Polls until a condition is met or timeout is reached.
 
@@ -24,6 +21,7 @@ def poll_until(
 
     Returns:
         True if condition met, False if timeout
+
     """
     elapsed = 0
     while elapsed < timeout:
@@ -40,9 +38,9 @@ def poll_with_result(
     check: Callable[[], tuple[bool, T]],
     timeout: int = 1800,
     interval: int = 30,
-    on_poll: Optional[Callable[[int, str], None]] = None,
-    status_extractor: Optional[Callable[[], str]] = None
-) -> tuple[bool, Optional[T], int]:
+    on_poll: Callable[[int, str], None] | None = None,
+    status_extractor: Callable[[], str] | None = None,
+) -> tuple[bool, T | None, int]:
     """Polls until completion, returning a result.
 
     Args:
@@ -54,6 +52,7 @@ def poll_with_result(
 
     Returns:
         Tuple of (completed, result or None, elapsed_time)
+
     """
     elapsed = 0
     while elapsed < timeout:

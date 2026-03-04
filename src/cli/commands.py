@@ -1,18 +1,19 @@
 """Command handlers for the CLI."""
 
 from __future__ import annotations
+
 import sys
 from argparse import Namespace
-from typing import Any, Optional
+from typing import Any
 
 from src.utils.reporter import (
-    print_session_status,
-    print_watch_complete,
-    print_watch_timeout,
-    print_sources_list,
-    print_idea_summary,
     Spinner,
     format_duration,
+    print_idea_summary,
+    print_session_status,
+    print_sources_list,
+    print_watch_complete,
+    print_watch_timeout,
 )
 
 
@@ -29,10 +30,10 @@ def handle_list_sources() -> None:
 
 def handle_agent(args: Namespace) -> None:
     """Handle the agent command."""
-    from src.services.gemini import GeminiClient
     from src.services.cache import FileCacheProvider
+    from src.services.gemini import GeminiClient
 
-    category = getattr(args, 'category', None)
+    category = getattr(args, "category", None)
 
     cache = FileCacheProvider()
     gemini = GeminiClient(cache_provider=cache)
@@ -45,9 +46,9 @@ def handle_agent(args: Namespace) -> None:
 
 def handle_website(args: Namespace) -> None:
     """Handle the website command."""
+    from src.services.cache import FileCacheProvider
     from src.services.gemini import GeminiClient
     from src.services.scraper import scrape_text
-    from src.services.cache import FileCacheProvider
 
     print(f"Scraping {args.url}...")
 
@@ -87,36 +88,34 @@ def handle_status(args: Namespace) -> None:
 
         print_session_status(
             session_id=session_id,
-            title=session.get('title', 'N/A'),
-            url=session.get('url', 'N/A'),
+            title=session.get("title", "N/A"),
+            url=session.get("url", "N/A"),
             is_complete=is_complete,
             pr_url=pr_url,
-            activities=activity_titles
+            activities=activity_titles,
         )
 
 
-def _execute_and_watch(
-    args: Namespace,
-    idea_data: dict[str, Any],
-    gemini: Optional[Any] = None
-) -> None:
+def _execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any | None = None) -> None:
     """Execute the workflow and watch the session if requested.
 
     Args:
         args: Command line arguments containing public and timeout settings
         idea_data: The idea data to process
         gemini: Optional pre-constructed GeminiClient (avoids re-creation)
+
     """
+    from src.core.events import WorkflowCompleted, WorkflowStarted
     from src.core.workflow import IdeaWorkflow
-    from src.services.bus import LocalEventBus
     from src.services.audit import JsonFileAuditLogger
-    from src.core.events import WorkflowStarted, WorkflowCompleted
+    from src.services.bus import LocalEventBus
 
     print_idea_summary(idea_data)
 
     if gemini is None:
-        from src.services.gemini import GeminiClient
         from src.services.cache import FileCacheProvider
+        from src.services.gemini import GeminiClient
+
         gemini = GeminiClient(cache_provider=FileCacheProvider())
 
     event_bus = LocalEventBus()
@@ -126,17 +125,13 @@ def _execute_and_watch(
 
     workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus)
 
-    result = workflow.execute(
-        idea_data,
-        private=not args.public,
-        timeout=args.timeout
-    )
+    result = workflow.execute(idea_data, private=not args.public, timeout=args.timeout)
 
     if result.session_id and args.watch:
         watch_session(result.session_id, timeout=args.timeout)
 
 
-def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[str]]:
+def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, str | None]:
     """Watch a Jules session until completion or timeout.
 
     Args:
@@ -145,6 +140,7 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[
 
     Returns:
         Tuple of (is_complete, pr_url or None)
+
     """
     from src.services.jules import JulesClient
     from src.utils.polling import poll_with_result
@@ -154,7 +150,7 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[
 
     with Spinner(f"[{format_duration(0)}] Watching session {session_id}...") as spinner:
 
-        def check() -> tuple[bool, Optional[str]]:
+        def check() -> tuple[bool, str | None]:
             return jules.is_session_complete(session_id)
 
         def status_extractor() -> str:
@@ -171,11 +167,7 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[
             spinner.update(f"[{format_duration(elapsed)}] {status}")
 
         is_complete, pr_url, elapsed = poll_with_result(
-            check=check,
-            timeout=timeout,
-            interval=poll_interval,
-            on_poll=on_poll,
-            status_extractor=status_extractor
+            check=check, timeout=timeout, interval=poll_interval, on_poll=on_poll, status_extractor=status_extractor
         )
 
     if is_complete:
@@ -183,27 +175,27 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, Optional[
         return is_complete, pr_url
 
     session = jules.get_session(session_id)
-    print_watch_timeout(timeout, session.get('url', 'N/A'))
+    print_watch_timeout(timeout, session.get("url", "N/A"))
     return False, None
 
 
 def handle_guide(args: Namespace) -> None:
     """Handle the guide command."""
     from src.utils.guide import (
-        print_welcome_guide,
         print_agent_guide,
-        print_website_guide,
+        print_examples,
         print_manual_guide,
-        print_examples
+        print_website_guide,
+        print_welcome_guide,
     )
 
-    workflow = getattr(args, 'workflow', None)
+    workflow = getattr(args, "workflow", None)
 
-    if workflow == 'agent':
+    if workflow == "agent":
         print_agent_guide()
-    elif workflow == 'website':
+    elif workflow == "website":
         print_website_guide()
-    elif workflow == 'manual':
+    elif workflow == "manual":
         print_manual_guide()
     else:
         # Show welcome guide with all options
@@ -223,7 +215,7 @@ def _parse_title_and_description(args: Namespace) -> tuple[str, str]:
         # If the title is too long, it's likely a full description
         description = raw_title
         # Use first sentence or prefix as a title
-        title = raw_title[:50].split('.')[0].strip() or "Manual Idea"
+        title = raw_title[:50].split(".")[0].strip() or "Manual Idea"
     else:
         title = raw_title
         description = args.description or raw_title
@@ -235,7 +227,7 @@ def _parse_list_arg(arg_value: str | None) -> list[str]:
     """Parse a comma-separated list argument."""
     if not arg_value:
         return []
-    return [item.strip() for item in arg_value.split(',')]
+    return [item.strip() for item in arg_value.split(",")]
 
 
 def handle_manual(args: Namespace) -> None:
@@ -253,7 +245,7 @@ def handle_manual(args: Namespace) -> None:
         "description": description,
         "slug": slug,
         "tech_stack": _parse_list_arg(args.tech_stack),
-        "features": _parse_list_arg(args.features)
+        "features": _parse_list_arg(args.features),
     }
 
     _execute_and_watch(args, idea_data)

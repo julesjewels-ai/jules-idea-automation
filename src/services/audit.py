@@ -1,12 +1,14 @@
 """Audit logging implementation for the Jules Automation Tool."""
 
+from __future__ import annotations
+
 import json
 import logging
 from pathlib import Path
 from typing import Any
 
-from src.core.interfaces import EventHandler
 from src.core.events import DomainEvent
+from src.core.interfaces import EventHandler
 from src.utils.errors import AuditError
 
 logger = logging.getLogger(__name__)
@@ -20,6 +22,7 @@ class JsonFileAuditLogger(EventHandler):
 
         Args:
             log_file: The path to the log file (JSONL format).
+
         """
         self.log_file = Path(log_file)
 
@@ -35,6 +38,7 @@ class JsonFileAuditLogger(EventHandler):
 
         Args:
             event: The domain event to handle.
+
         """
         if not isinstance(event, DomainEvent):
             logger.debug(f"Audit logger ignored non-DomainEvent: {type(event)}")

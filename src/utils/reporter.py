@@ -2,31 +2,34 @@
 
 from __future__ import annotations
 
-import sys
-import time
-import threading
 import re
+import sys
+import threading
+import time
 from types import TracebackType
-from typing import Optional, Any, Type
+from typing import Any
 
 
 class Colors:
     """ANSI color codes for terminal output."""
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+
+    HEADER = "\033[95m"
+    BLUE = "\033[94m"
+    CYAN = "\033[96m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+
 
 def strip_ansi(text: str) -> str:
     """Removes ANSI escape codes from text."""
-    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    return ansi_escape.sub('', text)
+    ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+    return ansi_escape.sub("", text)
+
 
 def _create_top_border(title: str, width: int, color: str) -> str:
     # Box drawing characters
@@ -48,7 +51,7 @@ def _create_top_border(title: str, width: int, color: str) -> str:
 
     # Ensure title fits
     if len(title_text) > width - 4:
-        title_text = title_text[:width-5] + "…"
+        title_text = title_text[: width - 5] + "…"
 
     left_pad = 2
     # Adjust right pad calculation by subtracting visual offset from the available space
@@ -62,7 +65,7 @@ def _create_top_border(title: str, width: int, color: str) -> str:
 
 
 def _wrap_content(content: str, width: int) -> list[str]:
-    lines = content.split('\n')
+    lines = content.split("\n")
     wrapped_lines = []
 
     for line in lines:
@@ -82,7 +85,7 @@ def _wrap_content(content: str, width: int) -> list[str]:
             # Simple word wrap
             current_line: list[str] = []
             current_len = 0
-            words = line.split(' ')
+            words = line.split(" ")
 
             for word in words:
                 word_len = len(strip_ansi(word))
@@ -115,7 +118,7 @@ def print_panel(content: str, title: str = "", color: str = Colors.CYAN, width: 
         visible_len = len(strip_ansi(line))
         padding = width - 4 - visible_len
         if padding < 0:
-             padding = 0
+            padding = 0
         print(f"{color}{V_LINE}{Colors.ENDC} {line}{' ' * padding} {color}{V_LINE}{Colors.ENDC}")
 
     print(f"{color}{BL_CORNER}{H_LINE * (width - 2)}{BR_CORNER}{Colors.ENDC}")
@@ -128,7 +131,7 @@ class Spinner:
     success (✔) or failure (✖) state upon completion.
     """
 
-    def __init__(self, message: str = "Processing", success_message: Optional[str] = None):
+    def __init__(self, message: str = "Processing", success_message: str | None = None):
         self.message = message
         self.success_message = success_message
         self._stop_event = threading.Event()
@@ -149,14 +152,16 @@ class Spinner:
         padding = max(0, len(self.message) - len(message))
         self.message = message + " " * padding
 
-    def __enter__(self) -> 'Spinner':
+    def __enter__(self) -> "Spinner":
         if sys.stdout.isatty():
             sys.stdout.write("\033[?25l")  # Hide cursor
             sys.stdout.flush()
         self._thread.start()
         return self
 
-    def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]) -> None:
+    def __exit__(
+        self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None
+    ) -> None:
         self._stop_event.set()
         self._thread.join()
 
@@ -191,16 +196,16 @@ def print_workflow_report(
     title: str,
     slug: str,
     repo_url: str,
-    session_id: Optional[str] = None,
-    session_url: Optional[str] = None,
-    pr_url: Optional[str] = None
+    session_id: str | None = None,
+    session_url: str | None = None,
+    pr_url: str | None = None,
 ) -> None:
     """Prints a summary report of the workflow results."""
     print_header("✨ WORKFLOW COMPLETE")
     print(f"{Colors.BOLD}📦 Project:{Colors.ENDC} {Colors.GREEN}{title}{Colors.ENDC}")
     print(f"{Colors.BOLD}📝 Slug:   {Colors.ENDC} {slug}")
     print(f"{Colors.BOLD}🔗 Repo:   {Colors.ENDC} {Colors.UNDERLINE}{repo_url}{Colors.ENDC}")
-    
+
     if session_id:
         print(f"{Colors.BOLD}🤖 Jules:  {Colors.ENDC} {Colors.UNDERLINE}{session_url or 'N/A'}{Colors.ENDC}")
         print(f"{Colors.BOLD}   Session:{Colors.ENDC} {session_id}")
@@ -208,7 +213,7 @@ def print_workflow_report(
             print(f"{Colors.BOLD}🎉 PR:     {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     else:
         print(f"{Colors.YELLOW}⚠️  Jules session was not created (source not indexed){Colors.ENDC}")
-    
+
     print(f"{Colors.BOLD}{Colors.BLUE}{'=' * 50}{Colors.ENDC}")
 
 
@@ -217,8 +222,8 @@ def print_session_status(
     title: str,
     url: str,
     is_complete: bool,
-    pr_url: Optional[str] = None,
-    activities: Optional[list[str]] = None
+    pr_url: str | None = None,
+    activities: list[str] | None = None,
 ) -> None:
     """Prints status information for a Jules session."""
     print(f"\n{Colors.BOLD}📋 Session Status:{Colors.ENDC} {Colors.CYAN}{session_id}{Colors.ENDC}")
@@ -226,10 +231,10 @@ def print_session_status(
     print(f"   {Colors.BOLD}URL:     {Colors.ENDC} {Colors.UNDERLINE}{url}{Colors.ENDC}")
     status_msg = f"{Colors.GREEN}✅ Yes{Colors.ENDC}" if is_complete else f"{Colors.YELLOW}⏳ In Progress{Colors.ENDC}"
     print(f"   {Colors.BOLD}Complete:{Colors.ENDC} {status_msg}")
-    
+
     if pr_url:
         print(f"   {Colors.BOLD}PR:      {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
-    
+
     if activities:
         print(f"\n   {Colors.BOLD}Recent Activity:{Colors.ENDC}")
         for activity in activities[:3]:
@@ -255,7 +260,7 @@ def print_progress(elapsed: int, message: str) -> None:
     print(f"  {Colors.CYAN}[{duration}]{Colors.ENDC} {message[:60]}...")
 
 
-def print_watch_complete(elapsed: int, pr_url: Optional[str] = None) -> None:
+def print_watch_complete(elapsed: int, pr_url: str | None = None) -> None:
     """Prints session completion message."""
     duration = format_duration(elapsed)
     print(f"\n{Colors.GREEN}✅ Session completed after {duration}!{Colors.ENDC}")
@@ -295,25 +300,24 @@ def print_sources_list(response: dict[str, Any]) -> None:
 
 def print_idea_summary(idea_data: dict[str, Any]) -> None:
     """Prints a summary of the generated idea."""
-
     content_lines = []
 
     # Description
     content_lines.append(f"{Colors.BOLD}📝 Description:{Colors.ENDC}")
-    content_lines.append(idea_data['description'])
+    content_lines.append(idea_data["description"])
     content_lines.append("")
 
     # Tech Stack
-    if idea_data.get('tech_stack'):
-        tech = ", ".join(idea_data['tech_stack'])
+    if idea_data.get("tech_stack"):
+        tech = ", ".join(idea_data["tech_stack"])
         content_lines.append(f"{Colors.BOLD}🛠️  Tech Stack:{Colors.ENDC}")
         content_lines.append(tech)
         content_lines.append("")
 
     # Features
-    if idea_data.get('features'):
+    if idea_data.get("features"):
         content_lines.append(f"{Colors.BOLD}⚡ Features:{Colors.ENDC}")
-        for feature in idea_data['features']:
+        for feature in idea_data["features"]:
             content_lines.append(f"• {feature}")
 
     # Remove trailing empty line if exists
@@ -322,11 +326,6 @@ def print_idea_summary(idea_data: dict[str, Any]) -> None:
 
     full_content = "\n".join(content_lines)
 
-    print("") # spacing before
-    print_panel(
-        full_content,
-        title=f"✨ {idea_data['title']}",
-        color=Colors.HEADER,
-        width=70
-    )
-    print("") # spacing after
+    print("")  # spacing before
+    print_panel(full_content, title=f"✨ {idea_data['title']}", color=Colors.HEADER, width=70)
+    print("")  # spacing after

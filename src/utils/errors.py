@@ -1,12 +1,12 @@
 """Application-specific exceptions."""
 
-from typing import Optional
+from __future__ import annotations
 
 
 class AppError(Exception):
     """Base class for application errors."""
 
-    def __init__(self, message: str, tip: Optional[str] = None):
+    def __init__(self, message: str, tip: str | None = None):
         super().__init__(message)
         self.tip = tip
 

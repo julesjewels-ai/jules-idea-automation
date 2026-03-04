@@ -1,13 +1,17 @@
 from typing import Any
 from unittest.mock import patch
+
 from src.cli.commands import watch_session
 
-@patch('src.services.jules.JulesClient')
-@patch('src.cli.commands.Spinner')
-@patch('src.utils.polling.time.sleep') # Speed up tests
-@patch('src.cli.commands.print_watch_complete')
-@patch('src.cli.commands.print_watch_timeout')
-def test_watch_session_success(mock_timeout_print: Any, mock_complete_print: Any, mock_sleep: Any, mock_spinner_cls: Any, mock_jules_cls: Any) -> None:
+
+@patch("src.services.jules.JulesClient")
+@patch("src.cli.commands.Spinner")
+@patch("src.utils.polling.time.sleep")  # Speed up tests
+@patch("src.cli.commands.print_watch_complete")
+@patch("src.cli.commands.print_watch_timeout")
+def test_watch_session_success(
+    mock_timeout_print: Any, mock_complete_print: Any, mock_sleep: Any, mock_spinner_cls: Any, mock_jules_cls: Any
+) -> None:
     # Setup
     mock_jules = mock_jules_cls.return_value
     # is_session_complete returns (is_complete, pr_url)
@@ -15,9 +19,7 @@ def test_watch_session_success(mock_timeout_print: Any, mock_complete_print: Any
     mock_jules.is_session_complete.side_effect = [(False, None), (True, "http://pr.url")]
 
     # Mock list_activities
-    mock_jules.list_activities.return_value = {
-        "activities": [{"progressUpdated": {"title": "Doing something"}}]
-    }
+    mock_jules.list_activities.return_value = {"activities": [{"progressUpdated": {"title": "Doing something"}}]}
 
     # Execute
     result, pr_url = watch_session("sess-123", timeout=100)
@@ -29,12 +31,15 @@ def test_watch_session_success(mock_timeout_print: Any, mock_complete_print: Any
     mock_timeout_print.assert_not_called()
     assert mock_jules.is_session_complete.call_count == 2
 
-@patch('src.services.jules.JulesClient')
-@patch('src.cli.commands.Spinner')
-@patch('src.utils.polling.time.sleep')
-@patch('src.cli.commands.print_watch_complete')
-@patch('src.cli.commands.print_watch_timeout')
-def test_watch_session_timeout(mock_timeout_print: Any, mock_complete_print: Any, mock_sleep: Any, mock_spinner_cls: Any, mock_jules_cls: Any) -> None:
+
+@patch("src.services.jules.JulesClient")
+@patch("src.cli.commands.Spinner")
+@patch("src.utils.polling.time.sleep")
+@patch("src.cli.commands.print_watch_complete")
+@patch("src.cli.commands.print_watch_timeout")
+def test_watch_session_timeout(
+    mock_timeout_print: Any, mock_complete_print: Any, mock_sleep: Any, mock_spinner_cls: Any, mock_jules_cls: Any
+) -> None:
     # Setup
     mock_jules = mock_jules_cls.return_value
     mock_jules.is_session_complete.return_value = (False, None)

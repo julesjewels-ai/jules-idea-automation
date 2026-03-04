@@ -5,7 +5,7 @@
 </div>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 
 A Python CLI tool that automates the software development lifecycle by generating ideas, creating repositories, and initializing Jules sessions.
 
@@ -53,7 +53,7 @@ Set these API keys in a `.env` file:
 ```bash
 git clone https://github.com/julesjewels-ai/jules-idea-automation.git
 cd jules-idea-automation
-python -m venv venv
+python3.12 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```

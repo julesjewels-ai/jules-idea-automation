@@ -1,8 +1,10 @@
 """Tests for GitHubClient."""
 
-import pytest
 from typing import Any
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from src.services.github import GitHubClient
 
 
@@ -16,10 +18,7 @@ def test_create_files_success(github_client: Any) -> None:
     owner = "test-owner"
     repo = "test-repo"
     branch = "main"
-    files = [
-        {"path": "file1.txt", "content": "content1"},
-        {"path": "dir/file2.txt", "content": "content2"}
-    ]
+    files = [{"path": "file1.txt", "content": "content1"}, {"path": "dir/file2.txt", "content": "content2"}]
     message = "feat: add files"
 
     # Mock data
@@ -64,10 +63,7 @@ def test_create_files_success(github_client: Any) -> None:
         result = github_client.create_files(owner, repo, files, message, branch)
 
         # Verify result
-        assert result == {
-            "commit_sha": new_commit_sha,
-            "files_created": 2
-        }
+        assert result == {"commit_sha": new_commit_sha, "files_created": 2}
 
         # Verify blob creation calls
         blob_calls = mock_requests.post.call_args_list

@@ -1,5 +1,7 @@
 """Event Bus implementation for the Jules Automation Tool."""
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 
@@ -21,6 +23,7 @@ class LocalEventBus(EventBus):
         Args:
             event_type: The type of event to subscribe to.
             handler: The handler to call when the event is published.
+
         """
         if event_type not in self._subscribers:
             self._subscribers[event_type] = []
@@ -33,6 +36,7 @@ class LocalEventBus(EventBus):
 
         Args:
             event: The domain event to publish.
+
         """
         event_type = type(event)
         handlers = self._subscribers.get(event_type, [])
@@ -51,7 +55,7 @@ class LocalEventBus(EventBus):
 
 class NullEventBus(EventBus):
     """Null Object implementation of the EventBus protocol.
-    
+
     Used as a safe default when no event bus is provided, preventing
     the need for null checks throughout the codebase.
     """
@@ -63,4 +67,3 @@ class NullEventBus(EventBus):
     def publish(self, event: Any) -> None:
         """Do nothing when publishing."""
         pass
-

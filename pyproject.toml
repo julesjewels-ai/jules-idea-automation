@@ -2,27 +2,46 @@
 name = "jules-idea-automation"
 version = "1.0.0"
 description = "CLI tool for automating idea generation, repo creation, and Jules session initialization."
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 license = "MIT"
 readme = "README.md"
 
 [project.urls]
 Repository = "https://github.com/julesjewels-ai/jules-idea-automation"
 
-[tool.black]
+[tool.ruff]
 line-length = 120
+target-version = "py312"
 
-[tool.isort]
-profile = "black"
-line_length = 120
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "D"]
+ignore = [
+    "E402",   # module-import-not-at-top-of-file
+    "D100",   # missing docstring in public module
+    "D101",   # missing docstring in public class
+    "D104",   # missing docstring in public package
+    "D203",   # one-blank-line-before-class
+    "D213",   # multi-line-docstring-summary-second-line
+    "D105",   # missing docstring in magic method
+    "D107",   # missing docstring in __init__
+    "D401",   # imperative mood
+    "E501",   # line too long (we use formatter for line length)
+    "W291",   # trailing whitespace
+    "W293",   # blank line contains whitespace
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[tool.ruff.format]
+quote-style = "double"
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
-python_version = "3.10"
+python_version = "3.12"
 ignore_missing_imports = true
 strict = true
 explicit_package_bases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-

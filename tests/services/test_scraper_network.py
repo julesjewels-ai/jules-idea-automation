@@ -1,18 +1,18 @@
 """Tests for scraper network error handling."""
 
-import pytest
-from unittest.mock import patch, MagicMock
-import requests
-from src.services.scraper import scrape_text, ScrapingError
-
-
 from typing import Any
+from unittest.mock import MagicMock, patch
+
+import pytest
+import requests
+
+from src.services.scraper import ScrapingError, scrape_text
+
 
 @patch("src.services.scraper._fetch_response")
 def test_scrape_text_success(mock_fetch: Any) -> None:
     url = "http://example.com"
-    content = ("<html><body><p>Some meaningful content here that is long enough.</p>" * 10
-               + "</body></html>")
+    content = "<html><body><p>Some meaningful content here that is long enough.</p>" * 10 + "</body></html>"
 
     mock_response = MagicMock()
     mock_response.content = content.encode("utf-8")
@@ -28,9 +28,7 @@ def test_scrape_text_403_forbidden(mock_get: Any) -> None:
 
     mock_response = MagicMock()
     mock_response.status_code = 403
-    http_error = requests.exceptions.HTTPError(
-        "403 Client Error: Forbidden", response=mock_response
-    )
+    http_error = requests.exceptions.HTTPError("403 Client Error: Forbidden", response=mock_response)
     mock_resp = MagicMock()
     mock_resp.raise_for_status.side_effect = http_error
     mock_get.return_value = mock_resp
@@ -48,9 +46,7 @@ def test_scrape_text_404_not_found(mock_get: Any) -> None:
 
     mock_response = MagicMock()
     mock_response.status_code = 404
-    http_error = requests.exceptions.HTTPError(
-        "404 Client Error: Not Found", response=mock_response
-    )
+    http_error = requests.exceptions.HTTPError("404 Client Error: Not Found", response=mock_response)
     mock_resp = MagicMock()
     mock_resp.raise_for_status.side_effect = http_error
     mock_get.return_value = mock_resp

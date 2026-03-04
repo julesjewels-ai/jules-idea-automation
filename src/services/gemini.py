@@ -1,18 +1,27 @@
 from __future__ import annotations
 
-import os
+import hashlib
 import json
 import logging
-from typing import Optional, Any
+import os
+import warnings
+from typing import Any
 from xml.sax.saxutils import escape
-import hashlib
+
+# Suppress Pydantic warning from google-genai 0.8.0 about 'any' as a type
+warnings.filterwarnings(
+    "ignore",
+    message=".*<built-in function any> is not a Python type.*",
+    category=UserWarning,
+    module="pydantic"
+)
+
 from google import genai
-from google.genai import types, errors
+from google.genai import errors, types
 
-from src.core.models import IdeaResponse, ProjectScaffold
 from src.core.interfaces import CacheProvider
+from src.core.models import IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
-
 
 logger = logging.getLogger(__name__)
 
@@ -24,29 +33,22 @@ CATEGORY_PROMPTS = {
     "mobile_app": "Generate a mobile application idea. Focus on user experience and cross-platform compatibility.",
     "automation": "Generate an automation tool idea. Focus on workflow optimization and integration capabilities.",
     "ai_ml": "Generate an AI/ML application idea. Focus on practical use cases and accessible interfaces.",
-    "default": "Generate a creative, unique, and useful software application idea."
+    "default": "Generate a creative, unique, and useful software application idea.",
 }
 
 
 class GeminiClient:
     """Client for the Google Gemini API, handling idea generation and project scaffolding."""
 
-    def __init__(
-        self,
-        api_key: Optional[str] = None,
-        cache_provider: Optional[CacheProvider] = None
-    ) -> None:
+    def __init__(self, api_key: str | None = None, cache_provider: CacheProvider | None = None) -> None:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
                 "GEMINI_API_KEY environment variable is not set",
-                tip="Get your API key from https://aistudio.google.com/app/apikey and add it to your .env file."
+                tip="Get your API key from https://aistudio.google.com/app/apikey and add it to your .env file.",
             )
 
-        self.client = genai.Client(
-            api_key=self.api_key,
-            http_options={'api_version': 'v1beta'}
-        )
+        self.client = genai.Client(api_key=self.api_key, http_options={"api_version": "v1beta"})
         self.models = ["gemini-3-pro-preview", "gemini-2.5-flash"]
         self.cache_provider = cache_provider
 
@@ -66,25 +68,25 @@ class GeminiClient:
 
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
-    def _get_cached_content(self, prompt: str, schema: Any) -> tuple[Optional[dict[str, Any]], str]:
+    def _get_cached_content(self, prompt: str, schema: Any) -> tuple[dict[str, Any] | None, str]:
         """Checks the cache for existing content and returns the data and cache key."""
         if not self.cache_provider:
             return None, ""
 
-        schema_name = getattr(schema, '__name__', str(schema))
+        schema_name = getattr(schema, "__name__", str(schema))
         prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
         cache_key = f"{self.models[0]}:{prompt_hash}:{schema_name}"
 
         cached_data = self.cache_provider.get(cache_key)
         if cached_data:
             logger.info(f"Cache hit for key: {cache_key}")
-            if hasattr(schema, 'model_validate'):
+            if hasattr(schema, "model_validate"):
                 return schema.model_validate(cached_data).model_dump(), cache_key
             return cached_data, cache_key
 
         return None, cache_key
 
-    def _process_api_response(self, text: Optional[str], schema: Any, cache_key: str, error_tip: str) -> dict[str, Any]:
+    def _process_api_response(self, text: str | None, schema: Any, cache_key: str, error_tip: str) -> dict[str, Any]:
         """Parses, caches, and validates the API response."""
         try:
             raw = json.loads(text or "")
@@ -94,7 +96,7 @@ class GeminiClient:
         if self.cache_provider and cache_key:
             self.cache_provider.set(cache_key, raw)
 
-        if hasattr(schema, 'model_validate'):
+        if hasattr(schema, "model_validate"):
             return schema.model_validate(raw).model_dump()  # type: ignore[no-any-return]
         return raw  # type: ignore[no-any-return]
 
@@ -104,10 +106,7 @@ class GeminiClient:
         for i, model in enumerate(self.models):
             try:
                 use_thinking = "pro" in model or "think" in model
-                config_kwargs: dict[str, Any] = {
-                    "response_mime_type": "application/json",
-                    "response_schema": schema
-                }
+                config_kwargs: dict[str, Any] = {"response_mime_type": "application/json", "response_schema": schema}
                 if use_thinking:
                     config_kwargs["thinking_config"] = types.ThinkingConfig(include_thoughts=True)
 
@@ -131,21 +130,18 @@ class GeminiClient:
                 raise
             except Exception as e:
                 raise GenerationError(
-                    f"Unexpected error during generation: {e}",
-                    tip="Check your network connection and configuration."
+                    f"Unexpected error during generation: {e}", tip="Check your network connection and configuration."
                 )
 
         if last_api_error:
             raise self._map_api_error(last_api_error)
 
         raise GenerationError(
-            "All model generation attempts failed.",
-            tip="Check your internet connection and API status."
+            "All model generation attempts failed.", tip="Check your internet connection and API status."
         )
 
     def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
         """Helper to generate content with consistent configuration and error handling."""
-
         # Check cache if available
         cached_data, cache_key = self._get_cached_content(prompt, schema)
         if cached_data:
@@ -153,20 +149,18 @@ class GeminiClient:
 
         return self._fetch_from_api(prompt, schema, error_tip, cache_key)
 
-    def generate_idea(self, category: Optional[str] = None) -> dict[str, Any]:
+    def generate_idea(self, category: str | None = None) -> dict[str, Any]:
         """Generates a unique software idea using Gemini 3.
 
         Args:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
+
         """
-        base_prompt = CATEGORY_PROMPTS.get(
-            category or "default", CATEGORY_PROMPTS["default"])
+        base_prompt = CATEGORY_PROMPTS.get(category or "default", CATEGORY_PROMPTS["default"])
         prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
 
         return self._generate_content(
-            prompt,
-            IdeaResponse,
-            "The AI model returned invalid JSON. Please try again or try a different category."
+            prompt, IdeaResponse, "The AI model returned invalid JSON. Please try again or try a different category."
         )
 
     def extract_idea_from_text(self, text: str) -> dict[str, Any]:
@@ -189,9 +183,7 @@ class GeminiClient:
         """
 
         return self._generate_content(
-            prompt,
-            IdeaResponse,
-            "The AI model returned invalid JSON while analyzing the website content."
+            prompt, IdeaResponse, "The AI model returned invalid JSON while analyzing the website content."
         )
 
     def generate_project_scaffold(self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
@@ -203,10 +195,11 @@ class GeminiClient:
 
         Returns:
             ProjectScaffold with files, requirements, and run command
+
         """
         # Sanitize inputs
-        safe_title = escape(idea_data['title'])
-        safe_desc = escape(idea_data['description'][:500])
+        safe_title = escape(idea_data["title"])
+        safe_desc = escape(idea_data["description"][:500])
 
         # Developer-ready MVP prompt
         prompt = f"""
@@ -244,23 +237,16 @@ Create a complete, immediately-runnable project with these files:
 
         for attempt in range(max_retries + 1):
             try:
-                return self._generate_content(
-                    prompt,
-                    ProjectScaffold,
-                    "Failed to generate valid project scaffold."
-                )
+                return self._generate_content(prompt, ProjectScaffold, "Failed to generate valid project scaffold.")
             except Exception as e:
                 if attempt < max_retries:
-                    logger.warning(
-                        f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
+                    logger.warning(f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
                     continue
                 else:
-                    logger.error(
-                        f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
+                    logger.error(f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
                     # Return minimal fallback scaffold
                     return ProjectScaffold.create_fallback_scaffold(
-                        idea_data['title'],
-                        idea_data['description']
+                        idea_data["title"], idea_data["description"]
                     ).model_dump()
 
         raise GenerationError("Failed to generate project scaffold.")

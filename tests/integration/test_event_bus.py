@@ -4,10 +4,10 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
+from src.core.events import WorkflowCompleted, WorkflowStarted
 from src.core.workflow import IdeaWorkflow
-from src.services.bus import LocalEventBus
 from src.services.audit import JsonFileAuditLogger
-from src.core.events import WorkflowStarted, WorkflowCompleted
+from src.services.bus import LocalEventBus
 
 
 def test_event_bus_audit_integration(tmp_path: Path) -> None:
@@ -31,19 +31,14 @@ def test_event_bus_audit_integration(tmp_path: Path) -> None:
     mock_gemini.generate_project_scaffold.return_value = {
         "files": [{"path": "main.py", "content": "print('hello')"}],
         "requirements": ["pytest"],
-        "run_command": "python main.py"
+        "run_command": "python main.py",
     }
 
     mock_jules = MagicMock()
     mock_jules.source_exists.return_value = True
     mock_jules.create_session.return_value = {"id": "session-123", "url": "http://example.com"}
 
-    workflow = IdeaWorkflow(
-        github=mock_github,
-        gemini=mock_gemini,
-        jules=mock_jules,
-        event_bus=event_bus
-    )
+    workflow = IdeaWorkflow(github=mock_github, gemini=mock_gemini, jules=mock_jules, event_bus=event_bus)
 
     idea_data = {
         "title": "Test Idea",
@@ -51,7 +46,7 @@ def test_event_bus_audit_integration(tmp_path: Path) -> None:
         "slug": "test-idea",
         "tech_stack": ["python"],
         "features": ["feature 1"],
-        "category": "cli_tool"
+        "category": "cli_tool",
     }
 
     # Execute workflow

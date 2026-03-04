@@ -1,25 +1,29 @@
 """Integration tests for Gemini client caching."""
 
 import json
-import pytest
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
-from pathlib import Path
-from src.services.gemini import GeminiClient
+
+import pytest
+
 from src.services.cache import FileCacheProvider
+from src.services.gemini import GeminiClient
 
 
 @pytest.fixture
 def mock_gemini_response(mocker: Any) -> MagicMock:
     """Mock the Google GenAI response."""
     mock_response = MagicMock()
-    mock_response.text = json.dumps({
-        "title": "Test App",
-        "description": "A test application",
-        "slug": "test-app",
-        "tech_stack": ["Python"],
-        "features": ["Feature 1"]
-    })
+    mock_response.text = json.dumps(
+        {
+            "title": "Test App",
+            "description": "A test application",
+            "slug": "test-app",
+            "tech_stack": ["Python"],
+            "features": ["Feature 1"],
+        }
+    )
     return mock_response
 
 

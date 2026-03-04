@@ -1,6 +1,8 @@
 """Core interfaces and protocols for the Jules Automation Tool."""
 
-from typing import Protocol, Optional, Any
+from __future__ import annotations
+
+from typing import Any, Protocol
 
 
 class EventHandler(Protocol):
@@ -11,6 +13,7 @@ class EventHandler(Protocol):
 
         Args:
             event: The domain event to handle.
+
         """
         ...
 
@@ -24,6 +27,7 @@ class EventBus(Protocol):
         Args:
             event_type: The type of event to subscribe to.
             handler: The handler to call when the event is published.
+
         """
         ...
 
@@ -32,6 +36,7 @@ class EventBus(Protocol):
 
         Args:
             event: The domain event to publish.
+
         """
         ...
 
@@ -39,7 +44,7 @@ class EventBus(Protocol):
 class CacheProvider(Protocol):
     """Protocol for caching mechanism."""
 
-    def get(self, key: str) -> Optional[dict[str, Any]]:
+    def get(self, key: str) -> dict[str, Any] | None:
         """Retrieve a value from the cache.
 
         Args:
@@ -47,6 +52,7 @@ class CacheProvider(Protocol):
 
         Returns:
             The cached value as a dictionary, or None if not found.
+
         """
         ...
 
@@ -56,5 +62,6 @@ class CacheProvider(Protocol):
         Args:
             key: The unique cache key.
             value: The value to cache (must be JSON-serializable).
+
         """
         ...

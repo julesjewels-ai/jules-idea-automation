@@ -1,7 +1,5 @@
 """Unit tests for _normalize_requirements extracted helper."""
 
-import pytest
-
 from src.core.workflow import _normalize_requirements
 
 
@@ -15,43 +13,53 @@ class TestNormalizeRequirements:
 
     def test_dict_with_versions(self):
         """Flash-model fallback format: {package: version_constraint}."""
-        result = _normalize_requirements({
-            "pytest": ">=7",
-            "requests": "~=2.31",
-        })
+        result = _normalize_requirements(
+            {
+                "pytest": ">=7",
+                "requests": "~=2.31",
+            }
+        )
         assert result == ["pytest>=7", "requests~=2.31"]
 
     def test_dict_with_star_and_latest(self):
         """Star and 'latest' sentinels should be stripped."""
-        result = _normalize_requirements({
-            "pytest": "*",
-            "flask": "latest",
-            "requests": ">=2.0",
-        })
+        result = _normalize_requirements(
+            {
+                "pytest": "*",
+                "flask": "latest",
+                "requests": ">=2.0",
+            }
+        )
         assert result == ["pytest", "flask", "requests>=2.0"]
 
     def test_list_of_dicts_package_version(self):
         """Unusual format: list of {package, version} dicts."""
-        result = _normalize_requirements([
-            {"package": "pytest", "version": ">=7"},
-            {"package": "requests", "version": ""},
-        ])
+        result = _normalize_requirements(
+            [
+                {"package": "pytest", "version": ">=7"},
+                {"package": "requests", "version": ""},
+            ]
+        )
         assert result == ["pytest>=7", "requests"]
 
     def test_list_of_dicts_name_constraint(self):
         """Alternative dict keys: name and constraint."""
-        result = _normalize_requirements([
-            {"name": "flask", "constraint": ">=2.0"},
-        ])
+        result = _normalize_requirements(
+            [
+                {"name": "flask", "constraint": ">=2.0"},
+            ]
+        )
         assert result == ["flask>=2.0"]
 
     def test_mixed_list(self):
         """List mixing strings, dicts, and other types."""
-        result = _normalize_requirements([
-            "pytest",
-            {"package": "flask", "version": ">=2"},
-            42,
-        ])
+        result = _normalize_requirements(
+            [
+                "pytest",
+                {"package": "flask", "version": ">=2"},
+                42,
+            ]
+        )
         assert result == ["pytest", "flask>=2", "42"]
 
     def test_scalar_string(self):

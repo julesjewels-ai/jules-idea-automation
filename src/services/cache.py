@@ -1,12 +1,14 @@
 """File-based implementation of the CacheProvider protocol."""
 
+from __future__ import annotations
+
 import hashlib
 import json
 import logging
 from pathlib import Path
-from typing import Optional, Any
-from src.core.interfaces import CacheProvider
+from typing import Any
 
+from src.core.interfaces import CacheProvider
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +21,7 @@ class FileCacheProvider(CacheProvider):
 
         Args:
             cache_dir: Directory to store cache files.
+
         """
         self.cache_dir = Path(cache_dir)
         try:
@@ -31,7 +34,7 @@ class FileCacheProvider(CacheProvider):
         hashed_key = hashlib.sha256(key.encode("utf-8")).hexdigest()
         return self.cache_dir / f"{hashed_key}.json"
 
-    def get(self, key: str) -> Optional[dict[str, Any]]:
+    def get(self, key: str) -> dict[str, Any] | None:
         """Retrieve a value from the cache.
 
         Args:
@@ -39,6 +42,7 @@ class FileCacheProvider(CacheProvider):
 
         Returns:
             The cached value as a dictionary, or None if not found or on error.
+
         """
         path = self._get_path(key)
         if not path.exists():
@@ -57,6 +61,7 @@ class FileCacheProvider(CacheProvider):
         Args:
             key: The unique cache key.
             value: The value to cache (must be JSON-serializable).
+
         """
         path = self._get_path(key)
         try:

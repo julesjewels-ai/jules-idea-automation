@@ -8,7 +8,7 @@ pytest<9.0.0
 pytest-mock
 mypy
 ruff
-pydocstyle
+pytest-cov
 types-requests
 types-beautifulsoup4
 iniconfig<3.0.0
