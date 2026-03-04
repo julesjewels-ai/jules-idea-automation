@@ -1,11 +1,9 @@
 name: Security Audit
+
 on:
   schedule:
     - cron: '0 8 * * 1'  # Weekly on Mondays at 8 AM
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:       # Allow manual runs when needed
 
 permissions:
   contents: read
