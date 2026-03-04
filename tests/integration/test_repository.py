@@ -30,13 +30,13 @@ def sample_result() -> WorkflowResult:
         description="A great idea",
         slug="test-idea",
         tech_stack=["python", "pytest"],
-        features=["auth", "db"]
+        features=["auth", "db"],
     )
     return WorkflowResult(
         idea=idea,
         repo_url="https://github.com/user/test-idea",
         session_id="session_123",
-        session_url="https://jules.app/session_123"
+        session_url="https://jules.app/session_123",
     )
 
 
@@ -60,15 +60,8 @@ def test_json_project_repository_integration(temp_repo_file: str, sample_result:
     assert retrieved.idea.title == sample_result.idea.title
 
     # Save another record
-    idea2 = IdeaResponse(
-        title="Second Idea",
-        description="Another idea",
-        slug="second-idea"
-    )
-    result2 = WorkflowResult(
-        idea=idea2,
-        repo_url="https://github.com/user/second-idea"
-    )
+    idea2 = IdeaResponse(title="Second Idea", description="Another idea", slug="second-idea")
+    result2 = WorkflowResult(idea=idea2, repo_url="https://github.com/user/second-idea")
 
     repo.save(result2)
 

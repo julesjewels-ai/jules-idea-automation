@@ -110,6 +110,7 @@ class JsonProjectRepository(ProjectRepository[T], Generic[T]):
                     except (json.JSONDecodeError, ValueError) as e:
                         # Log warning, but continue loading valid ones
                         import logging
+
                         logger = logging.getLogger(__name__)
                         logger.warning(f"Failed to parse repository entry: {e}")
 
