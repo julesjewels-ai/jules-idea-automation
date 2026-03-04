@@ -9,13 +9,10 @@ from src.utils.errors import AppError
 
 class ScrapingError(AppError):
     """Raised when scraping fails or returns insufficient content."""
-    pass
 
 
 def validate_url(url: str) -> None:
     """Validate that the URL is safe to scrape.
-
-    Prevents SSRF by blocking access to local/private network addresses.
 
     Args:
         url: The URL to validate

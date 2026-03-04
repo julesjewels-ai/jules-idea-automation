@@ -45,7 +45,6 @@ def test_handle_manual_long_title(mock_slugify: Any, mock_execute: Any) -> None:
     handle_manual(args)
 
     # Should extract first sentence/prefix
-    expected_title = "This is a very long title that is actually a descri" # 50 chars prefix then split '.'
     # Wait, the logic is: raw_title[:50].split('.')[0].strip()
     # "This is a very long title that is actually a descri" -> split('.') -> same string
 

@@ -1,10 +1,11 @@
 
+from typing import Any
 from unittest.mock import patch
+
 from src.cli.commands import handle_list_sources
+from src.utils.reporter import print_sources_list
 
 # Ensure module is loaded for patching
-
-from typing import Any
 
 @patch('src.cli.commands.Spinner')
 @patch('src.services.jules.JulesClient')
@@ -39,7 +40,6 @@ def test_handle_list_sources_empty(mock_print_sources: Any, mock_jules_client_cl
     # Verify
     mock_print_sources.assert_called_once_with(mock_sources)
 
-from src.utils.reporter import print_sources_list
 
 def test_print_sources_list(capsys: Any) -> None:
     sources: dict[str, Any] = {"sources": [{"name": "source1", "displayName": "Source 1"}]}
