@@ -61,6 +61,7 @@ class GitHubClient:
         """Creates multiple files in a single commit using the Git Data API.
 
         Args:
+        ----
             owner: Repository owner
             repo: Repository name
             files: List of dicts with 'path' and 'content' keys

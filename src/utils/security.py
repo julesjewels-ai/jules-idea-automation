@@ -21,9 +21,11 @@ def validate_url(url: str) -> None:
     Prevents SSRF by blocking access to local/private network addresses.
 
     Args:
+    ----
         url: The URL to validate
 
     Raises:
+    ------
         ScrapingError: If the URL is invalid or unsafe
 
     """

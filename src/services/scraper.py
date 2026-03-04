@@ -31,12 +31,15 @@ def scrape_text(url: str) -> str:
     """Fetches the content of a URL and extracts validated text.
 
     Args:
+    ----
         url: The URL to scrape
 
     Returns:
+    -------
         Extracted text content
 
     Raises:
+    ------
         ScrapingError: If the page cannot be scraped or has
                       insufficient content
 
@@ -60,9 +63,11 @@ def _extract_text(content: bytes) -> str:
     """Extracts clean text from HTML content.
 
     Args:
+    ----
         content: The HTML content in bytes
 
     Returns:
+    -------
         Cleaned text
 
     """
@@ -89,12 +94,15 @@ def _fetch_response(url: str) -> requests.Response:
     """Fetches the URL and handles network errors.
 
     Args:
+    ----
         url: The URL to fetch
 
     Returns:
+    -------
         The response object
 
     Raises:
+    ------
         ScrapingError: If the network request fails
 
     """
@@ -128,10 +136,12 @@ def _validate_content(text: str, url: str) -> None:
     """Validate that scraped content is sufficient and meaningful.
 
     Args:
+    ----
         text: The scraped text content
         url: The original URL (for error messages)
 
     Raises:
+    ------
         ScrapingError: If content is insufficient or appears blocked
 
     """

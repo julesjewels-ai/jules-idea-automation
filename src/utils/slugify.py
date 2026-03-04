@@ -9,13 +9,16 @@ def slugify(text: str, max_length: int = 100) -> str:
     """Convert text to a kebab-case slug suitable for GitHub repository names.
 
     Args:
+    ----
         text: The text to slugify
         max_length: Maximum slug length (GitHub limit is 100 characters)
 
     Returns:
+    -------
         A kebab-case slug, truncated to max_length if necessary
 
     Examples:
+    --------
         >>> slugify("My Cool Project")
         'my-cool-project'
         >>> slugify("Hello, World!")

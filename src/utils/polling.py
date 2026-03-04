@@ -14,12 +14,14 @@ def poll_until(
     """Polls until a condition is met or timeout is reached.
 
     Args:
+    ----
         condition: Callable that returns True when done
         timeout: Maximum seconds to wait
         interval: Seconds between polls
         on_poll: Optional callback with elapsed time
 
     Returns:
+    -------
         True if condition met, False if timeout
 
     """
@@ -44,6 +46,7 @@ def poll_with_result(
     """Polls until completion, returning a result.
 
     Args:
+    ----
         check: Callable that returns (is_complete, result)
         timeout: Maximum seconds to wait
         interval: Seconds between polls
@@ -51,6 +54,7 @@ def poll_with_result(
         status_extractor: Callable to get current status message
 
     Returns:
+    -------
         Tuple of (completed, result or None, elapsed_time)
 
     """

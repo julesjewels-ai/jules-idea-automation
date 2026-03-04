@@ -21,6 +21,7 @@ class JsonFileAuditLogger(EventHandler):
         """Initialize the JSON file audit logger.
 
         Args:
+        ----
             log_file: The path to the log file (JSONL format).
 
         """
@@ -37,6 +38,7 @@ class JsonFileAuditLogger(EventHandler):
         """Handle an event by logging it to the JSONL file.
 
         Args:
+        ----
             event: The domain event to handle.
 
         """

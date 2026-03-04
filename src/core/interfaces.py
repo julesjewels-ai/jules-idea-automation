@@ -12,6 +12,7 @@ class EventHandler(Protocol):
         """Handle an event.
 
         Args:
+        ----
             event: The domain event to handle.
 
         """
@@ -25,6 +26,7 @@ class EventBus(Protocol):
         """Subscribe a handler to an event type.
 
         Args:
+        ----
             event_type: The type of event to subscribe to.
             handler: The handler to call when the event is published.
 
@@ -35,6 +37,7 @@ class EventBus(Protocol):
         """Publish an event to all subscribers.
 
         Args:
+        ----
             event: The domain event to publish.
 
         """
@@ -48,9 +51,11 @@ class CacheProvider(Protocol):
         """Retrieve a value from the cache.
 
         Args:
+        ----
             key: The unique cache key.
 
         Returns:
+        -------
             The cached value as a dictionary, or None if not found.
 
         """
@@ -60,6 +65,7 @@ class CacheProvider(Protocol):
         """Set a value in the cache.
 
         Args:
+        ----
             key: The unique cache key.
             value: The value to cache (must be JSON-serializable).
 

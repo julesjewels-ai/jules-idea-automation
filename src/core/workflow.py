@@ -63,6 +63,7 @@ class IdeaWorkflow:
         """Initialize workflow with optional service instances.
 
         Args:
+        ----
             github: GitHubClient instance (created if None)
             gemini: GeminiClient instance (created if None)
             jules: JulesClient instance (created if None)
@@ -100,12 +101,14 @@ class IdeaWorkflow:
         """Execute the full workflow.
 
         Args:
+        ----
             idea_data: Dict with title, description, slug, tech_stack, features
             private: Create private repository (default: private)
             timeout: Max seconds to wait for Jules indexing
             verbose: Print progress messages
 
         Returns:
+        -------
             WorkflowResult with repo_url, session info, etc.
 
         """

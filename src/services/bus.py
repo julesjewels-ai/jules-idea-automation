@@ -21,6 +21,7 @@ class LocalEventBus(EventBus):
         """Subscribe a handler to an event type.
 
         Args:
+        ----
             event_type: The type of event to subscribe to.
             handler: The handler to call when the event is published.
 
@@ -35,6 +36,7 @@ class LocalEventBus(EventBus):
         """Publish an event to all subscribers.
 
         Args:
+        ----
             event: The domain event to publish.
 
         """

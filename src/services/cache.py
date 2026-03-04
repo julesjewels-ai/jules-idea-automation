@@ -20,6 +20,7 @@ class FileCacheProvider(CacheProvider):
         """Initialize the file cache provider.
 
         Args:
+        ----
             cache_dir: Directory to store cache files.
 
         """
@@ -38,9 +39,11 @@ class FileCacheProvider(CacheProvider):
         """Retrieve a value from the cache.
 
         Args:
+        ----
             key: The unique cache key.
 
         Returns:
+        -------
             The cached value as a dictionary, or None if not found or on error.
 
         """
@@ -59,6 +62,7 @@ class FileCacheProvider(CacheProvider):
         """Set a value in the cache.
 
         Args:
+        ----
             key: The unique cache key.
             value: The value to cache (must be JSON-serializable).
 

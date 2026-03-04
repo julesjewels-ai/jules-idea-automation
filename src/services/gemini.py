@@ -153,6 +153,7 @@ class GeminiClient:
         """Generates a unique software idea using Gemini 3.
 
         Args:
+        ----
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
 
         """
@@ -190,10 +191,12 @@ class GeminiClient:
         """Generates a complete MVP project scaffold for the given idea.
 
         Args:
+        ----
             idea_data: Dict with title, description, slug, tech_stack, features
             max_retries: Number of retries on failure (default: 2)
 
         Returns:
+        -------
             ProjectScaffold with files, requirements, and run command
 
         """

@@ -90,9 +90,11 @@ class JulesClient:
         """Retrieves details for a specific session.
 
         Args:
+        ----
             session_id: The session ID (numeric string)
 
         Returns:
+        -------
             Session object with outputs if complete
 
         """
@@ -102,6 +104,7 @@ class JulesClient:
         """Lists recent sessions.
 
         Args:
+        ----
             page_size: Number of sessions to return (default: 10)
 
         """
@@ -111,6 +114,7 @@ class JulesClient:
         """Lists activities (progress updates) for a session.
 
         Args:
+        ----
             session_id: The session ID
             page_size: Number of activities to return (default: 30)
 
@@ -121,6 +125,7 @@ class JulesClient:
         """Sends a follow-up message to an active session.
 
         Args:
+        ----
             session_id: The session ID
             prompt: The message to send to the agent
 
@@ -131,6 +136,7 @@ class JulesClient:
         """Approves the pending plan for a session.
 
         Args:
+        ----
             session_id: The session ID
 
         """
@@ -139,7 +145,8 @@ class JulesClient:
     def is_session_complete(self, session_id: str) -> tuple[bool, str | None]:
         """Checks if a session has completed and returns PR URL if available.
 
-        Returns:
+        Returns
+        -------
             tuple: (is_complete: bool, pr_url: str or None)
 
         """

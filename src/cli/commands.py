@@ -100,6 +100,7 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any |
     """Execute the workflow and watch the session if requested.
 
     Args:
+    ----
         args: Command line arguments containing public and timeout settings
         idea_data: The idea data to process
         gemini: Optional pre-constructed GeminiClient (avoids re-creation)
@@ -135,10 +136,12 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, str | Non
     """Watch a Jules session until completion or timeout.
 
     Args:
+    ----
         session_id: The session ID to watch
         timeout: Max seconds to wait
 
     Returns:
+    -------
         Tuple of (is_complete, pr_url or None)
 
     """

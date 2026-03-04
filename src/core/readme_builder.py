@@ -14,6 +14,7 @@ def build_readme(
     """Builds a README.md content string.
 
     Args:
+    ----
         title: Project title
         description: Project description
         tech_stack: List of technologies
@@ -22,6 +23,7 @@ def build_readme(
         run_command: Command to run the application
 
     Returns:
+    -------
         Complete README.md content as string
 
     """
