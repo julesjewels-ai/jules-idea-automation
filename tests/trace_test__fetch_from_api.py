@@ -11,6 +11,7 @@ from src.utils.errors import GenerationError
 
 class DummyAPIError(errors.APIError):  # type: ignore[misc]
     """Dummy exception for tests to bypass type checker issues with external libraries."""
+
     def __init__(self, message: str) -> None:
         mock_resp = MagicMock()
         mock_resp.json.return_value = {"error": {"message": message}}
@@ -47,7 +48,11 @@ def gemini_client(mocker: MockerFixture) -> GeminiClient:
         ),
         # Edge Case: 503 error on first model, success on second
         (
-            lambda mock_gen_content: setattr(mock_gen_content, "side_effect", [DummyAPIError("503 UNAVAILABLE"), MagicMock(text='{"result": "fallback"}')]),
+            lambda mock_gen_content: setattr(
+                mock_gen_content,
+                "side_effect",
+                [DummyAPIError("503 UNAVAILABLE"), MagicMock(text='{"result": "fallback"}')],
+            ),
             {"result": "fallback"},
         ),
         # Error State: all models fail
