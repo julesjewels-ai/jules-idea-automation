@@ -1,10 +1,12 @@
-import pytest
-from pytest_mock import MockerFixture
 from typing import Any, Callable, Type
 from unittest.mock import MagicMock
+
+import pytest
+from google.genai import errors
+from pytest_mock import MockerFixture
+
 from src.services.gemini import GeminiClient
 from src.utils.errors import GenerationError
-from google.genai import errors
 
 
 class DummyAPIError(errors.APIError):  # type: ignore[misc]
