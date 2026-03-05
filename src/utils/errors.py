@@ -29,6 +29,12 @@ class JulesApiError(AppError):
     pass
 
 
+class GitHubApiError(AppError):
+    """Raised when the GitHub API returns an error."""
+
+    pass
+
+
 class EventBusError(AppError):
     """Raised when an error occurs in the EventBus."""
 

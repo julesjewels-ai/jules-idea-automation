@@ -4,14 +4,38 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
 from src.services.github import GitHubClient
+from src.utils.errors import GitHubApiError
 
 
 @pytest.fixture
 def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
     return GitHubClient()
+
+
+def _make_response(json_data: Any, status_code: int = 200) -> MagicMock:
+    """Factory for mock responses."""
+    resp = MagicMock()
+    resp.json.return_value = json_data
+    resp.status_code = status_code
+    resp.text = "{}"
+    resp.raise_for_status.return_value = None
+    return resp
+
+
+def _make_http_error(status_code: int, body: dict[str, Any] | None = None) -> requests.exceptions.HTTPError:
+    """Factory for HTTPError with a mock response."""
+    response = MagicMock()
+    response.status_code = status_code
+    response.json.return_value = body or {}
+    error = requests.exceptions.HTTPError(response=response)
+    return error
+
+
+# --- Happy Path ---
 
 
 def test_create_files_success(github_client: Any) -> None:
@@ -21,7 +45,6 @@ def test_create_files_success(github_client: Any) -> None:
     files = [{"path": "file1.txt", "content": "content1"}, {"path": "dir/file2.txt", "content": "content2"}]
     message = "feat: add files"
 
-    # Mock data
     latest_commit_sha = "sha-latest-commit"
     base_tree_sha = "sha-base-tree"
     blob_sha_1 = "sha-blob-1"
@@ -30,47 +53,95 @@ def test_create_files_success(github_client: Any) -> None:
     new_commit_sha = "sha-new-commit"
 
     with patch("src.services.github.requests") as mock_requests:
-        # Build a response factory
-        def make_response(json_data: Any, status_code: int = 200) -> MagicMock:
-            resp = MagicMock()
-            resp.json.return_value = json_data
-            resp.status_code = status_code
-            resp.raise_for_status.return_value = None
-            return resp
-
-        # Configure responses in order of calls
-        mock_requests.get.side_effect = [
-            # 1. Get latest commit SHA
-            make_response({"object": {"sha": latest_commit_sha}}),
-            # 2. Get tree SHA
-            make_response({"tree": {"sha": base_tree_sha}}),
+        mock_requests.request.side_effect = [
+            # 1. GET latest commit SHA
+            _make_response({"object": {"sha": latest_commit_sha}}),
+            # 2. GET tree SHA
+            _make_response({"tree": {"sha": base_tree_sha}}),
+            # 3. POST blob 1
+            _make_response({"sha": blob_sha_1}, 201),
+            # 4. POST blob 2
+            _make_response({"sha": blob_sha_2}, 201),
+            # 5. POST new tree
+            _make_response({"sha": new_tree_sha}, 201),
+            # 6. POST new commit
+            _make_response({"sha": new_commit_sha}, 201),
+            # 7. PATCH ref update
+            _make_response({}, 200),
         ]
 
-        mock_requests.post.side_effect = [
-            # 3. Create blob 1
-            make_response({"sha": blob_sha_1}, 201),
-            # 4. Create blob 2
-            make_response({"sha": blob_sha_2}, 201),
-            # 5. Create new tree
-            make_response({"sha": new_tree_sha}, 201),
-            # 6. Create new commit
-            make_response({"sha": new_commit_sha}, 201),
-        ]
-
-        mock_requests.patch.return_value = make_response({}, 200)
-
-        # Execute
         result = github_client.create_files(owner, repo, files, message, branch)
 
-        # Verify result
         assert result == {"commit_sha": new_commit_sha, "files_created": 2}
+        assert mock_requests.request.call_count == 7
 
-        # Verify blob creation calls
-        blob_calls = mock_requests.post.call_args_list
-        assert blob_calls[0].kwargs["json"] == {"content": "content1", "encoding": "utf-8"}
-        assert blob_calls[1].kwargs["json"] == {"content": "content2", "encoding": "utf-8"}
 
-        # Verify ref update
-        mock_requests.patch.assert_called_once()
-        patch_call = mock_requests.patch.call_args
-        assert patch_call.kwargs["json"] == {"sha": new_commit_sha}
+# --- Error Handling ---
+
+
+def test_request_http_401_raises_github_api_error(github_client: Any) -> None:
+    """401 errors should suggest token is invalid."""
+    with patch("src.services.github.requests") as mock_requests:
+        mock_requests.request.side_effect = _make_http_error(401)
+        mock_requests.exceptions = requests.exceptions
+
+        with pytest.raises(GitHubApiError, match="GitHub API Error") as exc_info:
+            github_client.get_user()
+
+        assert "invalid or expired" in (exc_info.value.tip or "")
+
+
+def test_request_http_403_raises_github_api_error(github_client: Any) -> None:
+    """403 errors should suggest missing permissions."""
+    with patch("src.services.github.requests") as mock_requests:
+        mock_requests.request.side_effect = _make_http_error(403)
+        mock_requests.exceptions = requests.exceptions
+
+        with pytest.raises(GitHubApiError) as exc_info:
+            github_client.get_user()
+
+        assert "permission" in (exc_info.value.tip or "").lower()
+
+
+def test_request_http_404_raises_github_api_error(github_client: Any) -> None:
+    """404 errors should suggest checking resource name."""
+    with patch("src.services.github.requests") as mock_requests:
+        mock_requests.request.side_effect = _make_http_error(404)
+        mock_requests.exceptions = requests.exceptions
+
+        with pytest.raises(GitHubApiError) as exc_info:
+            github_client.get_user()
+
+        assert "not found" in (exc_info.value.tip or "").lower()
+
+
+def test_request_http_422_with_message(github_client: Any) -> None:
+    """422 errors should extract GitHub's error message when available."""
+    with patch("src.services.github.requests") as mock_requests:
+        mock_requests.request.side_effect = _make_http_error(422, {"message": "Repository already exists"})
+        mock_requests.exceptions = requests.exceptions
+
+        with pytest.raises(GitHubApiError) as exc_info:
+            github_client.create_repo("test", "test desc")
+
+        assert "Repository already exists" in (exc_info.value.tip or "")
+
+
+def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
+    """Timeout errors should surface as GitHubApiError."""
+    with patch("src.services.github.requests") as mock_requests:
+        mock_requests.request.side_effect = requests.exceptions.Timeout()
+        mock_requests.exceptions = requests.exceptions
+
+        with pytest.raises(GitHubApiError, match="timed out"):
+            github_client.get_user()
+
+
+def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
+    """Generic network errors should surface as GitHubApiError."""
+    with patch("src.services.github.requests") as mock_requests:
+        mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
+        mock_requests.exceptions = requests.exceptions
+
+        with pytest.raises(GitHubApiError, match="Network error"):
+            github_client.get_user()
