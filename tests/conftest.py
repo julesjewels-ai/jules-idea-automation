@@ -1,3 +1,5 @@
+"""Pytest conftest configuration."""
+
 import os
 import sys
 

@@ -1,3 +1,5 @@
+"""Trace protocol tests for the core workflow execution."""
+
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -13,6 +15,7 @@ from src.services.jules import JulesClient
 
 @pytest.fixture
 def mock_clients(mocker: MockerFixture) -> dict[str, MagicMock]:
+    """Mock external clients for testing."""
     return {
         "github": mocker.create_autospec(GitHubClient, instance=True),
         "gemini": mocker.create_autospec(GeminiClient, instance=True),
@@ -22,6 +25,7 @@ def mock_clients(mocker: MockerFixture) -> dict[str, MagicMock]:
 
 @pytest.fixture
 def idea_data() -> dict[str, Any]:
+    """Provide sample idea data."""
     return {
         "title": "Test Idea",
         "description": "A test description",
@@ -49,6 +53,7 @@ def test_execute_behavior(
     poll_success: bool,
     expected_result: str,
 ) -> None:
+    """Test the execution behavior of the IdeaWorkflow."""
     # 1. Setup Mocks (Namespace Verified)
     # Patch imported functions in src.core.workflow
     mock_poll = mocker.patch("src.core.workflow.poll_until")

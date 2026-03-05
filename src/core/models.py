@@ -44,7 +44,7 @@ class ProjectScaffold(BaseModel):
 
     @classmethod
     def create_fallback_scaffold(cls, title: str, description: str) -> "ProjectScaffold":
-        """Creates a default scaffold when generation fails."""
+        """Create a default scaffold when generation fails."""
         desc = description[:200]
 
         def render(filename: str) -> str:

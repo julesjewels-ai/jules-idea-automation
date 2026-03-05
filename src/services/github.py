@@ -1,3 +1,5 @@
+"""GitHub API client."""
+
 from __future__ import annotations
 
 import base64
@@ -10,7 +12,10 @@ from src.utils.errors import ConfigurationError
 
 
 class GitHubClient:
+    """Client for GitHub API."""
+
     def __init__(self, token: str | None = None) -> None:
+        """Initialize the client."""
         self.token = token or os.environ.get("GITHUB_TOKEN")
         if not self.token:
             raise ConfigurationError(
@@ -25,13 +30,13 @@ class GitHubClient:
         }
 
     def get_user(self) -> dict[str, Any]:
-        """Returns the authenticated user's details."""
+        """Return the authenticated user's details."""
         response = requests.get(f"{self.base_url}/user", headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json()  # type: ignore[no-any-return]
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
-        """Creates a new repository."""
+        """Create a new repository."""
         payload = {
             "name": name,
             "description": description,
@@ -43,7 +48,7 @@ class GitHubClient:
         return response.json()  # type: ignore[no-any-return]
 
     def create_file(self, owner: str, repo: str, path: str, content: str, message: str) -> dict[str, Any]:
-        """Creates or updates a file in the repository."""
+        """Create or updates a file in the repository."""
         url = f"{self.base_url}/repos/{owner}/{repo}/contents/{path}"
 
         # GitHub API requires content to be base64 encoded
@@ -58,7 +63,7 @@ class GitHubClient:
     def create_files(
         self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main"
     ) -> dict[str, Any]:
-        """Creates multiple files in a single commit using the Git Data API.
+        """Create multiple files in a single commit using the Git Data API.
 
         Args:
         ----
