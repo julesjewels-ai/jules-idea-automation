@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeVar
+
+T = TypeVar("T")
 
 
 class EventHandler(Protocol):
@@ -14,6 +16,38 @@ class EventHandler(Protocol):
         Args:
         ----
             event: The domain event to handle.
+
+        """
+        ...
+
+
+class ProjectRepository(Protocol[T]):
+    """Protocol for data persistence of generic items."""
+
+    def save(self, item: T) -> None:
+        """Save an item to the repository.
+
+        Args:
+        ----
+            item: The item to save.
+
+        Raises:
+        ------
+            RepositoryError: If the persistence operation fails.
+
+        """
+        ...
+
+    def get_all(self) -> list[T]:
+        """Retrieve all items from the repository.
+
+        Returns
+        -------
+            A list of all persisted items.
+
+        Raises
+        ------
+            RepositoryError: If the retrieval operation fails.
 
         """
         ...
