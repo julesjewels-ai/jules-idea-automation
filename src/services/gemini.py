@@ -12,10 +12,7 @@ from xml.sax.saxutils import escape
 
 # Suppress Pydantic warning from google-genai 0.8.0 about 'any' as a type
 warnings.filterwarnings(
-    "ignore",
-    message=".*<built-in function any> is not a Python type.*",
-    category=UserWarning,
-    module="pydantic"
+    "ignore", message=".*<built-in function any> is not a Python type.*", category=UserWarning, module="pydantic"
 )
 
 from google import genai
