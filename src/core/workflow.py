@@ -19,6 +19,29 @@ from src.utils.reporter import print_workflow_report
 logger = logging.getLogger(__name__)
 
 
+def _parse_dict_requirement(key: Any, value: Any) -> str:
+    """Parse a single dictionary-style requirement mapping."""
+    if value and isinstance(value, str) and value.strip() not in ("*", "latest"):
+        return f"{key}{value}"
+    return str(key)
+
+
+def _parse_list_dict_requirement(item: dict[str, Any]) -> str:
+    """Parse a single requirement object from a list."""
+    name = item.get("package") or item.get("name") or ""
+    version = item.get("version") or item.get("constraint") or ""
+    return f"{name}{version}" if version else str(name)
+
+
+def _parse_list_requirement(item: Any) -> str:
+    """Parse a single requirement item from a list."""
+    if isinstance(item, str):
+        return item
+    if isinstance(item, dict):
+        return _parse_list_dict_requirement(item)
+    return str(item)
+
+
 def _normalize_requirements(raw: Any) -> list[str]:
     """Normalize requirements from various LLM return formats to a flat list.
 
@@ -29,20 +52,10 @@ def _normalize_requirements(raw: Any) -> list[str]:
         - scalar     (edge case): "pytest"
     """
     if isinstance(raw, dict):
-        return [f"{k}{v}" if v and v.strip() not in ("*", "latest") else k for k, v in raw.items()]
+        return [_parse_dict_requirement(k, v) for k, v in raw.items()]
 
     if isinstance(raw, list):
-        lines: list[str] = []
-        for item in raw:
-            if isinstance(item, str):
-                lines.append(item)
-            elif isinstance(item, dict):
-                name = item.get("package") or item.get("name") or ""
-                version = item.get("version") or item.get("constraint") or ""
-                lines.append(f"{name}{version}" if version else name)
-            else:
-                lines.append(str(item))
-        return lines
+        return [_parse_list_requirement(item) for item in raw]
 
     return [str(raw)]
 
