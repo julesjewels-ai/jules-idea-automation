@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -50,10 +52,21 @@ class JsonFileAuditLogger(EventHandler):
             # We add a generic event_type field for easier querying of the JSONL file
             event_data = event.model_dump()
             event_data["event_type"] = event.__class__.__name__
+            new_line = (json.dumps(event_data) + "\n").encode("utf-8")
 
-            # Append as JSON Lines (one JSON object per line)
-            with open(self.log_file, "a", encoding="utf-8") as f:
-                f.write(json.dumps(event_data) + "\n")
+            # Read existing content (if any) so we can rewrite the whole file atomically
+            existing: bytes = b""
+            if self.log_file.exists():
+                existing = self.log_file.read_bytes()
+
+            # Write to a temp file in the same directory, then atomically replace
+            dir_ = str(self.log_file.parent)
+            fd, tmp_path = tempfile.mkstemp(dir=dir_, suffix=".jsonl.tmp")
+            try:
+                os.write(fd, existing + new_line)
+            finally:
+                os.close(fd)
+            os.replace(tmp_path, self.log_file)
 
             logger.debug(f"Audit logged event {event.__class__.__name__} to {self.log_file}")
         except Exception as e:
