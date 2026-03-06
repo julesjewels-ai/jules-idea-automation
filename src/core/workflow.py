@@ -7,7 +7,7 @@ import uuid
 from typing import Any
 
 from src.core.events import WorkflowCompleted, WorkflowStarted
-from src.core.interfaces import EventBus
+from src.core.interfaces import EventBus, ProjectRepository
 from src.core.models import WorkflowResult
 from src.core.readme_builder import build_readme
 from src.services.gemini import GeminiClient
@@ -72,6 +72,7 @@ class IdeaWorkflow:
         gemini: GeminiClient | None = None,
         jules: JulesClient | None = None,
         event_bus: EventBus | None = None,
+        repository: ProjectRepository[WorkflowResult] | None = None,
     ):
         """Initialize workflow with optional service instances.
 
@@ -81,6 +82,7 @@ class IdeaWorkflow:
             gemini: GeminiClient instance (created if None)
             jules: JulesClient instance (created if None)
             event_bus: EventBus instance (optional)
+            repository: Optional repository to persist results.
 
         """
         # If gemini is not provided, we create one with default cache provider if available
@@ -95,6 +97,8 @@ class IdeaWorkflow:
             from src.services.bus import NullEventBus
 
             self.event_bus = NullEventBus()
+
+        self.repository = repository
 
         if gemini:
             self.gemini = gemini
@@ -178,6 +182,12 @@ class IdeaWorkflow:
                 session_url=result.session_url,
             )
         )
+
+        if self.repository:
+            try:
+                self.repository.save(result)
+            except Exception as e:
+                logger.error(f"Failed to persist workflow result: {e}")
 
         return result
 
