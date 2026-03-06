@@ -2,3 +2,4 @@ src/core/workflow.py:IdeaWorkflow._prepare_scaffold_files
 src/services/gemini.py:GeminiClient._generate_content
 src/services/gemini.py:GeminiClient._fetch_from_api
 src/core/workflow.py:_normalize_requirements
+src/services/gemini.py:GeminiClient._map_api_error

@@ -5,3 +5,7 @@ Summary: Extracted response parsing, caching, and validation logic from `_fetch_
 Target: _normalize_requirements in src/core/workflow.py
 Delta: Complexity Score 14 -> 5
 Summary: Extracted dictionary and list parsing logic into `_parse_dict_requirement`, `_parse_list_dict_requirement`, and `_parse_list_requirement` helper methods to simplify the `_normalize_requirements` method.
+
+Target: _map_api_error in src/services/gemini.py
+Delta: Complexity Score 8 -> 3
+Summary: Replaced complex if-elif logic with a configuration dictionary mapping for substring matches to flatten control flow.
