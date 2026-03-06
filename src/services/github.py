@@ -139,7 +139,12 @@ class GitHubClient:
             data = self._request("POST", url, json=payload)
 
             tree_items.append(
-                {"path": file_info["path"], "mode": "100644", "type": "blob", "sha": data["sha"]}
+                {
+                    "path": file_info["path"],
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": data["sha"],
+                }
             )
         return tree_items
 
