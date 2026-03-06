@@ -63,7 +63,10 @@ class GeminiClient:
             "unavailable": "The Gemini API is currently overloaded. Please wait a few minutes and try again.",
         }
 
-        tip = next((t for k, t in error_mappings.items() if k in err_msg), "Check your internet connection and API status.")
+        tip = next(
+            (t for k, t in error_mappings.items() if k in err_msg),
+            "Check your internet connection and API status.",
+        )
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
     def _get_cached_content(self, prompt: str, schema: Any) -> tuple[dict[str, Any] | None, str]:
