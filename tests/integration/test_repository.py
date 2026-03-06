@@ -58,14 +58,8 @@ def test_repository_save_and_retrieve(repo_file_path: str) -> None:
 
     # Save another one
     result2 = WorkflowResult(
-        idea=IdeaResponse(
-            title="Idea 2",
-            description="Another one",
-            slug="idea-2",
-            tech_stack=[],
-            features=[]
-        ),
-        repo_url="https://github.com/test/idea-2"
+        idea=IdeaResponse(title="Idea 2", description="Another one", slug="idea-2", tech_stack=[], features=[]),
+        repo_url="https://github.com/test/idea-2",
     )
     repo.save(result2)
 

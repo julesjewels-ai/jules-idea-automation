@@ -109,7 +109,7 @@ class JsonProjectRepository(Generic[T]):
             os.replace(temp_path, self.file_path)
         except Exception as e:
             # Cleanup temp file if error occurred before replace
-            if 'temp_path' in locals() and os.path.exists(temp_path):
+            if "temp_path" in locals() and os.path.exists(temp_path):
                 try:
                     os.unlink(temp_path)
                 except OSError:
