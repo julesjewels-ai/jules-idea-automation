@@ -1,7 +1,7 @@
 requests>=2.32.4
 beautifulsoup4==4.14.3
 google-genai==0.8.0
-python-dotenv==1.2.1
+python-dotenv==1.2.2
 google-auth==2.30.0
 pydantic==2.10.6
 pytest<9.0.0
