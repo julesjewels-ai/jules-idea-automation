@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeVar
+
+from pydantic import BaseModel
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class EventHandler(Protocol):
@@ -14,6 +18,30 @@ class EventHandler(Protocol):
         Args:
         ----
             event: The domain event to handle.
+
+        """
+        ...
+
+
+class ProjectRepository(Protocol[T]):
+    """Generic protocol for saving and retrieving domain objects."""
+
+    def save(self, item: T) -> None:
+        """Save an item to the repository.
+
+        Args:
+        ----
+            item: The domain object to persist.
+
+        """
+        ...
+
+    def get_all(self) -> list[T]:
+        """Retrieve all items from the repository.
+
+        Returns
+        -------
+            A list of all persisted domain objects.
 
         """
         ...
