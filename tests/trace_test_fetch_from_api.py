@@ -10,17 +10,20 @@ from src.services.gemini import GeminiClient
 from src.utils.errors import GenerationError
 
 
-class MockAPIError(APIError): # type: ignore[misc]
+class MockAPIError(APIError):  # type: ignore[misc]
     """Mock APIError for testing."""
+
     def __init__(self, message: str, code: int = 503):
         mock_resp = MagicMock(spec=requests.models.Response)
         mock_resp.json.return_value = {"error": {"message": message}}
         mock_resp.status_code = code
         super().__init__(code=code, response=mock_resp)
 
+
 @pytest.fixture
 def gemini_client() -> GeminiClient:
     return GeminiClient(api_key="test_key")
+
 
 @pytest.fixture
 def mock_context() -> dict[str, Any]:
@@ -28,14 +31,16 @@ def mock_context() -> dict[str, Any]:
         "prompt": "generate a test idea",
         "schema": dict,
         "error_tip": "test error tip",
-        "cache_key": "test_cache_key"
+        "cache_key": "test_cache_key",
     }
+
 
 @pytest.fixture
 def setup_happy_path() -> tuple[MagicMock | list[MagicMock | Exception] | Exception, dict[str, str]]:
     mock_response = MagicMock()
     mock_response.text = '{"idea": "valid"}'
     return (mock_response, {"idea": "valid"})
+
 
 @pytest.fixture
 def setup_fallback_edge_case() -> tuple[MagicMock | list[MagicMock | Exception] | Exception, dict[str, str]]:
@@ -44,16 +49,21 @@ def setup_fallback_edge_case() -> tuple[MagicMock | list[MagicMock | Exception] 
     mock_response.text = '{"idea": "fallback_valid"}'
     return ([mock_error, mock_response], {"idea": "fallback_valid"})
 
+
 @pytest.fixture
 def setup_error_state() -> tuple[MagicMock | list[MagicMock | Exception] | Exception, dict[str, str]]:
     mock_error = MockAPIError(message="503 UNAVAILABLE", code=503)
     return (mock_error, {})
 
-@pytest.mark.parametrize("mock_setup_fixture, expected_call_count, expected", [
-    ("setup_happy_path", 1, {"idea": "valid"}),
-    ("setup_fallback_edge_case", 2, {"idea": "fallback_valid"}),
-    ("setup_error_state", 2, GenerationError)
-])
+
+@pytest.mark.parametrize(
+    "mock_setup_fixture, expected_call_count, expected",
+    [
+        ("setup_happy_path", 1, {"idea": "valid"}),
+        ("setup_fallback_edge_case", 2, {"idea": "fallback_valid"}),
+        ("setup_error_state", 2, GenerationError),
+    ],
+)
 def test_fetch_from_api_behavior(
     mocker: MockerFixture,
     gemini_client: GeminiClient,
@@ -61,14 +71,14 @@ def test_fetch_from_api_behavior(
     request: pytest.FixtureRequest,
     mock_setup_fixture: str,
     expected_call_count: int,
-    expected: dict[str, str] | type[Exception]
+    expected: dict[str, str] | type[Exception],
 ) -> None:
     # Get the setup data from the fixture
     mock_side_effect_or_return_value, mock_process_return = request.getfixturevalue(mock_setup_fixture)
 
     # 1. Setup Mocks (Namespace Verified)
-    mock_generate_content = mocker.patch.object(gemini_client.client.models, 'generate_content', autospec=True)
-    mock_process_api_response = mocker.patch.object(gemini_client, '_process_api_response', autospec=True)
+    mock_generate_content = mocker.patch.object(gemini_client.client.models, "generate_content", autospec=True)
+    mock_process_api_response = mocker.patch.object(gemini_client, "_process_api_response", autospec=True)
 
     if isinstance(mock_side_effect_or_return_value, Exception) or isinstance(mock_side_effect_or_return_value, list):
         mock_generate_content.side_effect = mock_side_effect_or_return_value
@@ -84,16 +94,19 @@ def test_fetch_from_api_behavior(
                 prompt=mock_context["prompt"],
                 schema=mock_context["schema"],
                 error_tip=mock_context["error_tip"],
-                cache_key=mock_context["cache_key"]
+                cache_key=mock_context["cache_key"],
             )
-        assert getattr(exc_info.value, "tip", None) == "The Gemini API is currently overloaded. Please wait a few minutes and try again."
+        assert (
+            getattr(exc_info.value, "tip", None)
+            == "The Gemini API is currently overloaded. Please wait a few minutes and try again."
+        )
         assert mock_generate_content.call_count == expected_call_count
     else:
         result = gemini_client._fetch_from_api(
             prompt=mock_context["prompt"],
             schema=mock_context["schema"],
             error_tip=mock_context["error_tip"],
-            cache_key=mock_context["cache_key"]
+            cache_key=mock_context["cache_key"],
         )
         assert result == expected
         assert mock_generate_content.call_count == expected_call_count
