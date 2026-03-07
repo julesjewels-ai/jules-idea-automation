@@ -2,7 +2,6 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-import requests
 from google.genai.errors import APIError
 from pytest_mock import MockerFixture
 
@@ -14,10 +13,14 @@ class MockAPIError(APIError):  # type: ignore[misc]
     """Mock APIError for testing."""
 
     def __init__(self, message: str, code: int = 503):
-        mock_resp = MagicMock(spec=requests.models.Response)
-        mock_resp.json.return_value = {"error": {"message": message}}
-        mock_resp.status_code = code
-        super().__init__(code=code, response=mock_resp)
+        # We must support google.genai 0.8.0 signature, but also handle whatever CI uses.
+        # So we just pass positional to Exception and patch __str__.
+        super(APIError, self).__init__(message)
+        self.code = code
+        self.message = message
+
+    def __str__(self) -> str:
+        return self.message
 
 
 @pytest.fixture
@@ -74,18 +77,17 @@ def test_fetch_from_api_behavior(
     expected: dict[str, str] | type[Exception],
 ) -> None:
     # Get the setup data from the fixture
+    # Note: We deliberately let the real `_process_api_response` run to provide a true
+    # high-fidelity test of how _fetch_from_api orchestrates API responses.
     mock_side_effect_or_return_value, mock_process_return = request.getfixturevalue(mock_setup_fixture)
 
     # 1. Setup Mocks (Namespace Verified)
     mock_generate_content = mocker.patch.object(gemini_client.client.models, "generate_content", autospec=True)
-    mock_process_api_response = mocker.patch.object(gemini_client, "_process_api_response", autospec=True)
 
     if isinstance(mock_side_effect_or_return_value, Exception) or isinstance(mock_side_effect_or_return_value, list):
         mock_generate_content.side_effect = mock_side_effect_or_return_value
     else:
         mock_generate_content.return_value = mock_side_effect_or_return_value
-
-    mock_process_api_response.return_value = mock_process_return
 
     # 2. Execution & Validation
     if isinstance(expected, type) and issubclass(expected, Exception):
@@ -110,4 +112,3 @@ def test_fetch_from_api_behavior(
         )
         assert result == expected
         assert mock_generate_content.call_count == expected_call_count
-        mock_process_api_response.assert_called_once()
