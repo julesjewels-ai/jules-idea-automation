@@ -1,11 +1,14 @@
-import pytest
+from typing import Any
 from unittest.mock import MagicMock
-from pytest_mock import MockerFixture
+
+import pytest
 import requests
+from google.genai.errors import APIError
+from pytest_mock import MockerFixture
 
 from src.services.gemini import GeminiClient
 from src.utils.errors import GenerationError
-from google.genai.errors import APIError
+
 
 class MockAPIError(APIError): # type: ignore[misc]
     """Mock APIError for testing."""
@@ -20,7 +23,7 @@ def gemini_client() -> GeminiClient:
     return GeminiClient(api_key="test_key")
 
 @pytest.fixture
-def mock_context() -> dict[str, str]:
+def mock_context() -> dict[str, Any]:
     return {
         "prompt": "generate a test idea",
         "schema": dict,
@@ -54,7 +57,7 @@ def setup_error_state() -> tuple[MagicMock | list[MagicMock | Exception] | Excep
 def test_fetch_from_api_behavior(
     mocker: MockerFixture,
     gemini_client: GeminiClient,
-    mock_context: dict[str, str],
+    mock_context: dict[str, Any],
     request: pytest.FixtureRequest,
     mock_setup_fixture: str,
     expected_call_count: int,
@@ -78,19 +81,19 @@ def test_fetch_from_api_behavior(
     if isinstance(expected, type) and issubclass(expected, Exception):
         with pytest.raises(expected) as exc_info:
             gemini_client._fetch_from_api(
-                prompt=mock_context["prompt"], # type: ignore[arg-type]
+                prompt=mock_context["prompt"],
                 schema=mock_context["schema"],
-                error_tip=mock_context["error_tip"], # type: ignore[arg-type]
-                cache_key=mock_context["cache_key"] # type: ignore[arg-type]
+                error_tip=mock_context["error_tip"],
+                cache_key=mock_context["cache_key"]
             )
-        assert exc_info.value.tip == "The Gemini API is currently overloaded. Please wait a few minutes and try again."
+        assert getattr(exc_info.value, "tip", None) == "The Gemini API is currently overloaded. Please wait a few minutes and try again."
         assert mock_generate_content.call_count == expected_call_count
     else:
         result = gemini_client._fetch_from_api(
-            prompt=mock_context["prompt"], # type: ignore[arg-type]
+            prompt=mock_context["prompt"],
             schema=mock_context["schema"],
-            error_tip=mock_context["error_tip"], # type: ignore[arg-type]
-            cache_key=mock_context["cache_key"] # type: ignore[arg-type]
+            error_tip=mock_context["error_tip"],
+            cache_key=mock_context["cache_key"]
         )
         assert result == expected
         assert mock_generate_content.call_count == expected_call_count
