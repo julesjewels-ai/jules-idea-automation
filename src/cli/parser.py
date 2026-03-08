@@ -6,7 +6,7 @@ import argparse
 
 
 def create_parser() -> argparse.ArgumentParser:
-    """Creates and configures the argument parser."""
+    """Create and configure the argument parser."""
     parser = argparse.ArgumentParser(description="Jules Automation Tool")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 

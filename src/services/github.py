@@ -1,3 +1,5 @@
+"""Client implementation for the GitHub API."""
+
 from __future__ import annotations
 
 import base64
@@ -13,7 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 class GitHubClient:
+    """Client for interacting with the GitHub API."""
+
     def __init__(self, token: str | None = None) -> None:
+        """Initialize the GitHubClient with an optional token.
+
+        Args:
+            token: Optional GitHub PAT token. Defaults to GITHUB_TOKEN env var.
+
+        """
         self.token = token or os.environ.get("GITHUB_TOKEN")
         if not self.token:
             raise ConfigurationError(
@@ -28,7 +38,7 @@ class GitHubClient:
         }
 
     def _request(self, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
-        """Internal helper to handle API requests and errors."""
+        """Make an HTTP request and handle errors."""
         try:
             response = requests.request(method, url, headers=self.headers, timeout=30, **kwargs)
             response.raise_for_status()
@@ -49,7 +59,7 @@ class GitHubClient:
             raise GitHubApiError(f"Network error: {e}", tip="Check your internet connection.")
 
     def _handle_http_error(self, e: requests.exceptions.HTTPError) -> str:
-        """Determines the appropriate user tip for an HTTP error."""
+        """Determine the appropriate user tip for an HTTP error."""
         status_code = e.response.status_code
         if status_code == 401:
             return "Your GitHub token seems invalid or expired. Check your .env file."
@@ -63,7 +73,7 @@ class GitHubClient:
         return self._extract_api_error_message(e) or f"API returned status {status_code}."
 
     def _extract_api_error_message(self, e: requests.exceptions.HTTPError) -> str | None:
-        """Attempts to parse a GitHub JSON error message."""
+        """Attempt to parse a GitHub JSON error message."""
         try:
             error_data = e.response.json()
             error_msg = error_data.get("message")
@@ -74,11 +84,11 @@ class GitHubClient:
         return None
 
     def get_user(self) -> dict[str, Any]:
-        """Returns the authenticated user's details."""
+        """Return the authenticated user's details."""
         return self._request("GET", f"{self.base_url}/user")
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
-        """Creates a new repository."""
+        """Create a new repository."""
         payload = {
             "name": name,
             "description": description,
@@ -88,7 +98,7 @@ class GitHubClient:
         return self._request("POST", f"{self.base_url}/user/repos", json=payload)
 
     def create_file(self, owner: str, repo: str, path: str, content: str, message: str) -> dict[str, Any]:
-        """Creates or updates a file in the repository."""
+        """Create or update a file in the repository."""
         url = f"{self.base_url}/repos/{owner}/{repo}/contents/{path}"
 
         # GitHub API requires content to be base64 encoded
@@ -101,7 +111,7 @@ class GitHubClient:
     def create_files(
         self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main"
     ) -> dict[str, Any]:
-        """Creates multiple files in a single commit using the Git Data API.
+        """Create multiple files in a single commit using the Git Data API.
 
         Args:
         ----
