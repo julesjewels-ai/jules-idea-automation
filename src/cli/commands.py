@@ -127,9 +127,7 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any |
     event_bus.subscribe(WorkflowCompleted, audit_logger)
 
     repository = JsonProjectRepository(
-        directory=".jules/workflows",
-        model_class=WorkflowResult,
-        id_getter=lambda result: result.idea.slug
+        directory=".jules/workflows", model_class=WorkflowResult, id_getter=lambda result: result.idea.slug
     )
 
     workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus, repository=repository)
