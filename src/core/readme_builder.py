@@ -11,7 +11,7 @@ def build_readme(
     requirements: list[str] | None = None,
     run_command: str | None = None,
 ) -> str:
-    """Builds a README.md content string.
+    """Build a README.md content string.
 
     Args:
     ----

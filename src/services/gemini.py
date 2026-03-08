@@ -1,3 +1,5 @@
+"""Client implementation for the Google Gemini API."""
+
 from __future__ import annotations
 
 import hashlib
@@ -38,6 +40,13 @@ class GeminiClient:
     """Client for the Google Gemini API, handling idea generation and project scaffolding."""
 
     def __init__(self, api_key: str | None = None, cache_provider: CacheProvider | None = None) -> None:
+        """Initialize the GeminiClient with an optional API key and cache provider.
+
+        Args:
+            api_key: Optional Gemini API key. Defaults to GEMINI_API_KEY env var.
+            cache_provider: Optional caching mechanism for API requests.
+
+        """
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -50,7 +59,7 @@ class GeminiClient:
         self.cache_provider = cache_provider
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
-        """Maps Gemini API errors to user-friendly GenerationError."""
+        """Map Gemini API errors to user-friendly GenerationError."""
         tip = "Check your internet connection and API status."
         err_msg = str(e)
 
@@ -66,7 +75,7 @@ class GeminiClient:
         return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
     def _get_cached_content(self, prompt: str, schema: Any) -> tuple[dict[str, Any] | None, str]:
-        """Checks the cache for existing content and returns the data and cache key."""
+        """Check the cache for existing content and returns the data and cache key."""
         if not self.cache_provider:
             return None, ""
 
@@ -84,7 +93,7 @@ class GeminiClient:
         return None, cache_key
 
     def _process_api_response(self, text: str | None, schema: Any, cache_key: str, error_tip: str) -> dict[str, Any]:
-        """Parses, caches, and validates the API response."""
+        """Parse, cache, and validate the API response."""
         try:
             raw = json.loads(text or "")
         except json.JSONDecodeError as e:
@@ -98,7 +107,7 @@ class GeminiClient:
         return raw  # type: ignore[no-any-return]
 
     def _fetch_from_api(self, prompt: str, schema: Any, error_tip: str, cache_key: str) -> dict[str, Any]:
-        """Fetches content from Gemini API and handles errors/caching."""
+        """Fetch content from Gemini API and handles errors/caching."""
         last_api_error = None
         for i, model in enumerate(self.models):
             try:
@@ -138,7 +147,7 @@ class GeminiClient:
         )
 
     def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
-        """Helper to generate content with consistent configuration and error handling."""
+        """Generate content with consistent configuration and error handling."""
         # Check cache if available
         cached_data, cache_key = self._get_cached_content(prompt, schema)
         if cached_data:
@@ -147,7 +156,7 @@ class GeminiClient:
         return self._fetch_from_api(prompt, schema, error_tip, cache_key)
 
     def generate_idea(self, category: str | None = None) -> dict[str, Any]:
-        """Generates a unique software idea using Gemini 3.
+        """Generate a unique software idea using Gemini 3.
 
         Args:
         ----
@@ -162,7 +171,7 @@ class GeminiClient:
         )
 
     def extract_idea_from_text(self, text: str) -> dict[str, Any]:
-        """Extracts the core app idea from the provided text."""
+        """Extract the core app idea from the provided text."""
         # Truncate text if it's too long to avoid token limits
         max_chars = 100000
         truncated_text = text[:max_chars]
@@ -185,7 +194,7 @@ class GeminiClient:
         )
 
     def generate_project_scaffold(self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
-        """Generates a complete MVP project scaffold for the given idea.
+        """Generate a complete MVP project scaffold for the given idea.
 
         Args:
         ----

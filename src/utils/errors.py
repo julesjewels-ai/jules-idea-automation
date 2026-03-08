@@ -7,6 +7,13 @@ class AppError(Exception):
     """Base class for application errors."""
 
     def __init__(self, message: str, tip: str | None = None):
+        """Initialize the AppError with an optional tip.
+
+        Args:
+            message: The error message.
+            tip: Optional suggestion to resolve the error.
+
+        """
         super().__init__(message)
         self.tip = tip
 

@@ -11,7 +11,7 @@ T = TypeVar("T")
 def poll_until(
     condition: Callable[[], bool], timeout: int = 1800, interval: int = 10, on_poll: Callable[[int], None] | None = None
 ) -> bool:
-    """Polls until a condition is met or timeout is reached.
+    """Poll until a condition is met or timeout is reached.
 
     Args:
     ----
@@ -43,7 +43,7 @@ def poll_with_result(
     on_poll: Callable[[int, str], None] | None = None,
     status_extractor: Callable[[], str] | None = None,
 ) -> tuple[bool, T | None, int]:
-    """Polls until completion, returning a result.
+    """Poll until completion, returning a result.
 
     Args:
     ----
