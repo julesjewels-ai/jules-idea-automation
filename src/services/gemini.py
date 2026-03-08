@@ -59,7 +59,11 @@ class GeminiClient:
             (("429",), err_msg, "You have exceeded your API quota. Try again later."),
             (("quota",), err_msg_lower, "You have exceeded your API quota. Try again later."),
             (("403",), err_msg, "You don't have permission to access this model."),
-            (("503", "UNAVAILABLE"), err_msg, "The Gemini API is currently overloaded. Please wait a few minutes and try again."),
+            (
+                ("503", "UNAVAILABLE"),
+                err_msg,
+                "The Gemini API is currently overloaded. Please wait a few minutes and try again.",
+            ),
         ]
 
         for keys, target, msg in error_mappings:
