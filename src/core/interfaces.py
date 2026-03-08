@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeVar
+
+T = TypeVar("T")
 
 
 class EventHandler(Protocol):
@@ -39,6 +41,56 @@ class EventBus(Protocol):
         Args:
         ----
             event: The domain event to publish.
+
+        """
+        ...
+
+
+class ProjectRepository(Protocol[T]):
+    """Protocol for data persistence using the Repository pattern."""
+
+    def save(self, item: T) -> None:
+        """Save an item to the repository.
+
+        Args:
+        ----
+            item: The domain model to save.
+
+        Raises:
+        ------
+            RepositoryError: If saving fails.
+
+        """
+        ...
+
+    def get(self, item_id: str) -> T | None:
+        """Retrieve an item from the repository by ID.
+
+        Args:
+        ----
+            item_id: The unique identifier.
+
+        Returns:
+        -------
+            The requested item, or None if not found.
+
+        Raises:
+        ------
+            RepositoryError: If retrieval fails.
+
+        """
+        ...
+
+    def get_all(self) -> list[T]:
+        """Retrieve all items from the repository.
+
+        Returns
+        -------
+            A list of all domain models.
+
+        Raises
+        ------
+            RepositoryError: If retrieval fails.
 
         """
         ...
