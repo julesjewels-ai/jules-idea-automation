@@ -2,7 +2,47 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeVar
+
+T = TypeVar("T")
+
+
+class ProjectRepository(Protocol[T]):
+    """Protocol for project data persistence."""
+
+    def save(self, item: T) -> None:
+        """Save an item to the repository.
+
+        Args:
+        ----
+            item: The domain model to save.
+
+        """
+        ...
+
+    def get(self, item_id: str) -> T | None:
+        """Retrieve an item by its unique identifier.
+
+        Args:
+        ----
+            item_id: The unique identifier.
+
+        Returns:
+        -------
+            The domain model if found, None otherwise.
+
+        """
+        ...
+
+    def list_all(self) -> list[T]:
+        """List all items in the repository.
+
+        Returns
+        -------
+            A list of all domain models.
+
+        """
+        ...
 
 
 class EventHandler(Protocol):
