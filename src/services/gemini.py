@@ -51,19 +51,23 @@ class GeminiClient:
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
         """Maps Gemini API errors to user-friendly GenerationError."""
-        tip = "Check your internet connection and API status."
-        err_msg = str(e)
+        err_msg_lower = str(e).lower()
 
-        if "API key not valid" in err_msg or "400" in err_msg:
-            tip = "Your GEMINI_API_KEY seems invalid. Check your .env file."
-        elif "429" in err_msg or "quota" in err_msg.lower():
-            tip = "You have exceeded your API quota. Try again later."
-        elif "403" in err_msg:
-            tip = "You don't have permission to access this model."
-        elif "503" in err_msg or "UNAVAILABLE" in err_msg:
-            tip = "The Gemini API is currently overloaded. Please wait a few minutes and try again."
+        error_tips = (
+            (("api key not valid", "400"), "Your GEMINI_API_KEY seems invalid. Check your .env file."),
+            (("429", "quota"), "You have exceeded your API quota. Try again later."),
+            (("403",), "You don't have permission to access this model."),
+            (
+                ("503", "unavailable"),
+                "The Gemini API is currently overloaded. Please wait a few minutes and try again.",
+            ),
+        )
 
-        return GenerationError(f"Gemini API Error: {e}", tip=tip)
+        for keys, tip in error_tips:
+            if any(k in err_msg_lower for k in keys):
+                return GenerationError(f"Gemini API Error: {e}", tip=tip)
+
+        return GenerationError(f"Gemini API Error: {e}", tip="Check your internet connection and API status.")
 
     def _get_cached_content(self, prompt: str, schema: Any) -> tuple[dict[str, Any] | None, str]:
         """Checks the cache for existing content and returns the data and cache key."""
