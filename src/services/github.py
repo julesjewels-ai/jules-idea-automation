@@ -138,7 +138,9 @@ class GitHubClient:
             payload = {"content": file_info["content"], "encoding": "utf-8"}
             data = self._request("POST", url, json=payload)
 
-            tree_items.append({"path": file_info["path"], "mode": "100644", "type": "blob", "sha": data["sha"]})
+            tree_items.append(
+                {"path": file_info["path"], "mode": "100644", "type": "blob", "sha": data["sha"]}
+            )
         return tree_items
 
     def _create_tree(self, owner: str, repo: str, base_tree_sha: str, tree_items: list[dict[str, Any]]) -> str:
