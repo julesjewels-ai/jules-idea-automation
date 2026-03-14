@@ -17,7 +17,7 @@ from google import genai
 from google.genai import errors, types
 
 from src.core.interfaces import CacheProvider
-from src.core.models import IdeaResponse, ProjectScaffold
+from src.core.models import FeatureMapResponse, IdeaResponse, ProjectScaffold
 from src.utils.errors import ConfigurationError, GenerationError
 
 logger = logging.getLogger(__name__)
@@ -254,3 +254,101 @@ Create a complete, immediately-runnable project with these files:
                     ).model_dump()
 
         raise GenerationError("Failed to generate project scaffold.")
+
+    @staticmethod
+    def _summarize_scaffold_files(files: list[dict[str, Any]], max_content_len: int = 500) -> str:
+        """Build a concise summary of scaffold files for the feature map prompt."""
+        lines: list[str] = []
+        for f in files:
+            path = f.get("path", "unknown")
+            desc = f.get("description", "")
+            content = f.get("content", "")
+            # Truncate content to keep prompt within reasonable size
+            preview = content[:max_content_len].rstrip()
+            if len(content) > max_content_len:
+                preview += "\n... (truncated)"
+            lines.append(f"### {path}\n**Description:** {desc}\n```\n{preview}\n```")
+        return "\n\n".join(lines)
+
+    def generate_feature_maps(
+        self, idea_data: dict[str, Any], scaffold_files: list[dict[str, Any]]
+    ) -> dict[str, Any]:
+        """Generate project-specific MVP and Production feature maps.
+
+        Uses the actual scaffold code as context so every feature item
+        references real file paths, classes, and dependencies.
+
+        Args:
+        ----
+            idea_data: Dict with title, description, slug, tech_stack, features
+            scaffold_files: List of scaffold file dicts with path, content, description
+
+        Returns:
+        -------
+            FeatureMapResponse with mvp_features and production_features
+
+        """
+        safe_title = escape(idea_data.get("title", "Untitled"))
+        safe_desc = escape(idea_data.get("description", "")[:500])
+        tech_stack = ", ".join(idea_data.get("tech_stack", [])) or "Not specified"
+        features = ", ".join(idea_data.get("features", [])) or "Not specified"
+
+        files_summary = self._summarize_scaffold_files(scaffold_files)
+
+        prompt = f"""You are a senior software architect. Analyze this project and generate two feature maps.
+
+## Project
+**Title:** <project_title>{safe_title}</project_title>
+**Description:** <project_description>{safe_desc}</project_description>
+**Tech Stack:** {tech_stack}
+**High-Level Features:** {features}
+
+## Actual Project Files
+{files_summary}
+
+---
+
+## Your Task
+
+Generate TWO feature maps based on the ACTUAL project code above:
+
+### 1. MVP Features (mvp_features)
+Concrete features to make this a working, demonstrable prototype. Each item MUST:
+- Reference actual file paths from the project (e.g., "Add X to `src/core/app.py`")
+- Include specific acceptance criteria a developer can test
+- Be ordered from most critical (P0) to nice-to-have (P2)
+- Include project setup items (env setup, basic tests, demo data)
+
+Generate 8-15 MVP items.
+
+### 2. Production Features (production_features)
+Infrastructure and hardening items needed to deploy at scale. CRITICAL RULES:
+- ONLY include items RELEVANT to this specific project type
+- A CLI tool does NOT need "health check endpoints" or "CORS headers"
+- A web API does NOT need "CLI argument validation"
+- A data pipeline does NOT need "rate limiting"
+- Reference actual project files where changes would be made
+- Be specific: "Add retry logic to the HTTP client in `src/core/app.py`" not "Add error handling"
+
+Generate 15-25 production items across relevant categories such as:
+error handling, testing, CI/CD, security, observability, deployment, documentation, performance.
+Skip any category that doesn't apply to this project type.
+
+### Priority Guide
+| Label | MVP Meaning | Production Meaning |
+|-------|------------|-------------------|
+| P0 | Prototype doesn't work without it | Blocks production deployment |
+| P1 | Important for a convincing demo | Needed for reliable operation |
+| P2 | Improves the prototype | Improves quality, schedule when possible |
+| P3 | (rarely used) | Nice-to-have, future-looking |
+"""
+
+        try:
+            return self._generate_content(
+                prompt,
+                FeatureMapResponse,
+                "Failed to generate feature maps. Static fallback will be used.",
+            )
+        except Exception as e:
+            logger.warning(f"Feature map generation failed: {e}. Returning empty maps.")
+            return FeatureMapResponse(mvp_features=[], production_features=[]).model_dump()

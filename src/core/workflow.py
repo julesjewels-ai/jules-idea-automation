@@ -14,9 +14,35 @@ from src.services.gemini import GeminiClient
 from src.services.github import GitHubClient
 from src.services.jules import JulesClient
 from src.utils.polling import poll_until
+from src.templates.feature_map import (
+    render_mvp_checklist_md,
+    render_mvp_skill_md,
+    render_production_checklist_md,
+    render_production_skill_md,
+)
 from src.utils.reporter import print_workflow_report
 
 logger = logging.getLogger(__name__)
+
+
+def _build_feature_map_files(
+    idea_data: dict[str, Any],
+    feature_maps: dict[str, Any] | None = None,
+) -> list[dict[str, str]]:
+    """Build the MVP and Production feature map skill files.
+
+    When *feature_maps* is provided (from Gemini) the checklists are
+    project-specific.  Otherwise the renderers fall back to static defaults.
+    """
+    mvp_items = (feature_maps or {}).get("mvp_features") or None
+    prod_items = (feature_maps or {}).get("production_features") or None
+
+    return [
+        {"path": ".agent/skills/mvp-feature-map/SKILL.md", "content": render_mvp_skill_md(idea_data)},
+        {"path": ".agent/skills/mvp-feature-map/CHECKLIST.md", "content": render_mvp_checklist_md(idea_data, mvp_items)},
+        {"path": ".agent/skills/production-feature-map/SKILL.md", "content": render_production_skill_md(idea_data)},
+        {"path": ".agent/skills/production-feature-map/CHECKLIST.md", "content": render_production_checklist_md(idea_data, prod_items)},
+    ]
 
 
 def _parse_dict_requirement(key: Any, value: Any) -> str:
@@ -223,8 +249,15 @@ class IdeaWorkflow:
             message="Initial commit: Add README with project description",
         )
 
-        # Second commit: Scaffold files
+        # Second commit: Scaffold files + feature maps
         files_to_create = self._prepare_scaffold_files(scaffold)
+
+        # Generate project-specific feature maps using the scaffold as context
+        if verbose:
+            print("Generating project-specific feature maps...")
+        feature_maps = self.gemini.generate_feature_maps(idea_data, scaffold.get("files", []))
+        feature_map_files = _build_feature_map_files(idea_data, feature_maps)
+        files_to_create.extend(feature_map_files)
 
         if files_to_create:
             if verbose:
