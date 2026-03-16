@@ -7,19 +7,19 @@ import uuid
 from typing import Any
 
 from src.core.events import WorkflowCompleted, WorkflowStarted
-from src.core.interfaces import EventBus
+from src.core.interfaces import EventBus, ProjectRepository
 from src.core.models import WorkflowResult
 from src.core.readme_builder import build_readme
 from src.services.gemini import GeminiClient
 from src.services.github import GitHubClient
 from src.services.jules import JulesClient
-from src.utils.polling import poll_until
 from src.templates.feature_map import (
     render_mvp_checklist_md,
     render_mvp_skill_md,
     render_production_checklist_md,
     render_production_skill_md,
 )
+from src.utils.polling import poll_until
 from src.utils.reporter import print_workflow_report
 
 logger = logging.getLogger(__name__)
@@ -39,9 +39,15 @@ def _build_feature_map_files(
 
     return [
         {"path": ".agent/skills/mvp-feature-map/SKILL.md", "content": render_mvp_skill_md(idea_data)},
-        {"path": ".agent/skills/mvp-feature-map/CHECKLIST.md", "content": render_mvp_checklist_md(idea_data, mvp_items)},
+        {
+            "path": ".agent/skills/mvp-feature-map/CHECKLIST.md",
+            "content": render_mvp_checklist_md(idea_data, mvp_items),
+        },
         {"path": ".agent/skills/production-feature-map/SKILL.md", "content": render_production_skill_md(idea_data)},
-        {"path": ".agent/skills/production-feature-map/CHECKLIST.md", "content": render_production_checklist_md(idea_data, prod_items)},
+        {
+            "path": ".agent/skills/production-feature-map/CHECKLIST.md",
+            "content": render_production_checklist_md(idea_data, prod_items),
+        },
     ]
 
 
@@ -98,6 +104,7 @@ class IdeaWorkflow:
         gemini: GeminiClient | None = None,
         jules: JulesClient | None = None,
         event_bus: EventBus | None = None,
+        repository: ProjectRepository[WorkflowResult] | None = None,
     ):
         """Initialize workflow with optional service instances.
 
@@ -107,6 +114,7 @@ class IdeaWorkflow:
             gemini: GeminiClient instance (created if None)
             jules: JulesClient instance (created if None)
             event_bus: EventBus instance (optional)
+            repository: Repository for persistence (optional)
 
         """
         # If gemini is not provided, we create one with default cache provider if available
@@ -133,6 +141,7 @@ class IdeaWorkflow:
             self.gemini = GeminiClient(cache_provider=FileCacheProvider())
 
         self.jules = jules or JulesClient()
+        self.repository = repository
 
     def execute(
         self, idea_data: dict[str, Any], private: bool = True, timeout: int = 1800, verbose: bool = True
@@ -204,6 +213,9 @@ class IdeaWorkflow:
                 session_url=result.session_url,
             )
         )
+
+        if self.repository:
+            self.repository.save(result)
 
         return result
 

@@ -2,7 +2,25 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeVar
+
+T = TypeVar("T")
+
+
+class ProjectRepository(Protocol[T]):
+    """Protocol for a generic repository managing entities of type T."""
+
+    def save(self, item: T) -> None:
+        """Save the item to the repository."""
+        ...
+
+    def get(self, id: str) -> T | None:
+        """Retrieve the item by its unique ID."""
+        ...
+
+    def list_all(self) -> list[T]:
+        """List all items in the repository."""
+        ...
 
 
 class EventHandler(Protocol):
