@@ -50,12 +50,8 @@ def handle_website(args: Namespace) -> None:
     from src.services.gemini import GeminiClient
     from src.services.scraper import scrape_text
 
-    print(f"Scraping {args.url}...")
-
-    with Spinner(f"Scraping {args.url}..."):
+    with Spinner(f"Scraping {args.url}...", success_message="Page scraped"):
         text = scrape_text(args.url)
-
-    print(f"✓ Extracted {len(text)} characters of content")
 
     cache = FileCacheProvider()
     gemini = GeminiClient(cache_provider=cache)
