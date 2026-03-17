@@ -6,13 +6,7 @@ import ipaddress
 import socket
 from urllib.parse import ParseResult, urlparse
 
-from src.utils.errors import AppError
-
-
-class ScrapingError(AppError):
-    """Raised when scraping fails or returns insufficient content."""
-
-    pass
+from src.utils.errors import ScrapingError
 
 
 def validate_url(url: str) -> None:

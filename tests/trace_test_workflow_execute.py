@@ -32,11 +32,11 @@ def idea_data() -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    "scenario, private_flag, verbose_flag, poll_success, expected_result",
+    "scenario, private_flag, poll_success, expected_result",
     [
-        ("happy_path", True, True, True, "success"),
-        ("public_repo_quiet", False, False, True, "success"),
-        ("jules_timeout", True, True, False, "timeout_error"),
+        ("happy_path", True, True, "success"),
+        ("public_repo", False, True, "success"),
+        ("jules_timeout", True, False, "timeout_error"),
     ],
 )
 def test_execute_behavior(
@@ -45,7 +45,6 @@ def test_execute_behavior(
     idea_data: dict[str, Any],
     scenario: str,
     private_flag: bool,
-    verbose_flag: bool,
     poll_success: bool,
     expected_result: str,
 ) -> None:
@@ -79,7 +78,7 @@ def test_execute_behavior(
     workflow = IdeaWorkflow(github=github, gemini=gemini, jules=jules)
 
     # 2. Execution & Validation
-    result = workflow.execute(idea_data, private=private_flag, timeout=10, verbose=verbose_flag)
+    result = workflow.execute(idea_data, private=private_flag, timeout=10)
 
     # Assert return type
     assert isinstance(result, WorkflowResult)
@@ -104,14 +103,13 @@ def test_execute_behavior(
     # Verify Polling
     mock_poll.assert_called_once()
 
+    # Report is always called (no verbose flag — output controlled via log level)
+    mock_report.assert_called_once()
+
     if expected_result == "success":
         assert result.session_id == "session_123"
         assert result.session_url == "http://session"
         jules.create_session.assert_called_once()
-        if verbose_flag:
-            mock_report.assert_called_once()
-        else:
-            mock_report.assert_not_called()
 
     elif expected_result == "timeout_error":
         assert result.session_id is None

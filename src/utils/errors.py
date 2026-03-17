@@ -35,6 +35,12 @@ class GitHubApiError(AppError):
     pass
 
 
+class ScrapingError(AppError):
+    """Raised when scraping fails or returns insufficient content."""
+
+    pass
+
+
 class EventBusError(AppError):
     """Raised when an error occurs in the EventBus."""
 

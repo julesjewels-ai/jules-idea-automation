@@ -5,7 +5,8 @@ from __future__ import annotations
 import requests
 from bs4 import BeautifulSoup
 
-from src.utils.security import ScrapingError, validate_url
+from src.utils.errors import ScrapingError
+from src.utils.security import validate_url
 
 __all__ = ["scrape_text", "ScrapingError", "MIN_CONTENT_LENGTH", "BLOCKED_INDICATORS"]
 

@@ -8,8 +8,10 @@ from typing import Any
 
 from src.core.events import WorkflowCompleted, WorkflowStarted
 from src.core.interfaces import EventBus
-from src.core.models import WorkflowResult
+from src.core.models import IdeaResponse, WorkflowResult
 from src.core.readme_builder import build_readme
+from src.services.bus import NullEventBus
+from src.services.cache import FileCacheProvider
 from src.services.gemini import GeminiClient
 from src.services.github import GitHubClient
 from src.services.jules import JulesClient
@@ -109,33 +111,13 @@ class IdeaWorkflow:
             event_bus: EventBus instance (optional)
 
         """
-        # If gemini is not provided, we create one with default cache provider if available
-        # Note: In production code, it's better to pass the configured client in.
-        # Here we follow the pattern of creating default if None.
-
         self.github = github or GitHubClient()
-
-        if event_bus:
-            self.event_bus = event_bus
-        else:
-            from src.services.bus import NullEventBus
-
-            self.event_bus = NullEventBus()
-
-        if gemini:
-            self.gemini = gemini
-        else:
-            # Lazy import to avoid circular dependency or unnecessary imports if passed
-            from src.services.cache import FileCacheProvider
-            from src.services.gemini import GeminiClient
-
-            # Default to using file cache if initializing here
-            self.gemini = GeminiClient(cache_provider=FileCacheProvider())
-
+        self.event_bus = event_bus or NullEventBus()
+        self.gemini = gemini or GeminiClient(cache_provider=FileCacheProvider())
         self.jules = jules or JulesClient()
 
     def execute(
-        self, idea_data: dict[str, Any], private: bool = True, timeout: int = 1800, verbose: bool = True
+        self, idea_data: dict[str, Any], private: bool = True, timeout: int = 1800
     ) -> WorkflowResult:
         """Execute the full workflow.
 
@@ -144,17 +126,14 @@ class IdeaWorkflow:
             idea_data: Dict with title, description, slug, tech_stack, features
             private: Create private repository (default: private)
             timeout: Max seconds to wait for Jules indexing
-            verbose: Print progress messages
 
         Returns:
         -------
             WorkflowResult with repo_url, session info, etc.
 
         """
-        if verbose:
-            print(f"Processing Idea: {idea_data['title']}")
-            print(f"Slug: {idea_data['slug']}")
-            print("-" * 40)
+        logger.info("Processing Idea: %s", idea_data["title"])
+        logger.info("Slug: %s", idea_data["slug"])
 
         self.event_bus.publish(
             WorkflowStarted(
@@ -166,18 +145,16 @@ class IdeaWorkflow:
         )
 
         # Step 1: Create GitHub repository
-        username = self._create_repository(idea_data, private, verbose)
+        username = self._create_repository(idea_data, private)
         repo_url = f"https://github.com/{username}/{idea_data['slug']}"
 
         # Step 2: Generate and commit scaffold
-        self._generate_scaffold(username, idea_data, verbose)
+        self._generate_scaffold(username, idea_data)
 
         # Step 3: Wait for Jules indexing and create session
-        session = self._create_jules_session(username, idea_data, timeout, verbose)
+        session = self._create_jules_session(username, idea_data, timeout)
 
         # Build result
-        from src.core.models import IdeaResponse
-
         result = WorkflowResult(
             idea=IdeaResponse(**idea_data),
             repo_url=repo_url,
@@ -185,14 +162,13 @@ class IdeaWorkflow:
             session_url=session.get("url") if session else None,
         )
 
-        if verbose:
-            print_workflow_report(
-                title=idea_data["title"],
-                slug=idea_data["slug"],
-                repo_url=repo_url,
-                session_id=result.session_id,
-                session_url=result.session_url,
-            )
+        print_workflow_report(
+            title=idea_data["title"],
+            slug=idea_data["slug"],
+            repo_url=repo_url,
+            session_id=result.session_id,
+            session_url=result.session_url,
+        )
 
         self.event_bus.publish(
             WorkflowCompleted(
@@ -207,23 +183,21 @@ class IdeaWorkflow:
 
         return result
 
-    def _create_repository(self, idea_data: dict[str, Any], private: bool, verbose: bool) -> str:
+    def _create_repository(self, idea_data: dict[str, Any], private: bool) -> str:
         """Create GitHub repository and return username."""
         user = self.github.get_user()
         username = str(user["login"])
 
         visibility = "private" if private else "public"
-        if verbose:
-            print(f"Creating {visibility} GitHub repository '{idea_data['slug']}'...")
+        logger.info("Creating %s GitHub repository '%s'...", visibility, idea_data["slug"])
 
         self.github.create_repo(name=idea_data["slug"], description=idea_data["description"][:350], private=private)
 
         return username
 
-    def _generate_scaffold(self, username: str, idea_data: dict[str, Any], verbose: bool) -> None:
+    def _generate_scaffold(self, username: str, idea_data: dict[str, Any]) -> None:
         """Generate MVP scaffold and commit to repository."""
-        if verbose:
-            print("Generating MVP scaffold with Gemini (this may take a moment)...")
+        logger.info("Generating MVP scaffold with Gemini (this may take a moment)...")
 
         scaffold = self.gemini.generate_project_scaffold(idea_data)
 
@@ -238,8 +212,7 @@ class IdeaWorkflow:
         )
 
         # First commit: README
-        if verbose:
-            print("Initializing repository with README...")
+        logger.info("Initializing repository with README...")
 
         self.github.create_file(
             owner=username,
@@ -253,15 +226,13 @@ class IdeaWorkflow:
         files_to_create = self._prepare_scaffold_files(scaffold)
 
         # Generate project-specific feature maps using the scaffold as context
-        if verbose:
-            print("Generating project-specific feature maps...")
+        logger.info("Generating project-specific feature maps...")
         feature_maps = self.gemini.generate_feature_maps(idea_data, scaffold.get("files", []))
         feature_map_files = _build_feature_map_files(idea_data, feature_maps)
         files_to_create.extend(feature_map_files)
 
         if files_to_create:
-            if verbose:
-                print(f"Adding {len(files_to_create)} MVP files...")
+            logger.info("Adding %d MVP files...", len(files_to_create))
 
             result = self.github.create_files(
                 owner=username,
@@ -270,13 +241,12 @@ class IdeaWorkflow:
                 message="feat: Add MVP scaffold with SOLID structure",
             )
 
-            if verbose:
-                print(f"  Created {result['files_created']} files in single commit")
+            logger.info("Created %d files in single commit", result["files_created"])
 
     def _process_file_entry(self, file_info: Any) -> dict[str, str] | None:
         """Validate and format a single file entry."""
         if not isinstance(file_info, dict) or "path" not in file_info:
-            logger.warning(f"Skipping malformed file entry: {type(file_info)}")
+            logger.warning("Skipping malformed file entry: %s", type(file_info))
             return None
 
         if file_info["path"].lower() == "readme.md":
@@ -311,31 +281,27 @@ class IdeaWorkflow:
         return files_to_create
 
     def _create_jules_session(
-        self, username: str, idea_data: dict[str, Any], timeout: int, verbose: bool
+        self, username: str, idea_data: dict[str, Any], timeout: int
     ) -> dict[str, Any] | None:
         """Wait for Jules indexing and create session."""
         source_id = f"sources/github/{username}/{idea_data['slug']}"
 
-        if verbose:
-            print(f"Constructed Source ID: {source_id}")
-            print(f"Waiting for Jules to discover the new repository (timeout: {timeout}s)...")
+        logger.info("Constructed Source ID: %s", source_id)
+        logger.info("Waiting for Jules to discover the new repository (timeout: %ds)...", timeout)
 
         # Poll for source
         def on_poll(elapsed: int) -> None:
-            if verbose:
-                print(f"  Source not yet indexed ({elapsed}s elapsed)...")
+            logger.info("Source not yet indexed (%ds elapsed)...", elapsed)
 
         source_found = poll_until(
             condition=lambda: self.jules.source_exists(source_id), timeout=timeout, interval=10, on_poll=on_poll
         )
 
         if not source_found:
-            if verbose:
-                print(f"WARNING: Source '{source_id}' was not found in Jules after {timeout}s.")
-                print("Please visit https://jules.google.com to install the app.")
+            logger.warning("Source '%s' was not found in Jules after %ds.", source_id, timeout)
+            logger.warning("Please visit https://jules.google.com to install the app.")
             return None
 
-        if verbose:
-            print("Source found! Creating session in Jules...")
+        logger.info("Source found! Creating session in Jules...")
 
         return self.jules.create_session(source_id, idea_data["description"])

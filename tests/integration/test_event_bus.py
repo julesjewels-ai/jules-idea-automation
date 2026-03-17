@@ -50,7 +50,7 @@ def test_event_bus_audit_integration(tmp_path: Path) -> None:
     }
 
     # Execute workflow
-    workflow.execute(idea_data, verbose=False)
+    workflow.execute(idea_data)
 
     # Verify log file was created and contains expected entries
     assert log_file.exists()
