@@ -80,7 +80,7 @@ class GeminiClient:
 
         cached_data = self.cache_provider.get(cache_key)
         if cached_data:
-            logger.info(f"Cache hit for key: {cache_key}")
+            logger.info("Cache hit for key: %s", cache_key)
             if hasattr(schema, "model_validate"):
                 return schema.model_validate(cached_data).model_dump(), cache_key
             return cached_data, cache_key
@@ -112,7 +112,7 @@ class GeminiClient:
                     config_kwargs["thinking_config"] = types.ThinkingConfig(include_thoughts=True)
 
                 if i > 0:
-                    logger.warning(f"Primary model failed. Falling back to {model}...")
+                    logger.warning("Primary model failed. Falling back to %s...", model)
 
                 response = self.client.models.generate_content(
                     model=model,
@@ -124,7 +124,7 @@ class GeminiClient:
                 err_msg = str(e)
                 last_api_error = e
                 if "503" in err_msg or "UNAVAILABLE" in err_msg:
-                    logger.warning(f"Model {model} returned 503 UNAVAILABLE.")
+                    logger.warning("Model %s returned 503 UNAVAILABLE.", model)
                     continue
                 raise self._map_api_error(e)
             except GenerationError:
@@ -244,10 +244,10 @@ Create a complete, immediately-runnable project with these files:
                 return self._generate_content(prompt, ProjectScaffold, "Failed to generate valid project scaffold.")
             except Exception as e:
                 if attempt < max_retries:
-                    logger.warning(f"Scaffold generation attempt {attempt + 1} failed: {e}. Retrying...")
+                    logger.warning("Scaffold generation attempt %d failed: %s. Retrying...", attempt + 1, e)
                     continue
                 else:
-                    logger.error(f"Scaffold generation failed after {max_retries + 1} attempts: {e}")
+                    logger.error("Scaffold generation failed after %d attempts: %s", max_retries + 1, e)
                     # Return minimal fallback scaffold
                     return ProjectScaffold.create_fallback_scaffold(
                         idea_data["title"], idea_data["description"]
@@ -350,5 +350,5 @@ Skip any category that doesn't apply to this project type.
                 "Failed to generate feature maps. Static fallback will be used.",
             )
         except Exception as e:
-            logger.warning(f"Feature map generation failed: {e}. Returning empty maps.")
+            logger.warning("Feature map generation failed: %s. Returning empty maps.", e)
             return FeatureMapResponse(mvp_features=[], production_features=[]).model_dump()
