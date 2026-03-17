@@ -46,7 +46,7 @@ class GeminiClient:
             )
 
         self.client = genai.Client(api_key=self.api_key, http_options={"api_version": "v1beta"})
-        self.models = ["gemini-3-pro-preview", "gemini-2.5-flash"]
+        self.models = ["gemini-2.5-pro", "gemini-2.5-flash"]
         self.cache_provider = cache_provider
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:
@@ -123,8 +123,11 @@ class GeminiClient:
             except errors.APIError as e:
                 err_msg = str(e)
                 last_api_error = e
-                if "503" in err_msg or "UNAVAILABLE" in err_msg:
-                    logger.warning("Model %s returned 503 UNAVAILABLE.", model)
+                is_unavailable = "503" in err_msg or "UNAVAILABLE" in err_msg
+                is_quota_exhausted = "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg
+                if is_unavailable or is_quota_exhausted:
+                    reason = "503 UNAVAILABLE" if is_unavailable else "429 RESOURCE_EXHAUSTED"
+                    logger.warning("Model %s returned %s.", model, reason)
                     continue
                 raise self._map_api_error(e)
             except GenerationError:

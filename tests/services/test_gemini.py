@@ -137,7 +137,7 @@ def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     assert client.client.models.generate_content.call_count == 2
 
     calls = client.client.models.generate_content.call_args_list
-    assert calls[0].kwargs["model"] == "gemini-3-pro-preview"
+    assert calls[0].kwargs["model"] == "gemini-2.5-pro"
     assert calls[1].kwargs["model"] == "gemini-2.5-flash"
 
 
