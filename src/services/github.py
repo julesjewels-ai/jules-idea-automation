@@ -1,80 +1,45 @@
+"""GitHub API client for repository management."""
+
 from __future__ import annotations
 
 import base64
-import logging
 import os
 from typing import Any
 
-import requests
-
+from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
-logger = logging.getLogger(__name__)
+_STATUS_TIPS: dict[int, str] = {
+    401: "Your GitHub token seems invalid or expired. Check your .env file.",
+    403: "Insufficient permissions. Check the scopes of your GitHub token.",
+    404: "Resource not found. Check that the repository name is correct.",
+}
 
 
-class GitHubClient:
+class GitHubClient(BaseApiClient):
+    """Client for GitHub API operations."""
+
     def __init__(self, token: str | None = None) -> None:
-        self.token = token or os.environ.get("GITHUB_TOKEN")
-        if not self.token:
+        token = token or os.environ.get("GITHUB_TOKEN")
+        if not token:
             raise ConfigurationError(
                 "GITHUB_TOKEN environment variable is not set",
-                tip="Create a Personal Access Token (PAT) with 'repo' scope at https://github.com/settings/tokens and add it to your .env file.",
+                tip="Create a personal access token at https://github.com/settings/tokens and add it to your .env file.",
             )
-        self.base_url = "https://api.github.com"
-        self.headers = {
-            "Authorization": f"token {self.token}",
-            "Accept": "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-        }
 
-    def _request(self, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
-        """Internal helper to handle API requests and errors."""
-        try:
-            response = requests.request(method, url, headers=self.headers, timeout=30, **kwargs)
-            response.raise_for_status()
-
-            if not response.text:
-                return {}
-            return response.json()  # type: ignore[no-any-return]
-
-        except requests.exceptions.HTTPError as e:
-            tip = self._handle_http_error(e)
-            raise GitHubApiError(f"GitHub API Error: {e}", tip=tip)
-        except requests.exceptions.Timeout:
-            raise GitHubApiError(
-                "GitHub API request timed out",
-                tip="The GitHub API is taking too long to respond. Try again in a moment.",
-            )
-        except requests.exceptions.RequestException as e:
-            raise GitHubApiError(f"Network error: {e}", tip="Check your internet connection.")
-
-    def _handle_http_error(self, e: requests.exceptions.HTTPError) -> str:
-        """Determines the appropriate user tip for an HTTP error."""
-        status_code = e.response.status_code
-        if status_code == 401:
-            return "Your GitHub token seems invalid or expired. Check your .env file."
-        if status_code == 403:
-            return "You don't have permission. Your token may lack the required 'repo' scope."
-        if status_code == 404:
-            return "The requested resource was not found. Check repository name and owner."
-        if status_code == 422:
-            return self._extract_api_error_message(e) or "The request was invalid (422 Unprocessable Entity)."
-
-        return self._extract_api_error_message(e) or f"API returned status {status_code}."
-
-    def _extract_api_error_message(self, e: requests.exceptions.HTTPError) -> str | None:
-        """Attempts to parse a GitHub JSON error message."""
-        try:
-            error_data = e.response.json()
-            error_msg = error_data.get("message")
-            if error_msg:
-                return f"GitHub says: {error_msg}"
-        except Exception:
-            pass
-        return None
+        super().__init__(
+            base_url="https://api.github.com",
+            headers={
+                "Authorization": f"token {token}",
+                "Accept": "application/vnd.github.v3+json",
+            },
+            error_class=GitHubApiError,
+            service_name="GitHub",
+            status_tips=_STATUS_TIPS,
+        )
 
     def get_user(self) -> dict[str, Any]:
-        """Returns the authenticated user's details."""
+        """Gets information about the authenticated user."""
         return self._request("GET", f"{self.base_url}/user")
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:

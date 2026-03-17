@@ -13,13 +13,13 @@ from src.core.readme_builder import build_readme
 from src.services.gemini import GeminiClient
 from src.services.github import GitHubClient
 from src.services.jules import JulesClient
-from src.utils.polling import poll_until
 from src.templates.feature_map import (
     render_mvp_checklist_md,
     render_mvp_skill_md,
     render_production_checklist_md,
     render_production_skill_md,
 )
+from src.utils.polling import poll_until
 from src.utils.reporter import print_workflow_report
 
 logger = logging.getLogger(__name__)

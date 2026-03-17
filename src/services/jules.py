@@ -1,63 +1,38 @@
+"""Jules API client for session management."""
+
 from __future__ import annotations
 
 import os
 from typing import Any
 
-import requests
-
+from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, JulesApiError
 
+_STATUS_TIPS: dict[int, str] = {
+    401: "Your Jules API key seems invalid. Check your .env file.",
+    403: "You don't have permission to access this resource.",
+    404: "The requested resource was not found.",
+}
 
-class JulesClient:
+
+class JulesClient(BaseApiClient):
+    """Client for Jules API operations."""
+
     def __init__(self, api_key: str | None = None) -> None:
-        self.api_key = api_key or os.environ.get("JULES_API_KEY")
-        if not self.api_key:
+        api_key = api_key or os.environ.get("JULES_API_KEY")
+        if not api_key:
             raise ConfigurationError(
                 "JULES_API_KEY environment variable is not set",
                 tip="Ensure you have access to the Jules API and add the key to your .env file.",
             )
-        self.base_url = "https://jules.googleapis.com/v1alpha"
-        self.headers = {"x-goog-api-key": self.api_key, "Content-Type": "application/json"}
 
-    def _request(self, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
-        """Internal helper to handle API requests and errors."""
-        try:
-            response = requests.request(method, url, headers=self.headers, **kwargs)
-            response.raise_for_status()
-
-            # Some endpoints might not return content (e.g. 204), but current usage suggests JSON
-            if not response.text:
-                return {}
-            return response.json()  # type: ignore[no-any-return]
-
-        except requests.exceptions.HTTPError as e:
-            tip = self._handle_http_error(e)
-            raise JulesApiError(f"Jules API Error: {e}", tip=tip)
-        except requests.exceptions.RequestException as e:
-            raise JulesApiError(f"Network error: {e}", tip="Check your internet connection.")
-
-    def _handle_http_error(self, e: requests.exceptions.HTTPError) -> str:
-        """Determines the appropriate user tip for an HTTP error."""
-        status_code = e.response.status_code
-        if status_code == 401:
-            return "Your Jules API key seems invalid. Check your .env file."
-        if status_code == 403:
-            return "You don't have permission to access this resource."
-        if status_code == 404:
-            return "The requested resource was not found."
-
-        return self._extract_api_error_message(e) or f"API returned status {status_code}."
-
-    def _extract_api_error_message(self, e: requests.exceptions.HTTPError) -> str | None:
-        """Attempts to parse a Google-style JSON error message."""
-        try:
-            error_data = e.response.json()
-            error_msg = error_data.get("error", {}).get("message")
-            if error_msg:
-                return f"API Message: {error_msg}"
-        except Exception:
-            pass
-        return None
+        super().__init__(
+            base_url="https://jules.googleapis.com/v1alpha",
+            headers={"x-goog-api-key": api_key, "Content-Type": "application/json"},
+            error_class=JulesApiError,
+            service_name="Jules",
+            status_tips=_STATUS_TIPS,
+        )
 
     def list_sources(self) -> dict[str, Any]:
         """Lists available sources from Jules API."""
