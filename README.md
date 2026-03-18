@@ -29,13 +29,10 @@ An **Idea Factory** CLI that automates the full journey from _raw concept_ to a 
   - [Manual Mode](#-manual-mode)
   - [Status & Sources](#status--sources)
   - [CLI Reference](#cli-reference)
-- [Architecture](#architecture)
+- [Documentation](#documentation)
   - [Project Structure](#project-structure)
-  - [Request Lifecycle](#request-lifecycle)
-  - [Event Bus & Domain Events](#event-bus--domain-events)
-  - [Gemini API Caching](#gemini-api-caching)
 - [Environment Variables](#environment-variables)
-- [Available Scripts](#available-scripts)
+- [Available Commands](#available-commands)
 - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
@@ -276,9 +273,14 @@ python main.py list-sources
 
 ---
 
-## Architecture
+## Documentation
 
-The codebase follows **SOLID** principles with **Dependency Injection** and **Protocol-based interfaces** for all external services, making every component testable in isolation.
+| Document | Description |
+|---|---|
+| [Architecture](docs/architecture.md) | SOLID principles, Dependency Injection, Event Bus, Gemini API Caching |
+| [Development Log](docs/DEVLOG.md) | Chronological history of changes and decisions |
+| [Roadmap](docs/ROADMAP.md) | Planned features and future direction |
+| [Contributing](CONTRIBUTING.md) | Setup, code style, PR process |
 
 ### Project Structure
 
@@ -293,100 +295,16 @@ jules-idea-automation/
 ├── .cache/                          # File-based Gemini API response cache
 │
 ├── src/
-│   ├── cli/                         # CLI layer
-│   │   ├── parser.py                # argparse definitions and subcommands
-│   │   └── commands.py              # Command handlers, session watching
-│   │
-│   ├── core/                        # Business logic layer
-│   │   ├── workflow.py              # IdeaWorkflow — central orchestrator (DI)
-│   │   ├── models.py                # Pydantic models (IdeaResponse, ProjectScaffold, etc.)
-│   │   ├── events.py                # Domain events (WorkflowStarted, WorkflowCompleted)
-│   │   ├── interfaces.py            # Protocol definitions for all services
-│   │   └── readme_builder.py        # Markdown README generator for scaffolded repos
-│   │
-│   ├── services/                    # External service clients
-│   │   ├── gemini.py                # Google Gemini API client (idea + scaffold generation)
-│   │   ├── github.py                # GitHub REST + Git Data API client
-│   │   ├── jules.py                 # Jules session API client
-│   │   ├── scraper.py               # Web scraper with content validation
-│   │   ├── cache.py                 # FileCacheProvider (CacheProvider Protocol)
-│   │   ├── bus.py                   # LocalEventBus + NullEventBus implementations
-│   │   ├── audit.py                 # JsonFileAuditLogger (EventHandler Protocol)
-│   │   └── http_client.py           # Shared HTTP utilities
-│   │
+│   ├── cli/                         # Argument parsing, command handlers
+│   ├── core/                        # Workflow orchestrator, Pydantic models, events
+│   ├── services/                    # Gemini, GitHub, Jules, Scraper, Cache, Event Bus
 │   ├── templates/                   # Project scaffolding templates
-│   │   └── feature_map.py           # Feature map template generation
-│   │
-│   └── utils/                       # Cross-cutting concerns
-│       ├── errors.py                # Custom error hierarchy (AppError + subtypes)
-│       ├── guide.py                 # Interactive guide / tutorial content
-│       ├── polling.py               # Generic async polling utilities
-│       ├── reporter.py              # Console output formatting (Colors, panels)
-│       ├── security.py              # Security checks (e.g., .gitignore validation)
-│       └── slugify.py               # Title → slug converter
+│   └── utils/                       # Errors, polling, reporter, security, slugify
 │
 ├── tests/                           # Test suite (mirrors src/ structure)
-│   ├── conftest.py                  # Shared fixtures
-│   ├── cli/                         # CLI tests (commands, manual mode, watch)
-│   ├── core/                        # Core logic tests
-│   ├── services/                    # Service client tests (Gemini, GitHub, Jules, Scraper)
-│   ├── integration/                 # Integration tests (Event Bus, Gemini caching)
-│   ├── templates/                   # Template tests
-│   └── utils/                       # Utility tests (reporter)
-│
-├── docs/                            # Documentation
-│   ├── architecture.md              # Architecture deep-dive (Event Bus, Caching)
-│   ├── DEVLOG.md                    # Development history / changelog
-│   └── ROADMAP.md                   # Future roadmap
-│
-└── assets/                          # Images for README and documentation
-    ├── jules_hero_banner.png
-    ├── agent_mode_icon.png
-    ├── website_mode_icon.png
-    └── manual_mode_icon.png
+├── docs/                            # Architecture, devlog, roadmap
+└── assets/                          # Images for README
 ```
-
-### Request Lifecycle
-
-Every CLI invocation follows this path:
-
-```
-main.py
-  └─ load_dotenv()                   # Load .env
-  └─ create_parser() → parse_args()  # Parse CLI arguments
-  └─ dispatch_command(args)           # Route to handler
-       └─ handle_agent | handle_website | handle_manual
-            └─ _execute_and_watch(idea_data, args)  # Centralised helper (DRY)
-                 ├─ IdeaWorkflow(gemini, github, jules, ...)  # Inject services
-                 ├─ workflow.run()
-                 │    ├─ EventBus.publish(WorkflowStarted)
-                 │    ├─ GeminiClient.generate_idea()      # → Gemini API
-                 │    ├─ GeminiClient.generate_scaffold()   # → Gemini API
-                 │    ├─ GitHubClient.create_repo()         # → GitHub API
-                 │    ├─ GitHubClient.create_files()        # → Git Data API (atomic commit)
-                 │    ├─ JulesClient.wait_for_indexing()    # → Jules Sources API (poll)
-                 │    ├─ JulesClient.start_session()        # → Jules Sessions API
-                 │    └─ EventBus.publish(WorkflowCompleted)
-                 └─ watch_session() [if --watch]
-                      └─ JulesClient.list_activities()      # → Jules Activities API (poll)
-```
-
-### Event Bus & Domain Events
-
-The project uses an in-memory synchronous Event Bus to decouple cross-cutting concerns (e.g., audit logging) from the core workflow:
-
-| Component | Role |
-|---|---|
-| `EventBus` (Protocol) | Interface for `subscribe()` and `publish()` |
-| `LocalEventBus` | In-memory implementation dispatching to registered handlers |
-| `NullEventBus` | No-op fallback (injected by default) — eliminates null checks |
-| `JsonFileAuditLogger` | Subscribes to `WorkflowStarted` / `WorkflowCompleted` and persists to `.jules_history.jsonl` |
-
-See [`docs/architecture.md`](docs/architecture.md) for detailed class diagrams.
-
-### Gemini API Caching
-
-A `CacheProvider` Protocol abstracts response caching. The bundled `FileCacheProvider` writes cached Gemini responses to `.cache/`, keyed by prompt hash. The `GeminiClient` checks the cache before making API calls, reducing latency and cost on repeated queries.
 
 ---
 
@@ -406,7 +324,7 @@ All three are loaded automatically from `.env` via `python-dotenv`.
 
 ---
 
-## Available Scripts
+## Available Commands
 
 | Command | Description |
 |---|---|
@@ -417,17 +335,11 @@ All three are loaded automatically from `.env` via `python-dotenv`.
 | `python main.py status <session_id>` | Check or watch an existing session |
 | `python main.py list-sources` | List indexed sources in Jules |
 | `python -m pytest tests/ -v` | Run full test suite |
-| `python -m pytest tests/ --cov=src` | Run tests with coverage |
 | `ruff check src/ tests/` | Lint all source and test files |
-| `ruff format src/ tests/` | Auto-format all source and test files |
-| `mypy src/` | Run strict type checking |
-| `pip-compile requirements.in` | Re-lock dependencies |
 
 ---
 
 ## Testing
-
-### Running Tests
 
 ```bash
 # Run the full test suite
@@ -438,59 +350,9 @@ python -m pytest tests/ --cov=src --cov-report=term-missing
 
 # Run a specific test file
 python -m pytest tests/services/test_gemini.py -v
-
-# Run tests matching a keyword
-python -m pytest tests/ -k "scaffold" -v
 ```
 
-### Test Structure
-
-The test directory mirrors the `src/` layout:
-
-```
-tests/
-├── conftest.py                  # Shared fixtures (mock clients, env setup)
-├── cli/
-│   ├── test_commands.py         # Command dispatch tests
-│   ├── test_commands_manual.py  # Manual mode edge cases
-│   └── test_watch_session.py    # Session watching tests
-├── core/
-│   └── test_normalize_requirements.py
-├── services/
-│   ├── test_gemini.py           # Gemini client tests
-│   ├── test_github.py           # GitHub client tests
-│   ├── test_jules.py            # Jules client tests
-│   ├── test_scraper.py          # Scraper tests
-│   └── test_scraper_network.py  # Network-level scraper tests
-├── integration/
-│   ├── test_event_bus.py        # Event Bus integration
-│   └── test_gemini_caching.py   # Cache integration
-├── templates/
-│   └── test_feature_map.py      # Feature map template tests
-└── utils/
-    └── test_reporter.py         # Reporter formatting tests
-```
-
-### Writing Tests
-
-All service dependencies are defined as Protocols, so tests use `pytest-mock` to inject fakes:
-
-```python
-import pytest
-from unittest.mock import MagicMock
-
-def test_workflow_publishes_started_event():
-    """The workflow should publish a WorkflowStarted event."""
-    bus = MagicMock()
-    workflow = IdeaWorkflow(
-        gemini=MagicMock(),
-        github=MagicMock(),
-        jules=MagicMock(),
-        event_bus=bus,
-    )
-    workflow.run(idea_data)
-    bus.publish.assert_any_call(ANY)  # WorkflowStarted event
-```
+The `tests/` directory mirrors `src/` with unit, integration, and template tests. All service dependencies use Protocol-based interfaces, so tests inject mocks via `pytest-mock`.
 
 ---
 
