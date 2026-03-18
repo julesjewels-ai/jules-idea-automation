@@ -174,6 +174,18 @@
 
 ---
 
+### A9. Input Modes
+
+- [x] **P1** — **Paste-content command** (`jules paste`): New command that accepts raw text content directly — pasted, piped via stdin, or read from a file — and feeds it to Gemini for idea extraction. Bypasses the web scraper entirely. Solves the common problem where corporate privacy/security tools block URL scraping.
+  - *Acceptance*: `jules paste` opens an interactive prompt where the user pastes content and presses Ctrl-D (or Enter twice) to submit. `jules paste --file page.txt` reads from a file. `cat page.html | jules paste -` reads from stdin. Content is passed to `gemini.extract_idea_from_text()` identically to the `website` command's scraped output. All three input methods tested.
+  - *Affected*: `src/cli/parser.py` (new `paste` subcommand with `--file` arg), `src/cli/commands.py` (new `handle_paste` handler), `src/utils/reporter.py` (paste-mode prompt UX)
+
+- [x] **P2** — **`--content` flag on `website` command**: Allow `jules website --content "..."` to provide the page content inline, skipping the scrape step. Useful for quick one-liners or when the user has already copied the text.
+  - *Acceptance*: `jules website --content "Some page text..."` bypasses `scrape_text()` and goes straight to `gemini.extract_idea_from_text()`. Mutually exclusive with `--url`. Tests verify scraper is never called when `--content` is provided.
+  - *Affected*: `src/cli/parser.py` (new `--content` on website), `src/cli/commands.py` → `handle_website()`
+
+---
+
 ## Part B: Generated Repositories
 
 ### B1. Scaffold Quality & Language Support
@@ -248,4 +260,4 @@
 
 ---
 
-*Last updated: 2026-03-13*
+*Last updated: 2026-03-18*

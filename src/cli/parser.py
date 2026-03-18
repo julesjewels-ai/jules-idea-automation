@@ -28,12 +28,36 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Command: website
     website_parser = subparsers.add_parser("website", help="Scrape a website for an idea and send to Jules")
-    website_parser.add_argument("--url", required=True, help="URL to scrape")
+    website_input = website_parser.add_mutually_exclusive_group(required=True)
+    website_input.add_argument("--url", help="URL to scrape")
+    website_input.add_argument("--content", help="Page content to use directly (bypasses scraping)")
     website_parser.add_argument("--public", action="store_true", help="Create a public repository (default: private)")
     website_parser.add_argument(
         "--timeout", type=int, default=1800, help="Timeout in seconds for Jules indexing (default: 1800 = 30 min)"
     )
     website_parser.add_argument(
+        "--watch", action="store_true", help="Watch the session until completion and show PR URL"
+    )
+
+    # Command: paste
+    paste_parser = subparsers.add_parser(
+        "paste", help="Paste or pipe content directly for idea extraction (bypasses web scraping)"
+    )
+    paste_parser.add_argument(
+        "content_source",
+        nargs="?",
+        default=None,
+        help="Use '-' to read from stdin pipe",
+    )
+    paste_parser.add_argument("--file", dest="file_path", help="Read content from a file")
+    paste_parser.add_argument(
+        "--clipboard", action="store_true", help="Read content from the system clipboard (macOS pbpaste)"
+    )
+    paste_parser.add_argument("--public", action="store_true", help="Create a public repository (default: private)")
+    paste_parser.add_argument(
+        "--timeout", type=int, default=1800, help="Timeout in seconds for Jules indexing (default: 1800 = 30 min)"
+    )
+    paste_parser.add_argument(
         "--watch", action="store_true", help="Watch the session until completion and show PR URL"
     )
 
