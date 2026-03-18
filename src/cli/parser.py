@@ -5,6 +5,15 @@ from __future__ import annotations
 import argparse
 
 
+def _add_common_execution_args(parser: argparse.ArgumentParser) -> None:
+    """Add --public, --timeout, and --watch flags shared by all execution commands."""
+    parser.add_argument("--public", action="store_true", help="Create a public repository (default: private)")
+    parser.add_argument(
+        "--timeout", type=int, default=1800, help="Timeout in seconds for Jules indexing (default: 1800 = 30 min)"
+    )
+    parser.add_argument("--watch", action="store_true", help="Watch the session until completion and show PR URL")
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Creates and configures the argument parser."""
     parser = argparse.ArgumentParser(description="Jules Automation Tool")
@@ -20,24 +29,14 @@ def create_parser() -> argparse.ArgumentParser:
         choices=["web_app", "cli_tool", "api_service", "mobile_app", "automation", "ai_ml"],
         help="Target a specific category for idea generation",
     )
-    agent_parser.add_argument("--public", action="store_true", help="Create a public repository (default: private)")
-    agent_parser.add_argument(
-        "--timeout", type=int, default=1800, help="Timeout in seconds for Jules indexing (default: 1800 = 30 min)"
-    )
-    agent_parser.add_argument("--watch", action="store_true", help="Watch the session until completion and show PR URL")
+    _add_common_execution_args(agent_parser)
 
     # Command: website
     website_parser = subparsers.add_parser("website", help="Scrape a website for an idea and send to Jules")
     website_input = website_parser.add_mutually_exclusive_group(required=True)
     website_input.add_argument("--url", help="URL to scrape")
     website_input.add_argument("--content", help="Page content to use directly (bypasses scraping)")
-    website_parser.add_argument("--public", action="store_true", help="Create a public repository (default: private)")
-    website_parser.add_argument(
-        "--timeout", type=int, default=1800, help="Timeout in seconds for Jules indexing (default: 1800 = 30 min)"
-    )
-    website_parser.add_argument(
-        "--watch", action="store_true", help="Watch the session until completion and show PR URL"
-    )
+    _add_common_execution_args(website_parser)
 
     # Command: paste
     paste_parser = subparsers.add_parser(
@@ -53,13 +52,7 @@ def create_parser() -> argparse.ArgumentParser:
     paste_parser.add_argument(
         "--clipboard", action="store_true", help="Read content from the system clipboard (macOS pbpaste)"
     )
-    paste_parser.add_argument("--public", action="store_true", help="Create a public repository (default: private)")
-    paste_parser.add_argument(
-        "--timeout", type=int, default=1800, help="Timeout in seconds for Jules indexing (default: 1800 = 30 min)"
-    )
-    paste_parser.add_argument(
-        "--watch", action="store_true", help="Watch the session until completion and show PR URL"
-    )
+    _add_common_execution_args(paste_parser)
 
     # Command: status
     status_parser = subparsers.add_parser("status", help="Check status of a Jules session")
@@ -84,12 +77,6 @@ def create_parser() -> argparse.ArgumentParser:
         "--tech_stack", help="Comma-separated list of technologies (e.g., 'Python,Flask,PostgreSQL')"
     )
     manual_parser.add_argument("--features", help="Comma-separated list of key features (e.g., 'Auth,CRUD,Export')")
-    manual_parser.add_argument("--public", action="store_true", help="Create a public repository (default: private)")
-    manual_parser.add_argument(
-        "--timeout", type=int, default=1800, help="Timeout in seconds for Jules indexing (default: 1800 = 30 min)"
-    )
-    manual_parser.add_argument(
-        "--watch", action="store_true", help="Watch the session until completion and show PR URL"
-    )
+    _add_common_execution_args(manual_parser)
 
     return parser
