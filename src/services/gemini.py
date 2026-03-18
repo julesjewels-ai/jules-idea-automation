@@ -273,9 +273,7 @@ Create a complete, immediately-runnable project with these files:
             lines.append(f"### {path}\n**Description:** {desc}\n```\n{preview}\n```")
         return "\n\n".join(lines)
 
-    def generate_feature_maps(
-        self, idea_data: dict[str, Any], scaffold_files: list[dict[str, Any]]
-    ) -> dict[str, Any]:
+    def generate_feature_maps(self, idea_data: dict[str, Any], scaffold_files: list[dict[str, Any]]) -> dict[str, Any]:
         """Generate project-specific MVP and Production feature maps.
 
         Uses the actual scaffold code as context so every feature item

@@ -41,9 +41,15 @@ def _build_feature_map_files(
 
     return [
         {"path": ".agent/skills/mvp-feature-map/SKILL.md", "content": render_mvp_skill_md(idea_data)},
-        {"path": ".agent/skills/mvp-feature-map/CHECKLIST.md", "content": render_mvp_checklist_md(idea_data, mvp_items)},
+        {
+            "path": ".agent/skills/mvp-feature-map/CHECKLIST.md",
+            "content": render_mvp_checklist_md(idea_data, mvp_items),
+        },
         {"path": ".agent/skills/production-feature-map/SKILL.md", "content": render_production_skill_md(idea_data)},
-        {"path": ".agent/skills/production-feature-map/CHECKLIST.md", "content": render_production_checklist_md(idea_data, prod_items)},
+        {
+            "path": ".agent/skills/production-feature-map/CHECKLIST.md",
+            "content": render_production_checklist_md(idea_data, prod_items),
+        },
     ]
 
 
@@ -116,9 +122,7 @@ class IdeaWorkflow:
         self.gemini = gemini or GeminiClient(cache_provider=FileCacheProvider())
         self.jules = jules or JulesClient()
 
-    def execute(
-        self, idea_data: dict[str, Any], private: bool = True, timeout: int = 1800
-    ) -> WorkflowResult:
+    def execute(self, idea_data: dict[str, Any], private: bool = True, timeout: int = 1800) -> WorkflowResult:
         """Execute the full workflow.
 
         Args:
@@ -280,9 +284,7 @@ class IdeaWorkflow:
 
         return files_to_create
 
-    def _create_jules_session(
-        self, username: str, idea_data: dict[str, Any], timeout: int
-    ) -> dict[str, Any] | None:
+    def _create_jules_session(self, username: str, idea_data: dict[str, Any], timeout: int) -> dict[str, Any] | None:
         """Wait for Jules indexing and create session."""
         source_id = f"sources/github/{username}/{idea_data['slug']}"
 

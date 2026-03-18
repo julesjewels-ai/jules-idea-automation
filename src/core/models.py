@@ -93,12 +93,8 @@ class FeatureItem(BaseModel):
     priority: str = Field(description="Priority label: P0, P1, P2, or P3.")
     name: str = Field(description="Short feature name, e.g. 'JWT auth middleware'.")
     description: str = Field(description="What to build and how, referencing actual project files.")
-    acceptance: list[str] = Field(
-        default_factory=list, description="Testable acceptance criteria."
-    )
-    affected_files: list[str] = Field(
-        default_factory=list, description="File paths affected, e.g. 'src/core/app.py'."
-    )
+    acceptance: list[str] = Field(default_factory=list, description="Testable acceptance criteria.")
+    affected_files: list[str] = Field(default_factory=list, description="File paths affected, e.g. 'src/core/app.py'.")
 
 
 class FeatureMapResponse(BaseModel):

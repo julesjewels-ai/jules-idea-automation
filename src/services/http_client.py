@@ -47,9 +47,7 @@ class BaseApiClient:
         Raises a domain-specific ``AppError`` subclass on failure.
         """
         try:
-            response = requests.request(
-                method, url, headers=self.headers, timeout=self._timeout, **kwargs
-            )
+            response = requests.request(method, url, headers=self.headers, timeout=self._timeout, **kwargs)
             response.raise_for_status()
 
             if not response.text:
@@ -88,10 +86,7 @@ class BaseApiClient:
             return tip
 
         # Try to extract a structured error message from the body
-        return (
-            self._extract_api_error_message(e)
-            or f"API returned status {status_code}."
-        )
+        return self._extract_api_error_message(e) or f"API returned status {status_code}."
 
     def _extract_api_error_message(self, e: requests.exceptions.HTTPError) -> str | None:
         """Parse a JSON error body for a human-readable message.

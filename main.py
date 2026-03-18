@@ -22,12 +22,12 @@ def main() -> None:
     """Main entry point - orchestration only."""
     parser = create_parser()
     args = parser.parse_args()
-    
+
     if not args.command:
         parser.print_help()
         print("\n💡 Tip: Run 'python main.py guide' for an interactive tutorial\n")
         sys.exit(1)
-    
+
     try:
         dispatch_command(args)
     except KeyboardInterrupt:
@@ -39,11 +39,7 @@ def main() -> None:
         # Format title from class name: ConfigurationError -> Configuration Error
         title = type(e).__name__.replace("Error", " Error")
 
-        print_panel(
-            f"{str(e)}{tip_msg}",
-            title=title,
-            color=Colors.FAIL
-        )
+        print_panel(f"{str(e)}{tip_msg}", title=title, color=Colors.FAIL)
         sys.exit(1)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
