@@ -4,6 +4,39 @@
 
 This log documents the development journey, design decisions, and evolution of the Jules Automation Tool.
 
+### Phase 9: Paste-Content Input Modes
+
+**Date:** 2026-03-18
+
+**Changes:**
+
+Added a fourth input mode (`paste`) and a `--content` flag on `website` to allow direct content input for idea extraction, bypassing the web scraper entirely.
+
+1. **New `paste` Command:**
+   - `--clipboard` — Auto-read from macOS clipboard via `pbpaste` (recommended)
+   - `--file <path>` — Read content from a text file
+   - `-` (stdin) — Pipe content from another command
+   - Interactive mode — Paste content, then type `END` to submit
+
+2. **`website --content` Flag:**
+   - `--url` and `--content` are now mutually exclusive
+   - `--content` skips the scraper and feeds text directly to `gemini.extract_idea_from_text()`
+
+3. **UX Improvements:**
+   - Content preview shown before Gemini processing (source label, char count, first 200 chars)
+   - Minimum 200-char content validation
+
+**Files Changed:**
+- `src/cli/parser.py` — New `paste` subcommand, `--content` on `website`
+- `src/cli/commands.py` — `handle_paste()`, `_read_clipboard()`, `_read_paste_content()`, content preview in `handle_paste()`
+- `tests/cli/test_commands_paste.py` — 13 tests covering all input modes
+- `README.md` — Updated Key Features, Mermaid diagram, Paste Mode section, CLI Reference, Available Commands, Troubleshooting
+
+**Rationale:**
+Users frequently encounter corporate firewalls, JS-rendered pages, or anti-scraping protections. Paste mode provides a zero-dependency fallback: copy the text, run `jules paste --clipboard`, done.
+
+---
+
 ### Phase 8: In-CLI User Guide System
 
 **Date:** 2026-01-11

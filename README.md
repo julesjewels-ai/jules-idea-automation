@@ -26,6 +26,7 @@ An **Idea Factory** CLI that automates the full journey from _raw concept_ to a 
   - [Interactive Guide](#interactive-guide)
   - [Agent Mode](#-agent-mode)
   - [Website Mode](#-website-mode)
+  - [Paste Mode](#-paste-mode)
   - [Manual Mode](#-manual-mode)
   - [Status & Sources](#status--sources)
   - [CLI Reference](#cli-reference)
@@ -42,7 +43,7 @@ An **Idea Factory** CLI that automates the full journey from _raw concept_ to a 
 
 ## Key Features
 
-- **Three Input Modes** — AI-generated ideas (_Agent_), website extraction (_Website_), or bring-your-own concept (_Manual_).
+- **Four Input Modes** — AI-generated ideas (_Agent_), website extraction (_Website_), paste content directly (_Paste_), or bring-your-own concept (_Manual_).
 - **Category-Aware Ideation** — Target specific categories like `cli_tool`, `web_app`, `api_service`, `mobile_app`, `automation`, or `ai_ml`.
 - **Full MVP Scaffolding** — Generates a 9-file SOLID-compliant project structure (entry point, source packages, tests, Makefile, `.env.example`, `.gitignore`) in a single atomic Git commit via the GitHub Git Data API.
 - **Thinking Mode** — Leverages Gemini's `ThinkingConfig` for transparent, deep-thought rationales during idea generation.
@@ -63,6 +64,7 @@ flowchart TD
     subgraph Input Sources
     A1(Agent: AI Generation) -.-> A
     A2(Website: Extraction) -.-> A
+    A4(Paste: Direct Content) -.-> A
     A3(Manual: Custom Ideas) -.-> A
     end
 
@@ -221,9 +223,32 @@ python main.py website --url https://example.com
 
 # Watch session until completion
 python main.py website --url https://example.com --watch
+
+# Skip the scraper — provide page content directly
+python main.py website --content "A finance app that builds money habits in three minutes a day..."
 ```
 
-The scraper includes content validation that enforces minimum text length and detects blocked/login-restricted pages to prevent hallucinated ideas from invalid sources.
+The scraper includes content validation that enforces minimum text length and detects blocked/login-restricted pages to prevent hallucinated ideas from invalid sources. If scraping is blocked, use `--content` to provide the page text directly, or use the **Paste Mode** below.
+
+### 📋 Paste Mode
+
+Paste or pipe content directly — bypasses the web scraper entirely. Ideal when corporate firewalls block URL scraping or you've already copied the text.
+
+```bash
+# Auto-read from clipboard (recommended)
+python main.py paste --clipboard
+
+# Read from a text file
+python main.py paste --file page.txt
+
+# Pipe from stdin
+cat page.html | python main.py paste -
+
+# Interactive paste (Cmd+V, then type END to submit)
+python main.py paste
+```
+
+All input methods show a content preview (character count + first 200 chars) before Gemini starts processing, so you can confirm the right content was captured.
 
 ### ✍️ Manual Mode
 
@@ -265,6 +290,9 @@ python main.py list-sources
 | `--description` | Detailed description for Manual mode | Uses title |
 | `--slug` | Custom GitHub repository slug | Auto-slugified title |
 | `--url` | Target URL for Website mode | *(required)* |
+| `--content` | Provide page text directly, skipping the scraper (Website mode) | None |
+| `--clipboard` | Auto-read content from clipboard (Paste mode) | `False` |
+| `--file` | Read content from a text file (Paste mode) | None |
 | `--tech_stack` | Comma-separated list of technologies | `[]` |
 | `--features` | Comma-separated list of MVP features | `[]` |
 | `--private` | Create a private repository | `False` |
@@ -331,6 +359,10 @@ All three are loaded automatically from `.env` via `python-dotenv`.
 | `python main.py guide` | Interactive getting-started tutorial |
 | `python main.py agent` | Generate an AI idea and create a repo |
 | `python main.py website --url <URL>` | Extract idea from a website |
+| `python main.py website --content "..."` | Extract idea from provided text (no scraping) |
+| `python main.py paste --clipboard` | Extract idea from clipboard content |
+| `python main.py paste --file <path>` | Extract idea from a text file |
+| `python main.py paste` | Interactive paste mode |
 | `python main.py manual "<title>"` | Create a repo from your own idea |
 | `python main.py status <session_id>` | Check or watch an existing session |
 | `python main.py list-sources` | List indexed sources in Jules |
@@ -397,8 +429,15 @@ The Jules API needs time to discover a newly created repository. This is an even
 
 The website may be using client-side rendering (JavaScript) or blocking automated requests.
 
-**Fix:** Try a different URL, or use **Manual Mode** to provide the idea directly:
+**Fix:** Try a different URL, use **Paste Mode** to provide the content directly, or fall back to **Manual Mode**:
 ```bash
+# Paste the page content from clipboard
+python main.py paste --clipboard
+
+# Or provide content inline on the website command
+python main.py website --content "The page text..."
+
+# Or describe the idea manually
 python main.py manual "My Idea" --description "Inspired by example.com" --watch
 ```
 
