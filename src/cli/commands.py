@@ -19,6 +19,14 @@ from src.utils.reporter import (
 )
 
 
+def _build_gemini_client() -> Any:
+    """Create a GeminiClient with the default FileCacheProvider."""
+    from src.services.cache import FileCacheProvider
+    from src.services.gemini import GeminiClient
+
+    return GeminiClient(cache_provider=FileCacheProvider())
+
+
 def handle_list_sources() -> None:
     """Handle the list-sources command."""
     from src.services.jules import JulesClient
@@ -32,13 +40,9 @@ def handle_list_sources() -> None:
 
 def handle_agent(args: Namespace) -> None:
     """Handle the agent command."""
-    from src.services.cache import FileCacheProvider
-    from src.services.gemini import GeminiClient
-
     category = getattr(args, "category", None)
 
-    cache = FileCacheProvider()
-    gemini = GeminiClient(cache_provider=cache)
+    gemini = _build_gemini_client()
     msg = f"Generating idea with Gemini{f' (category: {category})' if category else ''}..."
     with Spinner(msg, success_message="Idea generated"):
         idea_data = gemini.generate_idea(category=category)
@@ -48,9 +52,6 @@ def handle_agent(args: Namespace) -> None:
 
 def handle_website(args: Namespace) -> None:
     """Handle the website command."""
-    from src.services.cache import FileCacheProvider
-    from src.services.gemini import GeminiClient
-
     content = getattr(args, "content", None)
 
     if content:
@@ -62,8 +63,7 @@ def handle_website(args: Namespace) -> None:
         with Spinner(f"Scraping {args.url}...", success_message="Page scraped"):
             text = scrape_text(args.url)
 
-    cache = FileCacheProvider()
-    gemini = GeminiClient(cache_provider=cache)
+    gemini = _build_gemini_client()
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
         idea_data = gemini.extract_idea_from_text(text)
 
@@ -119,10 +119,7 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any |
     print_idea_summary(idea_data)
 
     if gemini is None:
-        from src.services.cache import FileCacheProvider
-        from src.services.gemini import GeminiClient
-
-        gemini = GeminiClient(cache_provider=FileCacheProvider())
+        gemini = _build_gemini_client()
 
     event_bus = LocalEventBus()
     audit_logger = JsonFileAuditLogger()
@@ -350,9 +347,6 @@ def _read_paste_content(args: Namespace) -> str:
 
 def handle_paste(args: Namespace) -> None:
     """Handle the paste command — direct content input for idea extraction."""
-    from src.services.cache import FileCacheProvider
-    from src.services.gemini import GeminiClient
-
     # Determine source label for UX feedback
     if getattr(args, "clipboard", False):
         source_label = "📋 clipboard"
@@ -372,8 +366,7 @@ def handle_paste(args: Namespace) -> None:
     print(f"\n✔ Read {len(text):,} chars from {source_label}")
     print(f"  Preview: {preview}\n")
 
-    cache = FileCacheProvider()
-    gemini = GeminiClient(cache_provider=cache)
+    gemini = _build_gemini_client()
     with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
         idea_data = gemini.extract_idea_from_text(text)
 
