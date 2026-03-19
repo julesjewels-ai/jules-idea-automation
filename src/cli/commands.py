@@ -261,11 +261,11 @@ def handle_manual(args: Namespace) -> None:
 def _read_clipboard() -> str:
     """Read content from the system clipboard using pbpaste (macOS).
 
-    Returns:
+    Returns
     -------
         Clipboard text content
 
-    Raises:
+    Raises
     ------
         RuntimeError: If clipboard cannot be read
 
@@ -292,11 +292,11 @@ def _read_paste_content(args: Namespace) -> str:
 
     Priority: --clipboard > --file > stdin pipe (-) > interactive input.
 
-    Returns:
+    Returns
     -------
         The text content to process
 
-    Raises:
+    Raises
     ------
         SystemExit: If content is insufficient
 

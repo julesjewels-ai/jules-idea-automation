@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from argparse import Namespace
 from typing import Any
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.cli.commands import _read_clipboard, _read_paste_content, handle_paste, handle_website
-
 
 # --- _read_clipboard tests ---
 
