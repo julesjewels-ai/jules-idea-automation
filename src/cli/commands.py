@@ -11,6 +11,7 @@ from typing import Any
 from src.utils.reporter import (
     Spinner,
     format_duration,
+    print_demo_report,
     print_idea_summary,
     print_session_status,
     print_sources_list,
@@ -101,9 +102,27 @@ def handle_status(args: Namespace) -> None:
         )
 
 
-def _execute_and_watch(
-    args: Namespace, idea_data: dict[str, Any], gemini: Any | None = None
-) -> None:
+def _execute_demo(idea_data: dict[str, Any], gemini: Any | None = None) -> None:
+    """Run the Gemini-only demo flow (no GitHub/Jules needed)."""
+    if gemini is None:
+        gemini = _build_gemini_client()
+
+    print_idea_summary(idea_data)
+
+    with Spinner("Generating MVP scaffold preview...", success_message="Scaffold generated"):
+        scaffold = gemini.generate_project_scaffold(idea_data)
+
+    feature_maps = None
+    try:
+        with Spinner("Generating feature maps...", success_message="Feature maps generated"):
+            feature_maps = gemini.generate_feature_maps(idea_data, scaffold.get("files", []))
+    except Exception:
+        pass  # Feature maps are optional in demo
+
+    print_demo_report(idea_data, scaffold, feature_maps)
+
+
+def _execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any | None = None) -> None:
     """Execute the workflow and watch the session if requested.
 
     Args:
@@ -113,6 +132,11 @@ def _execute_and_watch(
         gemini: Optional pre-constructed GeminiClient (avoids re-creation)
 
     """
+    # Demo mode: Gemini-only preview, skip GitHub/Jules entirely
+    if getattr(args, "demo", False):
+        _execute_demo(idea_data, gemini)
+        return
+
     from src.core.events import WorkflowCompleted, WorkflowStarted
     from src.core.workflow import IdeaWorkflow
     from src.services.audit import JsonFileAuditLogger
@@ -165,9 +189,7 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, str | Non
                 activities = jules.list_activities(session_id, page_size=1)
                 if activities.get("activities"):
                     latest = activities["activities"][0]
-                    return str(
-                        latest.get("progressUpdated", {}).get("title", "Working...")
-                    )
+                    return str(latest.get("progressUpdated", {}).get("title", "Working..."))
                 return "Working..."
             except Exception:
                 return "Polling..."

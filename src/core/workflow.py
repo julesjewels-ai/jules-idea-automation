@@ -128,9 +128,7 @@ class IdeaWorkflow:
         self.gemini = gemini or GeminiClient(cache_provider=FileCacheProvider())
         self.jules = jules or JulesClient()
 
-    def execute(
-        self, idea_data: dict[str, Any], private: bool = True, timeout: int = 1800
-    ) -> WorkflowResult:
+    def execute(self, idea_data: dict[str, Any], private: bool = True, timeout: int = 1800) -> WorkflowResult:
         """Execute the full workflow.
 
         Args:
@@ -201,9 +199,7 @@ class IdeaWorkflow:
         username = str(user["login"])
 
         visibility = "private" if private else "public"
-        logger.info(
-            "Creating %s GitHub repository '%s'...", visibility, idea_data["slug"]
-        )
+        logger.info("Creating %s GitHub repository '%s'...", visibility, idea_data["slug"])
 
         self.github.create_repo(
             name=idea_data["slug"],
@@ -245,9 +241,7 @@ class IdeaWorkflow:
 
         # Generate project-specific feature maps using the scaffold as context
         logger.info("Generating project-specific feature maps...")
-        feature_maps = self.gemini.generate_feature_maps(
-            idea_data, scaffold.get("files", [])
-        )
+        feature_maps = self.gemini.generate_feature_maps(idea_data, scaffold.get("files", []))
         feature_map_files = _build_feature_map_files(idea_data, feature_maps)
         files_to_create.extend(feature_map_files)
 
@@ -303,9 +297,7 @@ class IdeaWorkflow:
 
         return files_to_create
 
-    def _create_jules_session(
-        self, username: str, idea_data: dict[str, Any], timeout: int
-    ) -> dict[str, Any] | None:
+    def _create_jules_session(self, username: str, idea_data: dict[str, Any], timeout: int) -> dict[str, Any] | None:
         """Wait for Jules indexing and create session."""
         source_id = f"sources/github/{username}/{idea_data['slug']}"
 
@@ -327,9 +319,7 @@ class IdeaWorkflow:
         )
 
         if not source_found:
-            logger.warning(
-                "Source '%s' was not found in Jules after %ds.", source_id, timeout
-            )
+            logger.warning("Source '%s' was not found in Jules after %ds.", source_id, timeout)
             logger.warning("Please visit https://jules.google.com to install the app.")
             return None
 

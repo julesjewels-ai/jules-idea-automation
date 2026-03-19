@@ -55,7 +55,11 @@ working prototypes with automated development sessions.
     print("")
 
     # Quick tips
-    tips_content = f"""{Colors.BOLD}Common Options:{Colors.ENDC}
+    tips_content = f"""{Colors.BOLD}Quick Start (No API Keys Needed):{Colors.ENDC}
+• python main.py agent --demo   (try the AI pipeline instantly)
+
+{Colors.BOLD}Common Options:{Colors.ENDC}
+• --demo       Preview mode (Gemini key only, no GitHub/Jules)
 • --watch      Watch the session until completion
 • --public     Create a public repository (default: private)
 • --category   Target specific type (agent mode only)
@@ -199,11 +203,17 @@ python main.py manual \"Task Manager\" \\
 
 def print_examples() -> None:
     """Display common usage examples."""
-    content = f"""{Colors.BOLD}Quick Start - Generate Random Idea:{Colors.ENDC}
+    content = f"""{Colors.BOLD}Quick Start - Demo Mode (Gemini key only):{Colors.ENDC}
+python main.py agent --demo
+
+{Colors.BOLD}Quick Start - Generate Random Idea:{Colors.ENDC}
 python main.py agent
 
 {Colors.BOLD}Generate CLI Tool with Auto-Watch:{Colors.ENDC}
 python main.py agent --category cli_tool --watch
+
+{Colors.BOLD}Extract Idea from Website (Demo):{Colors.ENDC}
+python main.py website --url https://example.com --demo
 
 {Colors.BOLD}Extract Idea from Website:{Colors.ENDC}
 python main.py website --url https://news.ycombinator.com/item?id=12345

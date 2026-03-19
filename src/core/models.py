@@ -13,9 +13,7 @@ class IdeaResponse(BaseModel):
     title: str = Field(description="The name of the software idea.")
     description: str = Field(description="A detailed description of the idea.")
     slug: str = Field(description="A kebab-case string for GitHub repository name.")
-    tech_stack: list[str] = Field(
-        default_factory=list, description="Recommended technologies."
-    )
+    tech_stack: list[str] = Field(default_factory=list, description="Recommended technologies.")
     features: list[str] = Field(default_factory=list, description="Key MVP features.")
 
 
@@ -31,12 +29,8 @@ class ProjectScaffold(BaseModel):
     """Represents a complete project scaffold."""
 
     files: list[ProjectFile] = Field(description="List of files to create.")
-    requirements: list[str] = Field(
-        default_factory=list, description="Python dependencies."
-    )
-    run_command: str = Field(
-        default="python main.py", description="Command to run the app."
-    )
+    requirements: list[str] = Field(default_factory=list, description="Python dependencies.")
+    run_command: str = Field(default="python main.py", description="Command to run the app.")
 
     @classmethod
     def _read_template(cls, filename: str) -> str:
@@ -49,9 +43,7 @@ class ProjectScaffold(BaseModel):
             return ""
 
     @classmethod
-    def create_fallback_scaffold(
-        cls, title: str, description: str
-    ) -> "ProjectScaffold":
+    def create_fallback_scaffold(cls, title: str, description: str) -> "ProjectScaffold":
         """Creates a default scaffold when generation fails."""
         desc = description[:200]
 
@@ -118,15 +110,9 @@ class FeatureItem(BaseModel):
 
     priority: str = Field(description="Priority label: P0, P1, P2, or P3.")
     name: str = Field(description="Short feature name, e.g. 'JWT auth middleware'.")
-    description: str = Field(
-        description="What to build and how, referencing actual project files."
-    )
-    acceptance: list[str] = Field(
-        default_factory=list, description="Testable acceptance criteria."
-    )
-    affected_files: list[str] = Field(
-        default_factory=list, description="File paths affected, e.g. 'src/core/app.py'."
-    )
+    description: str = Field(description="What to build and how, referencing actual project files.")
+    acceptance: list[str] = Field(default_factory=list, description="Testable acceptance criteria.")
+    affected_files: list[str] = Field(default_factory=list, description="File paths affected, e.g. 'src/core/app.py'.")
 
 
 class FeatureMapResponse(BaseModel):

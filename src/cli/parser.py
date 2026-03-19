@@ -6,7 +6,12 @@ import argparse
 
 
 def _add_common_execution_args(parser: argparse.ArgumentParser) -> None:
-    """Add --public, --timeout, and --watch flags shared by all execution commands."""
+    """Add --demo, --public, --timeout, and --watch flags shared by all execution commands."""
+    parser.add_argument(
+        "--demo",
+        action="store_true",
+        help="Demo mode: generate idea and scaffold preview (Gemini key only, skips GitHub/Jules)",
+    )
     parser.add_argument("--public", action="store_true", help="Create a public repository (default: private)")
     parser.add_argument(
         "--timeout", type=int, default=1800, help="Timeout in seconds for Jules indexing (default: 1800 = 30 min)"

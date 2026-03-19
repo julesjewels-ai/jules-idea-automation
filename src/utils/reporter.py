@@ -329,3 +329,80 @@ def print_idea_summary(idea_data: dict[str, Any]) -> None:
     print("")  # spacing before
     print_panel(full_content, title=f"✨ {idea_data['title']}", color=Colors.HEADER, width=70)
     print("")  # spacing after
+
+
+def print_demo_report(
+    idea_data: dict[str, Any],
+    scaffold: dict[str, Any],
+    feature_maps: dict[str, Any] | None = None,
+) -> None:
+    """Prints a rich demo-mode report showing what would be created."""
+    # --- Scaffold file tree ---
+    files = scaffold.get("files", [])
+    tree_lines = [f"{Colors.BOLD}📂 Generated Scaffold ({len(files)} files):{Colors.ENDC}"]
+    for f in files:
+        path = f.get("path", "") if isinstance(f, dict) else getattr(f, "path", "")
+        desc = f.get("description", "") if isinstance(f, dict) else getattr(f, "description", "")
+        suffix = f"  {Colors.CYAN}# {desc}{Colors.ENDC}" if desc else ""
+        tree_lines.append(f"  📄 {path}{suffix}")
+
+    reqs = scaffold.get("requirements", [])
+    if reqs:
+        tree_lines.append("")
+        tree_lines.append(f"{Colors.BOLD}📦 Dependencies:{Colors.ENDC}")
+        tree_lines.append(f"  {', '.join(reqs)}")
+
+    run_cmd = scaffold.get("run_command")
+    if run_cmd:
+        tree_lines.append("")
+        tree_lines.append(f"{Colors.BOLD}▶  Run command:{Colors.ENDC}")
+        tree_lines.append(f"  {Colors.GREEN}{run_cmd}{Colors.ENDC}")
+
+    print_panel("\n".join(tree_lines), title="🏗️  MVP Scaffold Preview", color=Colors.BLUE, width=70)
+    print("")
+
+    # --- Feature maps summary ---
+    if feature_maps:
+        assert feature_maps is not None  # appease type-checker narrowing
+        mvp = feature_maps.get("mvp_features", [])
+        prod = feature_maps.get("production_features", [])
+        fm_lines = []
+        if mvp:
+            fm_lines.append(f"{Colors.BOLD}🎯 MVP Features ({len(mvp)} items):{Colors.ENDC}")
+            for item in mvp[:5]:
+                name = item.get("name", "") if isinstance(item, dict) else getattr(item, "name", "")
+                prio = item.get("priority", "") if isinstance(item, dict) else getattr(item, "priority", "")
+                fm_lines.append(f"  [{prio}] {name}")
+            if len(mvp) > 5:
+                fm_lines.append(f"  ... and {len(mvp) - 5} more")
+        if prod:
+            fm_lines.append("")
+            fm_lines.append(f"{Colors.BOLD}🚀 Production Features ({len(prod)} items):{Colors.ENDC}")
+            for item in prod[:3]:
+                name = item.get("name", "") if isinstance(item, dict) else getattr(item, "name", "")
+                prio = item.get("priority", "") if isinstance(item, dict) else getattr(item, "priority", "")
+                fm_lines.append(f"  [{prio}] {name}")
+            if len(prod) > 3:
+                fm_lines.append(f"  ... and {len(prod) - 3} more")
+        if fm_lines:
+            print_panel("\n".join(fm_lines), title="📋 Feature Maps", color=Colors.HEADER, width=70)
+            print("")
+
+    # --- What's Next ---
+    next_steps = f"""{Colors.BOLD}You just saw the full AI pipeline in demo mode!{Colors.ENDC}
+
+To run the full workflow (create repo + start Jules session):
+
+{Colors.BOLD}1. Add a GitHub token to .env:{Colors.ENDC}
+   GITHUB_TOKEN=ghp_...
+   {Colors.CYAN}→ https://github.com/settings/tokens{Colors.ENDC}
+
+{Colors.BOLD}2. Add a Jules API key to .env:{Colors.ENDC}
+   JULES_API_KEY=...
+   {Colors.CYAN}→ https://jules.google.com{Colors.ENDC}
+
+{Colors.BOLD}3. Re-run without --demo:{Colors.ENDC}
+   {Colors.GREEN}python main.py agent{Colors.ENDC}"""
+
+    print_panel(next_steps, title="🚀 What's Next?", color=Colors.GREEN, width=70)
+    print("")
