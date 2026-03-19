@@ -196,14 +196,16 @@ def handle_guide(args: Namespace) -> None:
 
     workflow = getattr(args, "workflow", None)
 
-    if workflow == "agent":
-        print_agent_guide()
-    elif workflow == "website":
-        print_website_guide()
-    elif workflow == "manual":
-        print_manual_guide()
+    guides = {
+        "agent": print_agent_guide,
+        "website": print_website_guide,
+        "manual": print_manual_guide,
+    }
+
+    guide_fn = guides.get(workflow)
+    if guide_fn:
+        guide_fn()
     else:
-        # Show welcome guide with all options
         print_welcome_guide()
         print_examples()
 
