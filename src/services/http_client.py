@@ -89,11 +89,12 @@ class BaseApiClient:
 
         # Try to extract a structured error message from the body
         return (
-            self._extract_api_error_message(e)
-            or f"API returned status {status_code}."
+            self._extract_api_error_message(e) or f"API returned status {status_code}."
         )
 
-    def _extract_api_error_message(self, e: requests.exceptions.HTTPError) -> str | None:
+    def _extract_api_error_message(
+        self, e: requests.exceptions.HTTPError
+    ) -> str | None:
         """Parse a JSON error body for a human-readable message.
 
         Supports two common layouts:

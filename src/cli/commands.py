@@ -101,7 +101,9 @@ def handle_status(args: Namespace) -> None:
         )
 
 
-def _execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any | None = None) -> None:
+def _execute_and_watch(
+    args: Namespace, idea_data: dict[str, Any], gemini: Any | None = None
+) -> None:
     """Execute the workflow and watch the session if requested.
 
     Args:
@@ -163,7 +165,9 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, str | Non
                 activities = jules.list_activities(session_id, page_size=1)
                 if activities.get("activities"):
                     latest = activities["activities"][0]
-                    return str(latest.get("progressUpdated", {}).get("title", "Working..."))
+                    return str(
+                        latest.get("progressUpdated", {}).get("title", "Working...")
+                    )
                 return "Working..."
             except Exception:
                 return "Polling..."
@@ -172,7 +176,11 @@ def watch_session(session_id: str, timeout: int = 1800) -> tuple[bool, str | Non
             spinner.update(f"[{format_duration(elapsed)}] {status}")
 
         is_complete, pr_url, elapsed = poll_with_result(
-            check=check, timeout=timeout, interval=poll_interval, on_poll=on_poll, status_extractor=status_extractor
+            check=check,
+            timeout=timeout,
+            interval=poll_interval,
+            on_poll=on_poll,
+            status_extractor=status_extractor,
         )
 
     if is_complete:

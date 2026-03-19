@@ -13,7 +13,9 @@ class IdeaResponse(BaseModel):
     title: str = Field(description="The name of the software idea.")
     description: str = Field(description="A detailed description of the idea.")
     slug: str = Field(description="A kebab-case string for GitHub repository name.")
-    tech_stack: list[str] = Field(default_factory=list, description="Recommended technologies.")
+    tech_stack: list[str] = Field(
+        default_factory=list, description="Recommended technologies."
+    )
     features: list[str] = Field(default_factory=list, description="Key MVP features.")
 
 
@@ -29,8 +31,12 @@ class ProjectScaffold(BaseModel):
     """Represents a complete project scaffold."""
 
     files: list[ProjectFile] = Field(description="List of files to create.")
-    requirements: list[str] = Field(default_factory=list, description="Python dependencies.")
-    run_command: str = Field(default="python main.py", description="Command to run the app.")
+    requirements: list[str] = Field(
+        default_factory=list, description="Python dependencies."
+    )
+    run_command: str = Field(
+        default="python main.py", description="Command to run the app."
+    )
 
     @classmethod
     def _read_template(cls, filename: str) -> str:
@@ -43,7 +49,9 @@ class ProjectScaffold(BaseModel):
             return ""
 
     @classmethod
-    def create_fallback_scaffold(cls, title: str, description: str) -> "ProjectScaffold":
+    def create_fallback_scaffold(
+        cls, title: str, description: str
+    ) -> "ProjectScaffold":
         """Creates a default scaffold when generation fails."""
         desc = description[:200]
 
@@ -54,9 +62,15 @@ class ProjectScaffold(BaseModel):
 
         return cls(
             files=[
-                ProjectFile(path="main.py", content=render("main.py.tpl"), description="Main entry point with CLI"),
                 ProjectFile(
-                    path="src/__init__.py", content=cls._read_template("src_init.py.tpl"), description="Package marker"
+                    path="main.py",
+                    content=render("main.py.tpl"),
+                    description="Main entry point with CLI",
+                ),
+                ProjectFile(
+                    path="src/__init__.py",
+                    content=cls._read_template("src_init.py.tpl"),
+                    description="Package marker",
                 ),
                 ProjectFile(
                     path="src/core/__init__.py",
@@ -64,14 +78,24 @@ class ProjectScaffold(BaseModel):
                     description="Package marker",
                 ),
                 ProjectFile(
-                    path="src/core/app.py", content=render("src_core_app.py.tpl"), description="Main business logic"
+                    path="src/core/app.py",
+                    content=render("src_core_app.py.tpl"),
+                    description="Main business logic",
                 ),
                 ProjectFile(
-                    path="Makefile", content=cls._read_template("Makefile.tpl"), description="Development commands"
+                    path="Makefile",
+                    content=cls._read_template("Makefile.tpl"),
+                    description="Development commands",
                 ),
-                ProjectFile(path=".env.example", content=render("env.example.tpl"), description="Environment template"),
                 ProjectFile(
-                    path=".gitignore", content=cls._read_template("gitignore.tpl"), description="Git ignore file"
+                    path=".env.example",
+                    content=render("env.example.tpl"),
+                    description="Environment template",
+                ),
+                ProjectFile(
+                    path=".gitignore",
+                    content=cls._read_template("gitignore.tpl"),
+                    description="Git ignore file",
                 ),
                 ProjectFile(
                     path="tests/__init__.py",
@@ -79,7 +103,9 @@ class ProjectScaffold(BaseModel):
                     description="Test package marker",
                 ),
                 ProjectFile(
-                    path="tests/test_core.py", content=render("tests_test_core.py.tpl"), description="Core unit tests"
+                    path="tests/test_core.py",
+                    content=render("tests_test_core.py.tpl"),
+                    description="Core unit tests",
                 ),
             ],
             requirements=["pytest"],
@@ -92,7 +118,9 @@ class FeatureItem(BaseModel):
 
     priority: str = Field(description="Priority label: P0, P1, P2, or P3.")
     name: str = Field(description="Short feature name, e.g. 'JWT auth middleware'.")
-    description: str = Field(description="What to build and how, referencing actual project files.")
+    description: str = Field(
+        description="What to build and how, referencing actual project files."
+    )
     acceptance: list[str] = Field(
         default_factory=list, description="Testable acceptance criteria."
     )

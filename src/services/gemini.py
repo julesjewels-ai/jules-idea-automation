@@ -10,7 +10,10 @@ from xml.sax.saxutils import escape
 
 # Suppress Pydantic warning from google-genai 0.8.0 about 'any' as a type
 warnings.filterwarnings(
-    "ignore", message=".*<built-in function any> is not a Python type.*", category=UserWarning, module="pydantic"
+    "ignore",
+    message=".*<built-in function any> is not a Python type.*",
+    category=UserWarning,
+    module="pydantic",
 )
 
 from google import genai
@@ -37,7 +40,9 @@ CATEGORY_PROMPTS = {
 class GeminiClient:
     """Client for the Google Gemini API, handling idea generation and project scaffolding."""
 
-    def __init__(self, api_key: str | None = None, cache_provider: CacheProvider | None = None) -> None:
+    def __init__(
+        self, api_key: str | None = None, cache_provider: CacheProvider | None = None
+    ) -> None:
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self.api_key:
             raise ConfigurationError(
@@ -45,7 +50,9 @@ class GeminiClient:
                 tip="Get your API key from https://aistudio.google.com/app/apikey and add it to your .env file.",
             )
 
-        self.client = genai.Client(api_key=self.api_key, http_options={"api_version": "v1beta"})
+        self.client = genai.Client(
+            api_key=self.api_key, http_options={"api_version": "v1beta"}
+        )
         self.models = ["gemini-2.5-flash"]
         self.cache_provider = cache_provider
 
@@ -54,7 +61,10 @@ class GeminiClient:
         err_msg_lower = str(e).lower()
 
         error_tips = (
-            (("api key not valid", "400"), "Your GEMINI_API_KEY seems invalid. Check your .env file."),
+            (
+                ("api key not valid", "400"),
+                "Your GEMINI_API_KEY seems invalid. Check your .env file.",
+            ),
             (("429", "quota"), "You have exceeded your API quota. Try again later."),
             (("403",), "You don't have permission to access this model."),
             (
@@ -67,9 +77,14 @@ class GeminiClient:
             if any(k in err_msg_lower for k in keys):
                 return GenerationError(f"Gemini API Error: {e}", tip=tip)
 
-        return GenerationError(f"Gemini API Error: {e}", tip="Check your internet connection and API status.")
+        return GenerationError(
+            f"Gemini API Error: {e}",
+            tip="Check your internet connection and API status.",
+        )
 
-    def _get_cached_content(self, prompt: str, schema: Any) -> tuple[dict[str, Any] | None, str]:
+    def _get_cached_content(
+        self, prompt: str, schema: Any
+    ) -> tuple[dict[str, Any] | None, str]:
         """Checks the cache for existing content and returns the data and cache key."""
         if not self.cache_provider:
             return None, ""
@@ -87,12 +102,16 @@ class GeminiClient:
 
         return None, cache_key
 
-    def _process_api_response(self, text: str | None, schema: Any, cache_key: str, error_tip: str) -> dict[str, Any]:
+    def _process_api_response(
+        self, text: str | None, schema: Any, cache_key: str, error_tip: str
+    ) -> dict[str, Any]:
         """Parses, caches, and validates the API response."""
         try:
             raw = json.loads(text or "")
         except json.JSONDecodeError as e:
-            raise GenerationError(f"Failed to parse Gemini response: {e}", tip=error_tip)
+            raise GenerationError(
+                f"Failed to parse Gemini response: {e}", tip=error_tip
+            )
 
         if self.cache_provider and cache_key:
             self.cache_provider.set(cache_key, raw)
@@ -101,15 +120,22 @@ class GeminiClient:
             return schema.model_validate(raw).model_dump()  # type: ignore[no-any-return]
         return raw  # type: ignore[no-any-return]
 
-    def _fetch_from_api(self, prompt: str, schema: Any, error_tip: str, cache_key: str) -> dict[str, Any]:
+    def _fetch_from_api(
+        self, prompt: str, schema: Any, error_tip: str, cache_key: str
+    ) -> dict[str, Any]:
         """Fetches content from Gemini API and handles errors/caching."""
         last_api_error = None
         for i, model in enumerate(self.models):
             try:
                 use_thinking = "pro" in model or "think" in model
-                config_kwargs: dict[str, Any] = {"response_mime_type": "application/json", "response_schema": schema}
+                config_kwargs: dict[str, Any] = {
+                    "response_mime_type": "application/json",
+                    "response_schema": schema,
+                }
                 if use_thinking:
-                    config_kwargs["thinking_config"] = types.ThinkingConfig(include_thoughts=True)
+                    config_kwargs["thinking_config"] = types.ThinkingConfig(
+                        include_thoughts=True
+                    )
 
                 if i > 0:
                     logger.warning("Primary model failed. Falling back to %s...", model)
@@ -119,14 +145,20 @@ class GeminiClient:
                     contents=prompt,
                     config=types.GenerateContentConfig(**config_kwargs),
                 )
-                return self._process_api_response(response.text, schema, cache_key, error_tip)
+                return self._process_api_response(
+                    response.text, schema, cache_key, error_tip
+                )
             except errors.APIError as e:
                 err_msg = str(e)
                 last_api_error = e
                 is_unavailable = "503" in err_msg or "UNAVAILABLE" in err_msg
                 is_quota_exhausted = "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg
                 if is_unavailable or is_quota_exhausted:
-                    reason = "503 UNAVAILABLE" if is_unavailable else "429 RESOURCE_EXHAUSTED"
+                    reason = (
+                        "503 UNAVAILABLE"
+                        if is_unavailable
+                        else "429 RESOURCE_EXHAUSTED"
+                    )
                     logger.warning("Model %s returned %s.", model, reason)
                     continue
                 raise self._map_api_error(e)
@@ -134,17 +166,21 @@ class GeminiClient:
                 raise
             except Exception as e:
                 raise GenerationError(
-                    f"Unexpected error during generation: {e}", tip="Check your network connection and configuration."
+                    f"Unexpected error during generation: {e}",
+                    tip="Check your network connection and configuration.",
                 )
 
         if last_api_error:
             raise self._map_api_error(last_api_error)
 
         raise GenerationError(
-            "All model generation attempts failed.", tip="Check your internet connection and API status."
+            "All model generation attempts failed.",
+            tip="Check your internet connection and API status.",
         )
 
-    def _generate_content(self, prompt: str, schema: Any, error_tip: str) -> dict[str, Any]:
+    def _generate_content(
+        self, prompt: str, schema: Any, error_tip: str
+    ) -> dict[str, Any]:
         """Helper to generate content with consistent configuration and error handling."""
         # Check cache if available
         cached_data, cache_key = self._get_cached_content(prompt, schema)
@@ -161,11 +197,15 @@ class GeminiClient:
             category: Optional category to target (web_app, cli_tool, api_service, mobile_app, automation, ai_ml)
 
         """
-        base_prompt = CATEGORY_PROMPTS.get(category or "default", CATEGORY_PROMPTS["default"])
+        base_prompt = CATEGORY_PROMPTS.get(
+            category or "default", CATEGORY_PROMPTS["default"]
+        )
         prompt = f"{base_prompt} Include recommended tech stack and key MVP features."
 
         return self._generate_content(
-            prompt, IdeaResponse, "The AI model returned invalid JSON. Please try again or try a different category."
+            prompt,
+            IdeaResponse,
+            "The AI model returned invalid JSON. Please try again or try a different category.",
         )
 
     def extract_idea_from_text(self, text: str) -> dict[str, Any]:
@@ -188,10 +228,14 @@ class GeminiClient:
         """
 
         return self._generate_content(
-            prompt, IdeaResponse, "The AI model returned invalid JSON while analyzing the website content."
+            prompt,
+            IdeaResponse,
+            "The AI model returned invalid JSON while analyzing the website content.",
         )
 
-    def generate_project_scaffold(self, idea_data: dict[str, Any], max_retries: int = 2) -> dict[str, Any]:
+    def generate_project_scaffold(
+        self, idea_data: dict[str, Any], max_retries: int = 2
+    ) -> dict[str, Any]:
         """Generates a complete MVP project scaffold for the given idea.
 
         Args:
@@ -244,13 +288,25 @@ Create a complete, immediately-runnable project with these files:
 
         for attempt in range(max_retries + 1):
             try:
-                return self._generate_content(prompt, ProjectScaffold, "Failed to generate valid project scaffold.")
+                return self._generate_content(
+                    prompt,
+                    ProjectScaffold,
+                    "Failed to generate valid project scaffold.",
+                )
             except Exception as e:
                 if attempt < max_retries:
-                    logger.warning("Scaffold generation attempt %d failed: %s. Retrying...", attempt + 1, e)
+                    logger.warning(
+                        "Scaffold generation attempt %d failed: %s. Retrying...",
+                        attempt + 1,
+                        e,
+                    )
                     continue
                 else:
-                    logger.error("Scaffold generation failed after %d attempts: %s", max_retries + 1, e)
+                    logger.error(
+                        "Scaffold generation failed after %d attempts: %s",
+                        max_retries + 1,
+                        e,
+                    )
                     # Return minimal fallback scaffold
                     return ProjectScaffold.create_fallback_scaffold(
                         idea_data["title"], idea_data["description"]
@@ -259,7 +315,9 @@ Create a complete, immediately-runnable project with these files:
         raise GenerationError("Failed to generate project scaffold.")
 
     @staticmethod
-    def _summarize_scaffold_files(files: list[dict[str, Any]], max_content_len: int = 500) -> str:
+    def _summarize_scaffold_files(
+        files: list[dict[str, Any]], max_content_len: int = 500
+    ) -> str:
         """Build a concise summary of scaffold files for the feature map prompt."""
         lines: list[str] = []
         for f in files:
@@ -353,5 +411,9 @@ Skip any category that doesn't apply to this project type.
                 "Failed to generate feature maps. Static fallback will be used.",
             )
         except Exception as e:
-            logger.warning("Feature map generation failed: %s. Returning empty maps.", e)
-            return FeatureMapResponse(mvp_features=[], production_features=[]).model_dump()
+            logger.warning(
+                "Feature map generation failed: %s. Returning empty maps.", e
+            )
+            return FeatureMapResponse(
+                mvp_features=[], production_features=[]
+            ).model_dump()

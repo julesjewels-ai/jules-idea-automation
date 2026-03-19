@@ -40,10 +40,22 @@ def _build_feature_map_files(
     prod_items = (feature_maps or {}).get("production_features") or None
 
     return [
-        {"path": ".agent/skills/mvp-feature-map/SKILL.md", "content": render_mvp_skill_md(idea_data)},
-        {"path": ".agent/skills/mvp-feature-map/CHECKLIST.md", "content": render_mvp_checklist_md(idea_data, mvp_items)},
-        {"path": ".agent/skills/production-feature-map/SKILL.md", "content": render_production_skill_md(idea_data)},
-        {"path": ".agent/skills/production-feature-map/CHECKLIST.md", "content": render_production_checklist_md(idea_data, prod_items)},
+        {
+            "path": ".agent/skills/mvp-feature-map/SKILL.md",
+            "content": render_mvp_skill_md(idea_data),
+        },
+        {
+            "path": ".agent/skills/mvp-feature-map/CHECKLIST.md",
+            "content": render_mvp_checklist_md(idea_data, mvp_items),
+        },
+        {
+            "path": ".agent/skills/production-feature-map/SKILL.md",
+            "content": render_production_skill_md(idea_data),
+        },
+        {
+            "path": ".agent/skills/production-feature-map/CHECKLIST.md",
+            "content": render_production_checklist_md(idea_data, prod_items),
+        },
     ]
 
 
@@ -189,9 +201,15 @@ class IdeaWorkflow:
         username = str(user["login"])
 
         visibility = "private" if private else "public"
-        logger.info("Creating %s GitHub repository '%s'...", visibility, idea_data["slug"])
+        logger.info(
+            "Creating %s GitHub repository '%s'...", visibility, idea_data["slug"]
+        )
 
-        self.github.create_repo(name=idea_data["slug"], description=idea_data["description"][:350], private=private)
+        self.github.create_repo(
+            name=idea_data["slug"],
+            description=idea_data["description"][:350],
+            private=private,
+        )
 
         return username
 
@@ -227,7 +245,9 @@ class IdeaWorkflow:
 
         # Generate project-specific feature maps using the scaffold as context
         logger.info("Generating project-specific feature maps...")
-        feature_maps = self.gemini.generate_feature_maps(idea_data, scaffold.get("files", []))
+        feature_maps = self.gemini.generate_feature_maps(
+            idea_data, scaffold.get("files", [])
+        )
         feature_map_files = _build_feature_map_files(idea_data, feature_maps)
         files_to_create.extend(feature_map_files)
 
@@ -275,7 +295,10 @@ class IdeaWorkflow:
         if raw_requirements:
             req_lines = _normalize_requirements(raw_requirements)
             files_to_create.append(
-                {"path": "requirements.txt", "content": "\n".join(line for line in req_lines if line)}
+                {
+                    "path": "requirements.txt",
+                    "content": "\n".join(line for line in req_lines if line),
+                }
             )
 
         return files_to_create
@@ -287,18 +310,26 @@ class IdeaWorkflow:
         source_id = f"sources/github/{username}/{idea_data['slug']}"
 
         logger.info("Constructed Source ID: %s", source_id)
-        logger.info("Waiting for Jules to discover the new repository (timeout: %ds)...", timeout)
+        logger.info(
+            "Waiting for Jules to discover the new repository (timeout: %ds)...",
+            timeout,
+        )
 
         # Poll for source
         def on_poll(elapsed: int) -> None:
             logger.info("Source not yet indexed (%ds elapsed)...", elapsed)
 
         source_found = poll_until(
-            condition=lambda: self.jules.source_exists(source_id), timeout=timeout, interval=10, on_poll=on_poll
+            condition=lambda: self.jules.source_exists(source_id),
+            timeout=timeout,
+            interval=10,
+            on_poll=on_poll,
         )
 
         if not source_found:
-            logger.warning("Source '%s' was not found in Jules after %ds.", source_id, timeout)
+            logger.warning(
+                "Source '%s' was not found in Jules after %ds.", source_id, timeout
+            )
             logger.warning("Please visit https://jules.google.com to install the app.")
             return None
 
