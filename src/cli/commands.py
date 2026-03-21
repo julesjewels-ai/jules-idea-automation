@@ -224,7 +224,7 @@ def handle_guide(args: Namespace) -> None:
         print_welcome_guide,
     )
 
-    workflow = getattr(args, "workflow", None)
+    workflow = str(getattr(args, "workflow", ""))
 
     guides = {
         "agent": print_agent_guide,
@@ -312,8 +312,7 @@ def _read_clipboard() -> str:
         return result.stdout
     except FileNotFoundError:
         raise RuntimeError(
-            "Clipboard reading requires 'pbpaste' (macOS only). "
-            "On other systems, use --file or pipe via stdin instead."
+            "Clipboard reading requires 'pbpaste' (macOS only). On other systems, use --file or pipe via stdin instead."
         )
 
 
