@@ -200,7 +200,7 @@ def print_workflow_report(
     session_url: str | None = None,
     pr_url: str | None = None,
 ) -> None:
-    """Prints a summary report of the workflow results."""
+    """Print a summary report of the workflow results."""
     print_header("✨ WORKFLOW COMPLETE")
     print(f"{Colors.BOLD}📦 Project:{Colors.ENDC} {Colors.GREEN}{title}{Colors.ENDC}")
     print(f"{Colors.BOLD}📝 Slug:   {Colors.ENDC} {slug}")
@@ -212,7 +212,14 @@ def print_workflow_report(
         if pr_url:
             print(f"{Colors.BOLD}🎉 PR:     {Colors.ENDC} {Colors.UNDERLINE}{Colors.GREEN}{pr_url}{Colors.ENDC}")
     else:
-        print(f"{Colors.YELLOW}⚠️  Jules session was not created (source not indexed){Colors.ENDC}")
+        print(f"{Colors.YELLOW}⚠️  Jules session was not created.{Colors.ENDC}")
+        print(
+            f"   {Colors.CYAN}The repository was created successfully, but session creation failed or timed out.{Colors.ENDC}"
+        )
+        print(
+            f"   {Colors.CYAN}You can manually create the session later at: {Colors.UNDERLINE}https://jules.google.com{Colors.ENDC}"
+        )
+        print(f"   {Colors.CYAN}Once created, track it via: {Colors.ENDC}python main.py status <session_id>")
 
     print(f"{Colors.BOLD}{Colors.BLUE}{'=' * 50}{Colors.ENDC}")
 
