@@ -162,7 +162,13 @@ class IdeaWorkflow:
         self._generate_scaffold(username, idea_data)
 
         # Step 3: Wait for Jules indexing and create session
-        session = self._create_jules_session(username, idea_data, timeout)
+        try:
+            session = self._create_jules_session(username, idea_data, timeout)
+        except Exception as e:
+            logger.error("Failed to create Jules session: %s", e)
+            logger.error("Repository was created successfully, but Jules session creation failed.")
+            logger.error("You can check the session status later using: python main.py status <session_id>")
+            session = None
 
         # Build result
         result = WorkflowResult(
