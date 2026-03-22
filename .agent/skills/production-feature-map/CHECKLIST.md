@@ -8,7 +8,7 @@
 
 ### A1. Error Handling & Resilience
 
-- [ ] **P0** — **Graceful API failure recovery in workflow**: If GitHub repo creation succeeds but Jules session creation fails, the CLI should report the partial success (repo URL) and suggest `status` command. Currently the session errors may leave the user with no repo URL output.
+- [x] **P0** — **Graceful API failure recovery in workflow**: If GitHub repo creation succeeds but Jules session creation fails, the CLI should report the partial success (repo URL) and suggest `status` command. Currently the session errors may leave the user with no repo URL output.
   - *Acceptance*: Partial success prints repo URL + clear next-step guidance. Test with mock Jules timeout.
   - *Affected*: `src/core/workflow.py` → `execute()`
 

@@ -8,6 +8,11 @@ Covers three scenarios:
 
 from __future__ import annotations
 
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
+from typing import Any
+
 from src.templates.feature_map import (
     render_mvp_checklist_md,
     render_mvp_skill_md,
@@ -15,11 +20,7 @@ from src.templates.feature_map import (
     render_production_skill_md,
 )
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-SAMPLE_IDEA: dict = {
+SAMPLE_IDEA: dict[str, Any] = {
     "title": "CodePulse",
     "description": "A developer productivity tracker.",
     "slug": "code-pulse",
@@ -27,7 +28,7 @@ SAMPLE_IDEA: dict = {
     "features": ["Session tracking", "Analytics dashboard", "VS Code extension"],
 }
 
-SAMPLE_AI_MVP_ITEMS: list[dict] = [
+SAMPLE_AI_MVP_ITEMS: list[dict[str, Any]] = [
     {
         "priority": "P0",
         "name": "Implement session recording in main.py",
@@ -47,7 +48,7 @@ SAMPLE_AI_MVP_ITEMS: list[dict] = [
     },
 ]
 
-SAMPLE_AI_PROD_ITEMS: list[dict] = [
+SAMPLE_AI_PROD_ITEMS: list[dict[str, Any]] = [
     {
         "priority": "P0",
         "name": "Structured logging with structlog",
@@ -64,7 +65,7 @@ SAMPLE_AI_PROD_ITEMS: list[dict] = [
     },
 ]
 
-MINIMAL_IDEA: dict = {"title": "X", "slug": "x"}
+MINIMAL_IDEA: dict[str, Any] = {"title": "X", "slug": "x"}
 
 
 # ---------------------------------------------------------------------------

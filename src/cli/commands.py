@@ -232,7 +232,7 @@ def handle_guide(args: Namespace) -> None:
         "manual": print_manual_guide,
     }
 
-    guide_fn = guides.get(workflow)
+    guide_fn = guides.get(workflow) if workflow else None
     if guide_fn:
         guide_fn()
     else:
@@ -312,8 +312,7 @@ def _read_clipboard() -> str:
         return result.stdout
     except FileNotFoundError:
         raise RuntimeError(
-            "Clipboard reading requires 'pbpaste' (macOS only). "
-            "On other systems, use --file or pipe via stdin instead."
+            "Clipboard reading requires 'pbpaste' (macOS only). On other systems, use --file or pipe via stdin instead."
         )
 
 
