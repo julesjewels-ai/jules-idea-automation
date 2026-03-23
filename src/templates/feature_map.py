@@ -72,29 +72,51 @@ def _static_mvp_items(idea: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _static_production_items() -> str:
-    """Generic production checklist for when AI generation is unavailable."""
-    return """- [ ] **P0** — **Structured logging** (replace print statements)
-- [ ] **P0** — **Error handling with graceful degradation**
-- [ ] **P0** — **Environment-based configuration** (no hardcoded secrets)
-- [ ] **P0** — **Docker containerization**
-- [ ] **P0** — **Health check endpoint** (if applicable)
+def _static_production_items(idea: dict[str, Any]) -> str:
+    """Project-aware production checklist for when AI generation is unavailable."""
+    tech = [t.lower() for t in idea.get("tech_stack", [])]
+    features = idea.get("features", [])
 
-- [ ] **P1** — **GitHub Actions CI workflow** (lint + test on push)
-- [ ] **P1** — **Input validation and sanitization**
-- [ ] **P1** — **Unit test coverage ≥ 80%**
-- [ ] **P1** — **Integration tests for critical paths**
-- [ ] **P1** — **Dependency pinning** (requirements.txt or lockfile)
-- [ ] **P1** — **Rate limiting** (if applicable)
-- [ ] **P1** — **API documentation** (if applicable)
+    lines: list[str] = []
 
-- [ ] **P2** — **Database migrations** (if applicable)
-- [ ] **P2** — **Monitoring and alerting**
-- [ ] **P2** — **Performance profiling**
-- [ ] **P2** — **Load testing**
-- [ ] **P2** — **Contributing guide**
-- [ ] **P2** — **Architecture decision records**
-"""
+    # P0 — always relevant
+    lines.append("- [ ] **P0** — **Structured logging** (replace print statements)")
+    lines.append("- [ ] **P0** — **Error handling with graceful degradation**")
+    lines.append("- [ ] **P0** — **Environment-based configuration** (no hardcoded secrets)")
+    lines.append("- [ ] **P0** — **Docker containerization**")
+
+    # Conditional: API-related items
+    api_techs = {"fastapi", "flask", "django", "express", "next.js", "nestjs"}
+    if any(t in api_techs for t in tech) or any("api" in f.lower() for f in features):
+        lines.append("- [ ] **P0** — **Health check endpoint**")
+        lines.append("- [ ] **P1** — **Rate limiting**")
+        lines.append("- [ ] **P1** — **API documentation** (OpenAPI/Swagger)")
+
+    lines.append("")
+
+    # P1 — always relevant
+    lines.append("- [ ] **P1** — **GitHub Actions CI workflow** (lint + test on push)")
+    lines.append("- [ ] **P1** — **Input validation and sanitization**")
+    lines.append("- [ ] **P1** — **Unit test coverage ≥ 80%**")
+    lines.append("- [ ] **P1** — **Integration tests for critical paths**")
+    lines.append("- [ ] **P1** — **Dependency pinning** (requirements.txt or lockfile)")
+
+    lines.append("")
+
+    # Conditional: DB-related items
+    db_techs = {"postgresql", "postgres", "mysql", "sqlite", "mongodb", "redis", "supabase"}
+    if any(t in db_techs for t in tech):
+        lines.append("- [ ] **P1** — **Database migrations**")
+
+    # P2
+    lines.append("- [ ] **P2** — **Monitoring and alerting**")
+    lines.append("- [ ] **P2** — **Performance profiling**")
+    lines.append("- [ ] **P2** — **Load testing**")
+    lines.append("- [ ] **P2** — **Contributing guide**")
+    lines.append("- [ ] **P2** — **Architecture decision records**")
+    lines.append("")
+
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -128,6 +150,12 @@ description: MVP feature backlog and build checklist for {title}. Use when picki
 """
 
 
+_TEMPLATE_NOTICE = """> ⚠️ **TEMPLATE** — These items are generic starting points.
+> AI-powered custom generation was unavailable. Review and adapt
+> each item to match your project's actual requirements.
+"""
+
+
 def render_mvp_checklist_md(
     idea: dict[str, Any],
     ai_items: list[dict[str, Any]] | None = None,
@@ -139,14 +167,16 @@ def render_mvp_checklist_md(
 
     if ai_items:
         items_md = _render_feature_items(ai_items)
+        notice = ""
     else:
         items_md = _static_mvp_items(idea)
+        notice = _TEMPLATE_NOTICE
 
     return f"""# MVP Checklist — {title}
 
 > `{slug}` · {tech}
 
-## Features
+{notice}## Features
 
 {items_md}
 
@@ -192,14 +222,16 @@ def render_production_checklist_md(
 
     if ai_items:
         items_md = _render_feature_items(ai_items)
+        notice = ""
     else:
-        items_md = _static_production_items()
+        items_md = _static_production_items(idea)
+        notice = _TEMPLATE_NOTICE
 
     return f"""# Production Readiness Checklist — {title}
 
 > `{slug}` · {tech}
 
-## Infrastructure & Hardening
+{notice}## Infrastructure & Hardening
 
 {items_md}
 

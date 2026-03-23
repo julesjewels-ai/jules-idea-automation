@@ -137,6 +137,14 @@ class TestMvpChecklistStaticFallback:
         # Empty list is falsy, so should get static fallback
         assert "Session tracking" in result
 
+    def test_template_notice_present(self) -> None:
+        result = render_mvp_checklist_md(SAMPLE_IDEA, None)
+        assert "TEMPLATE" in result
+
+    def test_template_notice_absent_with_ai_items(self) -> None:
+        result = render_mvp_checklist_md(SAMPLE_IDEA, SAMPLE_AI_MVP_ITEMS)
+        assert "TEMPLATE" not in result
+
 
 # ---------------------------------------------------------------------------
 # Production SKILL.md
@@ -184,6 +192,38 @@ class TestProductionChecklistStaticFallback:
     def test_all_items_unchecked(self) -> None:
         result = render_production_checklist_md(SAMPLE_IDEA, None)
         assert "- [x]" not in result
+
+    def test_template_notice_present(self) -> None:
+        result = render_production_checklist_md(SAMPLE_IDEA, None)
+        assert "TEMPLATE" in result
+
+    def test_template_notice_absent_with_ai_items(self) -> None:
+        result = render_production_checklist_md(SAMPLE_IDEA, SAMPLE_AI_PROD_ITEMS)
+        assert "TEMPLATE" not in result
+
+    def test_api_items_present_for_fastapi_stack(self) -> None:
+        """SAMPLE_IDEA uses FastAPI, so API-specific items should appear."""
+        result = render_production_checklist_md(SAMPLE_IDEA, None)
+        assert "Health check endpoint" in result
+        assert "Rate limiting" in result
+
+    def test_db_items_present_for_postgresql_stack(self) -> None:
+        """SAMPLE_IDEA uses PostgreSQL, so DB migration item should appear."""
+        result = render_production_checklist_md(SAMPLE_IDEA, None)
+        assert "Database migrations" in result
+
+    def test_api_items_absent_for_non_api_stack(self) -> None:
+        """A project without API frameworks should skip API-specific items."""
+        idea_no_api = {"title": "CLI Tool", "slug": "cli-tool", "tech_stack": ["Python", "Click"]}
+        result = render_production_checklist_md(idea_no_api, None)
+        assert "Health check endpoint" not in result
+        assert "Rate limiting" not in result
+
+    def test_db_items_absent_for_non_db_stack(self) -> None:
+        """A project without DB tech should skip DB-specific items."""
+        idea_no_db = {"title": "CLI Tool", "slug": "cli-tool", "tech_stack": ["Python", "Click"]}
+        result = render_production_checklist_md(idea_no_db, None)
+        assert "Database migrations" not in result
 
 
 # ---------------------------------------------------------------------------
