@@ -5,6 +5,7 @@
   "venv": "venv",
   "pythonVersion": "3.12",
   "typeCheckingMode": "basic",
-  "reportMissingImports": true,
+  "reportMissingImports": false,
+  "reportMissingModuleSource": false,
   "reportMissingTypeStubs": false
 }

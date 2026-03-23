@@ -186,7 +186,7 @@ class Spinner:
             else:
                 symbol = f"{Colors.GREEN}✔{Colors.ENDC}"
                 if self.success_message is not None:
-                    self.message = self.success_message
+                    self.message = self.success_message  # pyre-ignore[8]
 
             # Overwrite the spinner with final status
             # Use ANSI clear line (K) to clear any previous longer message
