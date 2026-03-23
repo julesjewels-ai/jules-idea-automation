@@ -53,7 +53,7 @@ def handle_agent(args: Namespace) -> None:
 
 def handle_website(args: Namespace) -> None:
     """Handle the website command."""
-    content = getattr(args, "content", None)
+    content: str | None = getattr(args, "content", None)
 
     if content:
         # Direct content provided — skip scraping entirely
@@ -138,9 +138,11 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any |
         return
 
     from src.core.events import WorkflowCompleted, WorkflowStarted
+    from src.core.models import WorkflowResult
     from src.core.workflow import IdeaWorkflow
     from src.services.audit import JsonFileAuditLogger
     from src.services.bus import LocalEventBus
+    from src.services.repository import JsonProjectRepository
 
     print_idea_summary(idea_data)
 
@@ -152,7 +154,13 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any |
     event_bus.subscribe(WorkflowStarted, audit_logger)
     event_bus.subscribe(WorkflowCompleted, audit_logger)
 
-    workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus)
+    repository = JsonProjectRepository[WorkflowResult](
+        model_class=WorkflowResult,
+        base_dir=Path(".jules/workflows"),
+        id_getter=lambda item: item.idea.slug,
+    )
+
+    workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus, repository=repository)
 
     result = workflow.execute(idea_data, private=not args.public, timeout=args.timeout)
 
@@ -232,7 +240,10 @@ def handle_guide(args: Namespace) -> None:
         "manual": print_manual_guide,
     }
 
-    guide_fn = guides.get(workflow)
+    if isinstance(workflow, str):
+        guide_fn = guides.get(workflow)
+    else:
+        guide_fn = None
     if guide_fn:
         guide_fn()
     else:
@@ -312,8 +323,7 @@ def _read_clipboard() -> str:
         return result.stdout
     except FileNotFoundError:
         raise RuntimeError(
-            "Clipboard reading requires 'pbpaste' (macOS only). "
-            "On other systems, use --file or pipe via stdin instead."
+            "Clipboard reading requires 'pbpaste' (macOS only). On other systems, use --file or pipe via stdin instead."
         )
 
 

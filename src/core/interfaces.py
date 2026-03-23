@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeVar
 
 
 class EventHandler(Protocol):
@@ -68,6 +68,47 @@ class CacheProvider(Protocol):
         ----
             key: The unique cache key.
             value: The value to cache (must be JSON-serializable).
+
+        """
+        ...
+
+
+T = TypeVar("T")
+
+
+class ProjectRepository(Protocol[T]):
+    """Protocol for data persistence operations."""
+
+    def save(self, item: T) -> None:
+        """Save an item to the repository.
+
+        Args:
+        ----
+            item: The item to save.
+
+        """
+        ...
+
+    def get(self, item_id: str) -> T | None:
+        """Retrieve an item by its ID.
+
+        Args:
+        ----
+            item_id: The unique identifier.
+
+        Returns:
+        -------
+            The requested item, or None if not found.
+
+        """
+        ...
+
+    def list_all(self) -> list[T]:
+        """Retrieve all items from the repository.
+
+        Returns
+        -------
+            A list of all stored items.
 
         """
         ...

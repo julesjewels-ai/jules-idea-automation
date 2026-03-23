@@ -7,7 +7,7 @@ import uuid
 from typing import Any
 
 from src.core.events import WorkflowCompleted, WorkflowStarted
-from src.core.interfaces import EventBus
+from src.core.interfaces import EventBus, ProjectRepository
 from src.core.models import IdeaResponse, WorkflowResult
 from src.core.readme_builder import build_readme
 from src.services.bus import NullEventBus
@@ -112,6 +112,7 @@ class IdeaWorkflow:
         gemini: GeminiClient | None = None,
         jules: JulesClient | None = None,
         event_bus: EventBus | None = None,
+        repository: ProjectRepository[WorkflowResult] | None = None,
     ):
         """Initialize workflow with optional service instances.
 
@@ -121,12 +122,14 @@ class IdeaWorkflow:
             gemini: GeminiClient instance (created if None)
             jules: JulesClient instance (created if None)
             event_bus: EventBus instance (optional)
+            repository: Optional repository to save workflow results.
 
         """
         self.github = github or GitHubClient()
         self.event_bus = event_bus or NullEventBus()
         self.gemini = gemini or GeminiClient(cache_provider=FileCacheProvider())
         self.jules = jules or JulesClient()
+        self.repository = repository
 
     def execute(self, idea_data: dict[str, Any], private: bool = True, timeout: int = 1800) -> WorkflowResult:
         """Execute the full workflow.
@@ -171,6 +174,12 @@ class IdeaWorkflow:
             session_id=session.get("id") if session else None,
             session_url=session.get("url") if session else None,
         )
+
+        if self.repository:
+            try:
+                self.repository.save(result)
+            except Exception as e:
+                logger.warning("Failed to save workflow result to repository: %s", e)
 
         print_workflow_report(
             title=idea_data["title"],
