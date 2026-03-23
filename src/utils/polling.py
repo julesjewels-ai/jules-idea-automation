@@ -9,7 +9,11 @@ T = TypeVar("T")
 
 
 def poll_until(
-    condition: Callable[[], bool], timeout: int = 1800, interval: int = 10, on_poll: Callable[[int], None] | None = None
+    condition: Callable[[], bool],
+    timeout: int = 1800,
+    interval: int = 10,
+    on_poll: Callable[[int], None] | None = None,
+    sleep_fn: Callable[[float], None] = time.sleep,
 ) -> bool:
     """Polls until a condition is met or timeout is reached.
 
@@ -19,6 +23,7 @@ def poll_until(
         timeout: Maximum seconds to wait
         interval: Seconds between polls
         on_poll: Optional callback with elapsed time
+        sleep_fn: Sleep callable (default: time.sleep). Inject a no-op for fast tests.
 
     Returns:
     -------
@@ -31,7 +36,7 @@ def poll_until(
             return True
         if on_poll:
             on_poll(elapsed)
-        time.sleep(interval)
+        sleep_fn(interval)
         elapsed += interval
     return False
 
@@ -42,6 +47,7 @@ def poll_with_result(
     interval: int = 30,
     on_poll: Callable[[int, str], None] | None = None,
     status_extractor: Callable[[], str] | None = None,
+    sleep_fn: Callable[[float], None] = time.sleep,
 ) -> tuple[bool, T | None, int]:
     """Polls until completion, returning a result.
 
@@ -52,6 +58,7 @@ def poll_with_result(
         interval: Seconds between polls
         on_poll: Callback with (elapsed, status_message)
         status_extractor: Callable to get current status message
+        sleep_fn: Sleep callable (default: time.sleep). Inject a no-op for fast tests.
 
     Returns:
     -------
@@ -68,7 +75,7 @@ def poll_with_result(
             status = status_extractor() if status_extractor else "Working..."
             on_poll(elapsed, status)
 
-        time.sleep(interval)
+        sleep_fn(interval)
         elapsed += interval
 
     return False, None, elapsed

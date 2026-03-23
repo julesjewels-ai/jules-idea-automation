@@ -1,14 +1,14 @@
 from typing import Any
 from unittest.mock import patch
 
-from src.cli.commands import watch_session
+from src.cli.cmd_watch import watch_session
 
 
 @patch("src.services.jules.JulesClient")
-@patch("src.cli.commands.Spinner")
+@patch("src.cli.cmd_watch.Spinner")
 @patch("src.utils.polling.time.sleep")  # Speed up tests
-@patch("src.cli.commands.print_watch_complete")
-@patch("src.cli.commands.print_watch_timeout")
+@patch("src.cli.cmd_watch.print_watch_complete")
+@patch("src.cli.cmd_watch.print_watch_timeout")
 def test_watch_session_success(
     mock_timeout_print: Any, mock_complete_print: Any, mock_sleep: Any, mock_spinner_cls: Any, mock_jules_cls: Any
 ) -> None:
@@ -33,10 +33,10 @@ def test_watch_session_success(
 
 
 @patch("src.services.jules.JulesClient")
-@patch("src.cli.commands.Spinner")
+@patch("src.cli.cmd_watch.Spinner")
 @patch("src.utils.polling.time.sleep")
-@patch("src.cli.commands.print_watch_complete")
-@patch("src.cli.commands.print_watch_timeout")
+@patch("src.cli.cmd_watch.print_watch_complete")
+@patch("src.cli.cmd_watch.print_watch_timeout")
 def test_watch_session_timeout(
     mock_timeout_print: Any, mock_complete_print: Any, mock_sleep: Any, mock_spinner_cls: Any, mock_jules_cls: Any
 ) -> None:

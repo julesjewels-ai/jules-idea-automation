@@ -12,6 +12,18 @@ from src.services.gemini import GeminiClient
 from src.utils.errors import ConfigurationError, GenerationError
 
 
+class MockAPIError(errors.APIError):  # type: ignore[misc]
+    """Reusable mock for google.genai APIError (used across several tests)."""
+
+    def __init__(self, message: str, code: int):
+        self.message = message
+        self.code = code
+        super(Exception, self).__init__(message)  # type: ignore[misc]
+
+    def __str__(self) -> str:
+        return self.message
+
+
 @pytest.fixture
 def mock_genai_client() -> typing.Generator[unittest.mock.MagicMock, None, None]:
     with patch("src.services.gemini.genai.Client") as mock:
@@ -67,16 +79,6 @@ def test_generate_idea_json_error(client: Any) -> None:
 
 def test_generate_idea_api_error(client: Any) -> None:
     # Simulate an API error (e.g., invalid key)
-    # Mocking APIError properly for google.genai 0.8.0
-    class MockAPIError(errors.APIError):  # type: ignore[misc]
-        def __init__(self, message: str, code: int):
-            self.message = message
-            self.code = code
-            super(Exception, self).__init__(message)  # type: ignore[misc]
-
-        def __str__(self) -> str:
-            return self.message
-
     mock_error = MockAPIError("400 API key not valid", 400)
     client.client.models.generate_content.side_effect = mock_error
 
@@ -90,14 +92,6 @@ def test_generate_idea_api_error(client: Any) -> None:
 def test_generate_idea_api_error_503_fallback(client: Any) -> None:
     """Test that a 503 error falls back to the second model, which also fails."""
 
-    class MockAPIError(errors.APIError):  # type: ignore[misc]
-        def __init__(self, message: str, code: int):
-            self.message = message
-            self.code = code
-            super(Exception, self).__init__(message)  # type: ignore[misc]
-
-        def __str__(self) -> str:
-            return self.message
 
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
     client.client.models.generate_content.side_effect = mock_error
@@ -113,14 +107,6 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
 def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     """Test that a 503 error falls back to the second model which succeeds."""
 
-    class MockAPIError(errors.APIError):  # type: ignore[misc]
-        def __init__(self, message: str, code: int):
-            self.message = message
-            self.code = code
-            super(Exception, self).__init__(message)  # type: ignore[misc]
-
-        def __str__(self) -> str:
-            return self.message
 
     api_error = MockAPIError("503 UNAVAILABLE", 503)
 

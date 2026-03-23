@@ -5,9 +5,9 @@ from unittest.mock import patch
 from src.cli.commands import handle_list_sources
 
 
-@patch("src.cli.commands.Spinner")
+@patch("src.cli.cmd_watch.Spinner")
 @patch("src.services.jules.JulesClient")
-@patch("src.cli.commands.print_sources_list")
+@patch("src.cli.cmd_watch.print_sources_list")
 def test_handle_list_sources(mock_print_sources: Any, mock_jules_client_class: Any, mock_spinner: Any) -> None:
     # Setup
     mock_client_instance = mock_jules_client_class.return_value
@@ -24,9 +24,9 @@ def test_handle_list_sources(mock_print_sources: Any, mock_jules_client_class: A
     mock_spinner.assert_called_once_with("Fetching sources...", success_message="Sources fetched")
 
 
-@patch("src.cli.commands.Spinner")
+@patch("src.cli.cmd_watch.Spinner")
 @patch("src.services.jules.JulesClient")
-@patch("src.cli.commands.print_sources_list")
+@patch("src.cli.cmd_watch.print_sources_list")
 def test_handle_list_sources_empty(mock_print_sources: Any, mock_jules_client_class: Any, mock_spinner: Any) -> None:
     # Setup
     mock_client_instance = mock_jules_client_class.return_value

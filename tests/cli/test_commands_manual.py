@@ -5,7 +5,7 @@ from unittest.mock import ANY, patch
 from src.cli.commands import handle_manual
 
 
-@patch("src.cli.commands._execute_and_watch")
+@patch("src.cli.cmd_manual.execute_and_watch")
 @patch("src.utils.slugify.slugify")
 def test_handle_manual_basic(mock_slugify: Any, mock_execute: Any) -> None:
     """Test basic manual command with explicit title and description."""
@@ -25,7 +25,7 @@ def test_handle_manual_basic(mock_slugify: Any, mock_execute: Any) -> None:
     mock_execute.assert_called_once_with(args, expected_data)
 
 
-@patch("src.cli.commands._execute_and_watch")
+@patch("src.cli.cmd_manual.execute_and_watch")
 @patch("src.utils.slugify.slugify")
 def test_handle_manual_long_title(mock_slugify: Any, mock_execute: Any) -> None:
     """Test handling of long titles (description-as-title pattern)."""
@@ -63,7 +63,7 @@ def test_handle_manual_long_title(mock_slugify: Any, mock_execute: Any) -> None:
     assert idea_data["title"] == "This is a very long title that is actually a descr"
 
 
-@patch("src.cli.commands._execute_and_watch")
+@patch("src.cli.cmd_manual.execute_and_watch")
 def test_handle_manual_with_lists(mock_execute: Any) -> None:
     """Test parsing of tech stack and features."""
     args = Namespace(

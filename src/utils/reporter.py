@@ -6,6 +6,7 @@ import re
 import sys
 import threading
 import time
+import unicodedata
 from types import TracebackType
 from typing import Any
 
@@ -31,6 +32,21 @@ def strip_ansi(text: str) -> str:
     return ansi_escape.sub("", text)
 
 
+def _visual_width(text: str) -> int:
+    """Return the approximate terminal column width of *text*.
+
+    Wide characters (emoji, CJK, fullwidth) occupy two columns;
+    everything else occupies one.  ANSI escape codes are stripped before
+    counting so that colour codes don't inflate the result.
+    """
+    clean = strip_ansi(text)
+    width = 0
+    for ch in clean:
+        eaw = unicodedata.east_asian_width(ch)
+        width += 2 if eaw in ("W", "F") else 1
+    return width
+
+
 def _create_top_border(title: str, width: int, color: str) -> str:
     # Box drawing characters
     H_LINE = "─"
@@ -42,21 +58,15 @@ def _create_top_border(title: str, width: int, color: str) -> str:
 
     title_text = f" {title} "
 
-    # Check for emojis to adjust padding for visual consistency (best effort)
-    # Assuming common emojis are 2 chars wide but length 1
-    # This is not perfect but improves the most common case in this app (✨)
-    visual_offset = 0
-    if "✨" in title:
-        visual_offset += 1
+    visual_len = _visual_width(title_text)
 
     # Ensure title fits
-    if len(title_text) > width - 4:
+    if visual_len > width - 4:
         title_text = title_text[: width - 5] + "…"
+        visual_len = _visual_width(title_text)
 
     left_pad = 2
-    # Adjust right pad calculation by subtracting visual offset from the available space
-    # (wait, if visual length is longer, we need LESS padding characters to reach the same width)
-    right_pad = width - 2 - len(title_text) - left_pad - visual_offset
+    right_pad = width - 2 - visual_len - left_pad
 
     if right_pad < 0:
         right_pad = 0

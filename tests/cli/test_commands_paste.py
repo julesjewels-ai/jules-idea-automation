@@ -8,12 +8,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.cli.commands import _read_clipboard, _read_paste_content, handle_paste, handle_website
+from src.cli.cmd_paste import _read_clipboard, _read_paste_content, handle_paste
+from src.cli.cmd_website import handle_website
 
 # --- _read_clipboard tests ---
 
 
-@patch("src.cli.commands.subprocess.run")
+@patch("src.cli.cmd_paste.subprocess.run")
 def test_read_clipboard_success(mock_run: Any) -> None:
     mock_run.return_value = MagicMock(returncode=0, stdout="clipboard content here", stderr="")
     result = _read_clipboard()
@@ -21,14 +22,14 @@ def test_read_clipboard_success(mock_run: Any) -> None:
     mock_run.assert_called_once_with(["pbpaste"], capture_output=True, text=True, timeout=5)
 
 
-@patch("src.cli.commands.subprocess.run")
+@patch("src.cli.cmd_paste.subprocess.run")
 def test_read_clipboard_failure(mock_run: Any) -> None:
     mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="some error")
     with pytest.raises(RuntimeError, match="pbpaste failed"):
         _read_clipboard()
 
 
-@patch("src.cli.commands.subprocess.run", side_effect=FileNotFoundError)
+@patch("src.cli.cmd_paste.subprocess.run", side_effect=FileNotFoundError)
 def test_read_clipboard_not_available(mock_run: Any) -> None:
     with pytest.raises(RuntimeError, match="pbpaste"):
         _read_clipboard()
@@ -41,7 +42,7 @@ LONG_CONTENT = "A" * 250  # Above MIN_CONTENT_LENGTH (200)
 SHORT_CONTENT = "A" * 50  # Below MIN_CONTENT_LENGTH
 
 
-@patch("src.cli.commands._read_clipboard", return_value=LONG_CONTENT)
+@patch("src.cli.cmd_paste._read_clipboard", return_value=LONG_CONTENT)
 def test_read_paste_content_clipboard(mock_clip: Any) -> None:
     args = Namespace(clipboard=True, file_path=None, content_source=None)
     result = _read_paste_content(args)
@@ -49,7 +50,7 @@ def test_read_paste_content_clipboard(mock_clip: Any) -> None:
     mock_clip.assert_called_once()
 
 
-@patch("src.cli.commands._read_clipboard", return_value=SHORT_CONTENT)
+@patch("src.cli.cmd_paste._read_clipboard", return_value=SHORT_CONTENT)
 def test_read_paste_content_clipboard_too_short(mock_clip: Any) -> None:
     args = Namespace(clipboard=True, file_path=None, content_source=None)
     with pytest.raises(SystemExit):
@@ -90,11 +91,11 @@ def test_read_paste_content_interactive(mock_input: Any) -> None:
 # --- handle_paste tests ---
 
 
-@patch("src.cli.commands._execute_and_watch")
-@patch("src.cli.commands.Spinner")
+@patch("src.cli.cmd_paste.execute_and_watch")
+@patch("src.cli.cmd_paste.Spinner")
 @patch("src.services.gemini.GeminiClient")
 @patch("src.services.cache.FileCacheProvider")
-@patch("src.cli.commands._read_paste_content", return_value=LONG_CONTENT)
+@patch("src.cli.cmd_paste._read_paste_content", return_value=LONG_CONTENT)
 def test_handle_paste_calls_gemini(
     mock_read: Any,
     mock_cache_class: Any,
@@ -116,8 +117,8 @@ def test_handle_paste_calls_gemini(
 # --- handle_website --content tests ---
 
 
-@patch("src.cli.commands._execute_and_watch")
-@patch("src.cli.commands.Spinner")
+@patch("src.cli.cmd_website.execute_and_watch")
+@patch("src.cli.cmd_website.Spinner")
 @patch("src.services.gemini.GeminiClient")
 @patch("src.services.cache.FileCacheProvider")
 def test_handle_website_with_content_skips_scraper(
@@ -138,8 +139,8 @@ def test_handle_website_with_content_skips_scraper(
     mock_execute.assert_called_once()
 
 
-@patch("src.cli.commands._execute_and_watch")
-@patch("src.cli.commands.Spinner")
+@patch("src.cli.cmd_website.execute_and_watch")
+@patch("src.cli.cmd_website.Spinner")
 @patch("src.services.gemini.GeminiClient")
 @patch("src.services.cache.FileCacheProvider")
 def test_handle_website_with_url_uses_scraper(
