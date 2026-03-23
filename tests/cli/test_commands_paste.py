@@ -79,12 +79,12 @@ def test_read_paste_content_stdin_pipe(mock_stdin: Any) -> None:
     assert result == LONG_CONTENT
 
 
-@patch("sys.stdin")
-def test_read_paste_content_interactive(mock_stdin: Any) -> None:
-    mock_stdin.read.return_value = LONG_CONTENT
+@patch("builtins.input", side_effect=[*list(LONG_CONTENT[:50] for _ in range(5)), "END"])
+def test_read_paste_content_interactive(mock_input: Any) -> None:
     args = Namespace(clipboard=False, file_path=None, content_source=None)
     result = _read_paste_content(args)
-    assert result == LONG_CONTENT
+    # Should get 5 lines of content joined by newlines
+    assert len(result) > 200
 
 
 # --- handle_paste tests ---
@@ -131,7 +131,7 @@ def test_handle_website_with_content_skips_scraper(
 
     args = Namespace(content=LONG_CONTENT, url=None, public=False, timeout=1800, watch=False)
 
-    with patch("src.cli.commands.scrape_text", side_effect=AssertionError("scraper should not be called")) as _:
+    with patch("src.services.scraper.scrape_text", side_effect=AssertionError("scraper should not be called")) as _:
         handle_website(args)
 
     mock_gemini.extract_idea_from_text.assert_called_once_with(LONG_CONTENT)

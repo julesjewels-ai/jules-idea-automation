@@ -81,16 +81,17 @@ def handle_status(args: Namespace) -> None:
     if args.watch:
         watch_session(session_id, timeout=args.timeout)
     else:
-        session = client.get_session(session_id)
-        is_complete, pr_url = client.is_session_complete(session_id)
+        with Spinner("Fetching session status…", success_message="Status fetched"):
+            session = client.get_session(session_id)
+            is_complete, pr_url = client.is_session_complete(session_id)
 
-        # Get recent activity titles
-        activities = client.list_activities(session_id, page_size=3)
-        activity_titles = []
-        for act in activities.get("activities", []):
-            title = act.get("progressUpdated", {}).get("title", "")
-            if title:
-                activity_titles.append(title)
+            # Get recent activity titles
+            activities = client.list_activities(session_id, page_size=3)
+            activity_titles = []
+            for act in activities.get("activities", []):
+                title = act.get("progressUpdated", {}).get("title", "")
+                if title:
+                    activity_titles.append(title)
 
         print_session_status(
             session_id=session_id,
@@ -144,7 +145,8 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any |
     from src.utils.config import preflight_check_credentials
 
     # Verify GitHub/Jules tokens are valid before spending Gemini credits
-    preflight_check_credentials()
+    with Spinner("Verifying API credentials…", success_message="Credentials verified"):
+        preflight_check_credentials()
 
     print_idea_summary(idea_data)
 
@@ -383,17 +385,25 @@ def _read_paste_content(args: Namespace) -> str:
 
 def handle_paste(args: Namespace) -> None:
     """Handle the paste command — direct content input for idea extraction."""
-    # Determine source label for UX feedback
+    # Determine source label and spinner message for UX feedback
     if getattr(args, "clipboard", False):
         source_label = "📋 clipboard"
+        read_msg = "Reading clipboard…"
     elif getattr(args, "file_path", None):
         source_label = f"📄 {args.file_path}"
+        read_msg = f"Reading {args.file_path}…"
     elif getattr(args, "content_source", None) == "-":
-        source_label = "⎔ stdin"
+        source_label = "⎎ stdin"
+        read_msg = ""  # stdin/interactive are inherently visible, no spinner needed
     else:
         source_label = "⌨️  interactive"
+        read_msg = ""
 
-    text = _read_paste_content(args)
+    if read_msg:
+        with Spinner(read_msg, success_message=f"Content read from {source_label}"):
+            text = _read_paste_content(args)
+    else:
+        text = _read_paste_content(args)
 
     # Show content preview so user knows what was captured
     preview = text[:200].replace("\n", " ")
@@ -403,7 +413,7 @@ def handle_paste(args: Namespace) -> None:
     print(f"  Preview: {preview}\n")
 
     gemini = _build_gemini_client()
-    with Spinner("Extracting idea with Gemini...", success_message="Idea extracted"):
+    with Spinner("Extracting idea with Gemini…", success_message="Idea extracted"):
         idea_data = gemini.extract_idea_from_text(text)
 
     _execute_and_watch(args, idea_data, gemini=gemini)

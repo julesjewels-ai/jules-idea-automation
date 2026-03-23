@@ -22,7 +22,7 @@ from src.templates.feature_map import (
     render_production_skill_md,
 )
 from src.utils.polling import poll_until
-from src.utils.reporter import print_workflow_report
+from src.utils.reporter import Spinner, format_duration, print_workflow_report
 
 logger = logging.getLogger(__name__)
 
@@ -142,8 +142,8 @@ class IdeaWorkflow:
             WorkflowResult with repo_url, session info, etc.
 
         """
-        logger.info("Processing Idea: %s", idea_data["title"])
-        logger.info("Slug: %s", idea_data["slug"])
+        logger.debug("Processing Idea: %s", idea_data["title"])
+        logger.debug("Slug: %s", idea_data["slug"])
 
         self.event_bus.publish(
             WorkflowStarted(
@@ -199,21 +199,27 @@ class IdeaWorkflow:
         username = str(user["login"])
 
         visibility = "private" if private else "public"
-        logger.info("Creating %s GitHub repository '%s'...", visibility, idea_data["slug"])
+        logger.debug("Creating %s GitHub repository '%s'...", visibility, idea_data["slug"])
 
-        self.github.create_repo(
-            name=idea_data["slug"],
-            description=idea_data["description"][:350],
-            private=private,
-        )
+        with Spinner(
+            f"Creating {visibility} GitHub repository '{idea_data['slug']}'…",
+            success_message=f"Repository created ({visibility})",
+        ):
+            self.github.create_repo(
+                name=idea_data["slug"],
+                description=idea_data["description"][:350],
+                private=private,
+            )
 
         return username
 
     def _generate_scaffold(self, username: str, idea_data: dict[str, Any]) -> None:
         """Generate MVP scaffold and commit to repository."""
-        logger.info("Generating MVP scaffold with Gemini (this may take a moment)...")
-
-        scaffold = self.gemini.generate_project_scaffold(idea_data)
+        with Spinner(
+            "Generating MVP scaffold with Gemini…",
+            success_message="MVP scaffold generated",
+        ):
+            scaffold = self.gemini.generate_project_scaffold(idea_data)
 
         # Build README
         readme_content = build_readme(
@@ -226,36 +232,43 @@ class IdeaWorkflow:
         )
 
         # First commit: README
-        logger.info("Initializing repository with README...")
-
-        self.github.create_file(
-            owner=username,
-            repo=idea_data["slug"],
-            path="README.md",
-            content=readme_content,
-            message="Initial commit: Add README with project description",
-        )
+        with Spinner(
+            "Initializing repository with README…",
+            success_message="README committed",
+        ):
+            self.github.create_file(
+                owner=username,
+                repo=idea_data["slug"],
+                path="README.md",
+                content=readme_content,
+                message="Initial commit: Add README with project description",
+            )
 
         # Second commit: Scaffold files + feature maps
         files_to_create = self._prepare_scaffold_files(scaffold)
 
         # Generate project-specific feature maps using the scaffold as context
-        logger.info("Generating project-specific feature maps...")
-        feature_maps = self.gemini.generate_feature_maps(idea_data, scaffold.get("files", []))
+        with Spinner(
+            "Generating project-specific feature maps…",
+            success_message="Feature maps generated",
+        ):
+            feature_maps = self.gemini.generate_feature_maps(idea_data, scaffold.get("files", []))
         feature_map_files = _build_feature_map_files(idea_data, feature_maps)
         files_to_create.extend(feature_map_files)
 
         if files_to_create:
-            logger.info("Adding %d MVP files...", len(files_to_create))
+            with Spinner(
+                f"Committing {len(files_to_create)} scaffold files…",
+                success_message=f"{len(files_to_create)} files committed",
+            ):
+                result = self.github.create_files(
+                    owner=username,
+                    repo=idea_data["slug"],
+                    files=files_to_create,
+                    message="feat: Add MVP scaffold with SOLID structure",
+                )
 
-            result = self.github.create_files(
-                owner=username,
-                repo=idea_data["slug"],
-                files=files_to_create,
-                message="feat: Add MVP scaffold with SOLID structure",
-            )
-
-            logger.info("Created %d files in single commit", result["files_created"])
+            logger.debug("Created %d files in single commit", result["files_created"])
 
     def _process_file_entry(self, file_info: Any) -> dict[str, str] | None:
         """Validate and format a single file entry."""
@@ -300,29 +313,33 @@ class IdeaWorkflow:
     def _create_jules_session(self, username: str, idea_data: dict[str, Any], timeout: int) -> dict[str, Any] | None:
         """Wait for Jules indexing and create session."""
         source_id = f"sources/github/{username}/{idea_data['slug']}"
+        logger.debug("Constructed Source ID: %s", source_id)
 
-        logger.info("Constructed Source ID: %s", source_id)
-        logger.info(
-            "Waiting for Jules to discover the new repository (timeout: %ds)...",
-            timeout,
-        )
+        with Spinner(
+            f"Waiting for Jules to discover repository (timeout: {format_duration(timeout)})…",
+        ) as spinner:
 
-        # Poll for source
-        def on_poll(elapsed: int) -> None:
-            logger.info("Source not yet indexed (%ds elapsed)...", elapsed)
+            def on_poll(elapsed: int) -> None:
+                spinner.update(
+                    f"[{format_duration(elapsed)}] Waiting for Jules to index repository…"
+                )
 
-        source_found = poll_until(
-            condition=lambda: self.jules.source_exists(source_id),
-            timeout=timeout,
-            interval=10,
-            on_poll=on_poll,
-        )
+            source_found = poll_until(
+                condition=lambda: self.jules.source_exists(source_id),
+                timeout=timeout,
+                interval=10,
+                on_poll=on_poll,
+            )
 
         if not source_found:
             logger.warning("Source '%s' was not found in Jules after %ds.", source_id, timeout)
             logger.warning("Please visit https://jules.google.com to install the app.")
             return None
 
-        logger.info("Source found! Creating session in Jules...")
+        with Spinner(
+            "Creating Jules session…",
+            success_message="Jules session created",
+        ):
+            session = self.jules.create_session(source_id, idea_data["description"])
 
-        return self.jules.create_session(source_id, idea_data["description"])
+        return session

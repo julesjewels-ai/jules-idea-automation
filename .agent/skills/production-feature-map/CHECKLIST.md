@@ -100,6 +100,10 @@
 
 ### A5. CLI UX & Polish
 
+- [x] **P0** — **Spinner coverage on all workflow steps and command handlers**: Workflow steps (`workflow.py`) used invisible `logger.info()` calls, and paste/status/preflight operations in `commands.py` had no feedback. Users saw a dead terminal for 30-60s during repo creation.
+  - *Acceptance*: Every step in `IdeaWorkflow.execute()` wrapped in `Spinner`. Paste clipboard/file reads, `handle_status` API calls, and `preflight_check_credentials` all have spinners. `format_duration` used for human-readable timeouts.
+  - *Affected*: `src/core/workflow.py`, `src/cli/commands.py`, `tests/cli/test_commands_paste.py`
+
 - [ ] **P1** — **`--dry-run` mode**: Execute everything except actual API calls. Show what would be created (repo name, files, session params).
   - *Acceptance*: `--dry-run` flag on all three modes. Prints planned actions without side effects. Tests verify no HTTP calls.
   - *Affected*: `src/cli/parser.py`, `src/cli/commands.py`, `src/core/workflow.py`
@@ -260,4 +264,4 @@
 
 ---
 
-*Last updated: 2026-03-23*
+*Last updated: 2026-03-23 (Phase 11: UX feedback visibility)*

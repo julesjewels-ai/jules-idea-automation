@@ -88,3 +88,4 @@ User Input → Gemini (idea/scaffold) → GitHub (repo + atomic commit) → Jule
 - Phase 8 (partial): CLI guide, input validation (in progress)
 - Phase 9: Paste-content input modes (`paste`, `website --content`)
 - Phase 10: Checklist template clarity & project-aware production items
+- Phase 11: UX feedback visibility — spinners on all workflow steps, paste reads, status queries, and credential preflight
