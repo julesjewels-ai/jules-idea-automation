@@ -4,6 +4,33 @@
 
 This log documents the development journey, design decisions, and evolution of the Jules Automation Tool.
 
+### Phase 10: Checklist Template Clarity & Project-Aware Production Items
+
+**Date:** 2026-03-23
+
+**Changes:**
+
+Improved the static fallback checklists generated in new repositories when AI-powered feature map generation is unavailable.
+
+1. **Template Notice Banner:**
+   - Both MVP and Production checklists now display a `⚠️ TEMPLATE` callout when using static fallback items, making it clear these are generic starting points — not custom-generated.
+   - AI-generated checklists remain unchanged (no banner).
+
+2. **Project-Aware Production Checklist:**
+   - `_static_production_items()` now accepts the `idea` dictionary and uses `tech_stack` to conditionally include:
+     - **API items** (Health check, Rate limiting, API docs) only when tech stack includes frameworks like FastAPI, Flask, Django, Express, etc.
+     - **Database items** (Database migrations) only when tech stack includes PostgreSQL, MySQL, MongoDB, Redis, etc.
+   - Non-applicable items are no longer included, reducing noise for CLI-only or non-DB projects.
+
+**Files Changed:**
+- `src/templates/feature_map.py` — Added `_TEMPLATE_NOTICE`, made `_static_production_items()` project-aware
+- `tests/templates/test_feature_map.py` — 8 new tests: template notice presence/absence, API/DB conditional items, non-API/non-DB stacks
+
+**Rationale:**
+Users were confused by static fallback checklists that appeared custom-generated. The template banner clarifies provenance, and conditional items reduce irrelevant noise.
+
+---
+
 ### Phase 9: Paste-Content Input Modes
 
 **Date:** 2026-03-18

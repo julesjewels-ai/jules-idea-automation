@@ -51,7 +51,7 @@ An **Idea Factory** CLI that automates the full journey from _raw concept_ to a 
 - **Session Monitoring** — Live-poll sessions with `--watch` to see real-time activity and PR outputs.
 - **API Response Caching** — File-based cache in `.cache/` reduces Gemini latency and cost on repeated queries.
 - **Audit Logging** — Every workflow execution is persisted to `.jules_history.jsonl` via an Event Bus, giving you a full history of generated ideas and sessions.
-- **Resilient Generation** — Exponential backoff retries plus a comprehensive fallback scaffold if API calls time out.
+- **Resilient Generation** — Exponential backoff retries plus a comprehensive fallback scaffold if API calls time out. Static fallback checklists are clearly labeled as templates and filter items by project tech stack.
 
 ---
 

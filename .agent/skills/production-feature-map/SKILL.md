@@ -61,6 +61,7 @@ jules-idea-automation/
 │   │   ├── audit.py        # JsonFileAuditLogger (JSONL event log)
 │   │   └── bus.py          # LocalEventBus + NullEventBus
 │   ├── templates/scaffold/ # 9 fallback scaffold template files
+│   ├── templates/feature_map.py  # MVP + Production checklists (AI or static w/ TEMPLATE notice)
 │   └── utils/              # Cross-cutting concerns
 │       ├── errors.py       # Custom exception hierarchy
 │       ├── guide.py        # In-CLI guide system
@@ -85,3 +86,5 @@ User Input → Gemini (idea/scaffold) → GitHub (repo + atomic commit) → Jule
 - Phase 6: SOLID refactor (modular layers)
 - Phase 7: Manual mode (custom ideas, slugify, tech_stack/features)
 - Phase 8 (partial): CLI guide, input validation (in progress)
+- Phase 9: Paste-content input modes (`paste`, `website --content`)
+- Phase 10: Checklist template clarity & project-aware production items
