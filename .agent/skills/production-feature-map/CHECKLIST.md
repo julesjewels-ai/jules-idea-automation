@@ -8,7 +8,7 @@
 
 ### A1. Error Handling & Resilience
 
-- [ ] **P0** — **Graceful API failure recovery in workflow**: If GitHub repo creation succeeds but Jules session creation fails, the CLI should report the partial success (repo URL) and suggest `status` command. Currently the session errors may leave the user with no repo URL output.
+- [x] **P0** — **Graceful API failure recovery in workflow**: If GitHub repo creation succeeds but Jules session creation fails, the CLI should report the partial success (repo URL) and suggest `status` command. Currently the session errors may leave the user with no repo URL output.
   - *Acceptance*: Partial success prints repo URL + clear next-step guidance. Test with mock Jules timeout.
   - *Affected*: `src/core/workflow.py` → `execute()`
 
@@ -32,7 +32,7 @@
 
 ### A2. Testing & Quality
 
-- [ ] **P0** — **Integration test for full workflow** (`execute()`): No test exercises the `IdeaWorkflow.execute()` path end-to-end with mocked services.
+- [x] **P0** — **Integration test for full workflow** (`execute()`): No test exercises the `IdeaWorkflow.execute()` path end-to-end with mocked services.
   - *Acceptance*: `tests/core/test_workflow.py` exists with at least 3 scenarios: happy path, partial failure (Jules down), scaffold failure (fallback used). All mocked.
   - *Affected*: `tests/core/test_workflow.py` (new)
 
@@ -60,7 +60,7 @@
 
 ### A3. Configuration & Environment
 
-- [ ] **P0** — **Startup config validation**: The tool only validates API keys when the respective client is first used. Missing keys should be caught at startup with a clear checklist of what's wrong.
+- [x] **P0** — **Startup config validation**: The tool only validates API keys when the respective client is first used. Missing keys should be caught at startup with a clear checklist of what's wrong.
   - *Acceptance*: `main.py` validates all 3 env vars (`GEMINI_API_KEY`, `GITHUB_TOKEN`, `JULES_API_KEY`) before dispatching any command. Prints a table of missing/present keys.
   - *Affected*: `main.py`, `src/cli/commands.py`
 

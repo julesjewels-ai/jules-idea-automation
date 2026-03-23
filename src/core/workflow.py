@@ -22,7 +22,7 @@ from src.templates.feature_map import (
     render_production_skill_md,
 )
 from src.utils.polling import poll_until
-from src.utils.reporter import Spinner, format_duration, print_workflow_report
+from src.utils.reporter import Spinner, format_duration, print_partial_failure, print_workflow_report
 
 logger = logging.getLogger(__name__)
 
@@ -154,15 +154,36 @@ class IdeaWorkflow:
             )
         )
 
-        # Step 1: Create GitHub repository
+        # Step 1: Create GitHub repository (unrecoverable — must succeed)
         username = self._create_repository(idea_data, private)
         repo_url = f"https://github.com/{username}/{idea_data['slug']}"
 
-        # Step 2: Generate and commit scaffold
-        self._generate_scaffold(username, idea_data)
+        # Step 2: Generate and commit scaffold (recoverable)
+        try:
+            self._generate_scaffold(username, idea_data)
+        except Exception as exc:
+            logger.warning("Scaffold generation failed: %s", exc, exc_info=True)
+            print_partial_failure(
+                step="Scaffold generation",
+                error=str(exc),
+                repo_url=repo_url,
+                tip="The repository was created but has no scaffold. "
+                "You can push code manually or re-run the tool.",
+            )
 
-        # Step 3: Wait for Jules indexing and create session
-        session = self._create_jules_session(username, idea_data, timeout)
+        # Step 3: Wait for Jules indexing and create session (recoverable)
+        session: dict[str, Any] | None = None
+        try:
+            session = self._create_jules_session(username, idea_data, timeout)
+        except Exception as exc:
+            logger.warning("Jules session creation failed: %s", exc, exc_info=True)
+            print_partial_failure(
+                step="Jules session creation",
+                error=str(exc),
+                repo_url=repo_url,
+                tip="Run 'python main.py status <session-id>' later, "
+                "or visit https://jules.google.com to create a session manually.",
+            )
 
         # Build result
         result = WorkflowResult(

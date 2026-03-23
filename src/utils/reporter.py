@@ -62,7 +62,7 @@ def _create_top_border(title: str, width: int, color: str) -> str:
 
     # Ensure title fits
     if visual_len > width - 4:
-        title_text = title_text[: width - 5] + "…"
+        title_text = title_text[:max(0, width - 5)] + "…"  # pyre-ignore[16]
         visual_len = _visual_width(title_text)
 
     left_pad = 2
@@ -185,7 +185,7 @@ class Spinner:
                 symbol = f"{Colors.FAIL}✖{Colors.ENDC}"
             else:
                 symbol = f"{Colors.GREEN}✔{Colors.ENDC}"
-                if self.success_message:
+                if self.success_message is not None:
                     self.message = self.success_message
 
             # Overwrite the spinner with final status
@@ -227,6 +227,38 @@ def print_workflow_report(
     print(f"{Colors.BOLD}{Colors.BLUE}{'=' * 50}{Colors.ENDC}")
 
 
+def print_partial_failure(
+    step: str,
+    error: str,
+    repo_url: str | None = None,
+    tip: str | None = None,
+) -> None:
+    """Print a warning panel for a workflow step that failed after repo creation.
+
+    Args:
+    ----
+        step: The step that failed (e.g. "Scaffold generation")
+        error: The error message
+        repo_url: The repo URL to display (if available)
+        tip: Actionable guidance for the user
+
+    """
+    lines = [
+        f"{Colors.BOLD}⚠️  {step} failed:{Colors.ENDC}",
+        f"  {error}",
+    ]
+    if repo_url:
+        lines.append("")
+        lines.append(f"{Colors.BOLD}📦 Your repo was created:{Colors.ENDC}")
+        lines.append(f"  {Colors.UNDERLINE}{repo_url}{Colors.ENDC}")
+    if tip:
+        lines.append("")
+        lines.append(f"{Colors.BOLD}💡 Tip:{Colors.ENDC}")
+        lines.append(f"  {tip}")
+
+    print_panel("\n".join(lines), title="Partial Failure", color=Colors.YELLOW, width=70)
+
+
 def print_session_status(
     session_id: str,
     title: str,
@@ -247,8 +279,8 @@ def print_session_status(
 
     if activities:
         print(f"\n   {Colors.BOLD}Recent Activity:{Colors.ENDC}")
-        for activity in activities[:3]:
-            print(f"   - {activity[:70]}")
+        for activity in list(activities)[:3]:  # pyre-ignore[16]
+            print(f"   - {str(activity)[:70]}")  # pyre-ignore[16]
 
 
 def format_duration(seconds: int) -> str:
@@ -267,7 +299,7 @@ def format_duration(seconds: int) -> str:
 def print_progress(elapsed: int, message: str) -> None:
     """Prints a progress update."""
     duration = format_duration(elapsed)
-    print(f"  {Colors.CYAN}[{duration}]{Colors.ENDC} {message[:60]}...")
+    print(f"  {Colors.CYAN}[{duration}]{Colors.ENDC} {str(message)[:60]}...")  # pyre-ignore[16]
 
 
 def print_watch_complete(elapsed: int, pr_url: str | None = None) -> None:
