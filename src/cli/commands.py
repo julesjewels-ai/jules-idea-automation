@@ -141,6 +141,10 @@ def _execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any |
     from src.core.workflow import IdeaWorkflow
     from src.services.audit import JsonFileAuditLogger
     from src.services.bus import LocalEventBus
+    from src.utils.config import preflight_check_credentials
+
+    # Verify GitHub/Jules tokens are valid before spending Gemini credits
+    preflight_check_credentials()
 
     print_idea_summary(idea_data)
 
@@ -407,6 +411,10 @@ def handle_paste(args: Namespace) -> None:
 
 def dispatch_command(args: Namespace) -> None:
     """Dispatch to the appropriate command handler."""
+    from src.utils.config import validate_env_keys
+
+    validate_env_keys(args.command, is_demo=getattr(args, "demo", False))
+
     handlers = {
         "list-sources": lambda: handle_list_sources(),
         "agent": lambda: handle_agent(args),
