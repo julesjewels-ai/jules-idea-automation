@@ -7,6 +7,15 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 
+def _read_scaffold_template(filename: str) -> str:
+    """Read a scaffold template file, returning empty string on failure."""
+    template_path = Path(__file__).parent.parent / "templates" / "scaffold" / filename
+    try:
+        return template_path.read_text(encoding="utf-8")
+    except Exception:
+        return ""
+
+
 class IdeaResponse(BaseModel):
     """Represents a generated software idea."""
 
@@ -33,22 +42,12 @@ class ProjectScaffold(BaseModel):
     run_command: str = Field(default="python main.py", description="Command to run the app.")
 
     @classmethod
-    def _read_template(cls, filename: str) -> str:
-        """Read a template file."""
-        template_dir = Path(__file__).parent.parent / "templates" / "scaffold"
-        template_path = template_dir / filename
-        try:
-            return template_path.read_text(encoding="utf-8")
-        except Exception:
-            return ""
-
-    @classmethod
     def create_fallback_scaffold(cls, title: str, description: str) -> "ProjectScaffold":
         """Creates a default scaffold when generation fails."""
         desc = description[:200]
 
         def render(filename: str) -> str:
-            content = cls._read_template(filename)
+            content = _read_scaffold_template(filename)
             # Use replace instead of format because strings like Makefile contain literal curly braces
             return content.replace("{title}", title).replace("{desc}", desc)
 
@@ -61,12 +60,12 @@ class ProjectScaffold(BaseModel):
                 ),
                 ProjectFile(
                     path="src/__init__.py",
-                    content=cls._read_template("src_init.py.tpl"),
+                    content=_read_scaffold_template("src_init.py.tpl"),
                     description="Package marker",
                 ),
                 ProjectFile(
                     path="src/core/__init__.py",
-                    content=cls._read_template("src_core_init.py.tpl"),
+                    content=_read_scaffold_template("src_core_init.py.tpl"),
                     description="Package marker",
                 ),
                 ProjectFile(
@@ -76,7 +75,7 @@ class ProjectScaffold(BaseModel):
                 ),
                 ProjectFile(
                     path="Makefile",
-                    content=cls._read_template("Makefile.tpl"),
+                    content=_read_scaffold_template("Makefile.tpl"),
                     description="Development commands",
                 ),
                 ProjectFile(
@@ -86,12 +85,12 @@ class ProjectScaffold(BaseModel):
                 ),
                 ProjectFile(
                     path=".gitignore",
-                    content=cls._read_template("gitignore.tpl"),
+                    content=_read_scaffold_template("gitignore.tpl"),
                     description="Git ignore file",
                 ),
                 ProjectFile(
                     path="tests/__init__.py",
-                    content=cls._read_template("tests_init.py.tpl"),
+                    content=_read_scaffold_template("tests_init.py.tpl"),
                     description="Test package marker",
                 ),
                 ProjectFile(

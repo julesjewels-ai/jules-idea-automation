@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import sys
 from argparse import Namespace
+from functools import partial
 
 from src.cli.cmd_agent import handle_agent
 from src.cli.cmd_manual import handle_manual
@@ -63,13 +64,13 @@ def dispatch_command(args: Namespace) -> None:
     validate_env_keys(args.command, is_demo=getattr(args, "demo", False))
 
     handlers = {
-        "list-sources": lambda: handle_list_sources(),
-        "agent": lambda: handle_agent(args),
-        "website": lambda: handle_website(args),
-        "paste": lambda: handle_paste(args),
-        "status": lambda: handle_status(args),
-        "guide": lambda: handle_guide(args),
-        "manual": lambda: handle_manual(args),
+        "list-sources": handle_list_sources,
+        "agent": partial(handle_agent, args),
+        "website": partial(handle_website, args),
+        "paste": partial(handle_paste, args),
+        "status": partial(handle_status, args),
+        "guide": partial(handle_guide, args),
+        "manual": partial(handle_manual, args),
     }
 
     handler = handlers.get(args.command)

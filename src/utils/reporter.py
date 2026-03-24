@@ -20,7 +20,6 @@ class Colors:
     GREEN = "\033[92m"
     YELLOW = "\033[93m"
     RED = "\033[91m"
-    FAIL = "\033[91m"
     ENDC = "\033[0m"
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
@@ -182,7 +181,7 @@ class Spinner:
             sys.stdout.write("\033[?25h")  # Show cursor
 
             if exc_type:
-                symbol = f"{Colors.FAIL}✖{Colors.ENDC}"
+                symbol = f"{Colors.RED}✖{Colors.ENDC}"
             else:
                 symbol = f"{Colors.GREEN}✔{Colors.ENDC}"
                 if self.success_message is not None:
@@ -405,7 +404,6 @@ def print_demo_report(
 
     # --- Feature maps summary ---
     if feature_maps:
-        assert feature_maps is not None  # appease type-checker narrowing
         mvp = feature_maps.get("mvp_features", [])
         prod = feature_maps.get("production_features", [])
         fm_lines = []

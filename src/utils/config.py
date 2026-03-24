@@ -7,11 +7,12 @@ actionable summary of what's missing up front.
 
 from __future__ import annotations
 
+import logging
 import os
 
 from src.utils.errors import ConfigurationError
 
-logger = __import__("logging").getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 # (env var name, setup URL)
 _KEY_INFO: dict[str, str] = {
