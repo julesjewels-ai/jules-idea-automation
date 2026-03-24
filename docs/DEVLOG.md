@@ -4,6 +4,34 @@
 
 This log documents the development journey, design decisions, and evolution of the Jules Automation Tool.
 
+### Phase 13: Retry with Exponential Backoff
+
+**Date:** 2026-03-24
+
+**Changes:**
+
+Added automatic retry with exponential backoff to all external HTTP API calls (GitHub and Jules) via a single change to `BaseApiClient._request()`.
+
+1. **Retry Logic:**
+   - Retries up to 3× on transient failures: 5xx status codes, `Timeout`, and `ConnectionError`
+   - 4xx errors (401, 403, 404, 422) raise immediately — they are permanent
+   - Backoff delays: `0.5s → 1.0s → 2.0s` (configurable via `retry_base_delay`)
+   - Each retry logged at `WARNING` level with service name, status, attempt count
+
+2. **DRY Refactor:**
+   - Extracted `_wait_before_retry()` helper — log + sleep (no-op on final attempt)
+   - Extracted `_raise_after_retries_exhausted()` — translate last exception to domain error
+
+**Files Changed:**
+- `src/services/http_client.py` — Retry loop, `_wait_before_retry()`, `_raise_after_retries_exhausted()`
+- `tests/services/test_http_client.py` — 6 new tests: 502 retry+success, 503 exhaustion, timeout retry, connection retry, no-retry on 4xx, backoff delay values
+- `tests/services/test_github.py` — Updated `test_request_network_error` for new retry behavior
+
+**Rationale:**
+Both GitHub and Jules API clients inherit from `BaseApiClient`, so implementing retry at the base class level gives resilience to **all** HTTP calls with zero changes to `github.py` or `jules.py`. No new dependencies introduced.
+
+---
+
 ### Phase 10: Checklist Template Clarity & Project-Aware Production Items
 
 **Date:** 2026-03-23

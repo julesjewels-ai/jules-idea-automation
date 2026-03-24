@@ -74,53 +74,20 @@ class BaseApiClient:
                 return response.json()  # type: ignore[no-any-return]
 
             except requests.exceptions.HTTPError as e:
-                if e.response is not None and e.response.status_code in _RETRYABLE_STATUS_CODES:
-                    last_exception = e
-                    if attempt < self._max_retries:
-                        delay = self._retry_base_delay * (2 ** (attempt - 1))
-                        logger.warning(
-                            "%s API returned %s (attempt %d/%d). Retrying in %.1fs…",
-                            self._service_name,
-                            e.response.status_code,
-                            attempt,
-                            self._max_retries,
-                            delay,
-                        )
-                        time.sleep(delay)
-                        continue
-                    # Exhausted retries — fall through to raise
-                else:
-                    # 4xx errors are not retryable
+                status = e.response.status_code if e.response is not None else 0
+                if status not in _RETRYABLE_STATUS_CODES:
                     tip = self._handle_http_error(e)
                     raise self._error_class(f"{self._service_name} API Error: {e}", tip=tip)
+                last_exception = e
+                self._wait_before_retry(attempt, f"API returned {status}")
 
             except requests.exceptions.Timeout as e:
                 last_exception = e
-                if attempt < self._max_retries:
-                    delay = self._retry_base_delay * (2 ** (attempt - 1))
-                    logger.warning(
-                        "%s request timed out (attempt %d/%d). Retrying in %.1fs…",
-                        self._service_name,
-                        attempt,
-                        self._max_retries,
-                        delay,
-                    )
-                    time.sleep(delay)
-                    continue
+                self._wait_before_retry(attempt, "request timed out")
 
             except requests.exceptions.ConnectionError as e:
                 last_exception = e
-                if attempt < self._max_retries:
-                    delay = self._retry_base_delay * (2 ** (attempt - 1))
-                    logger.warning(
-                        "%s connection error (attempt %d/%d). Retrying in %.1fs…",
-                        self._service_name,
-                        attempt,
-                        self._max_retries,
-                        delay,
-                    )
-                    time.sleep(delay)
-                    continue
+                self._wait_before_retry(attempt, "connection error")
 
             except requests.exceptions.RequestException as e:
                 raise self._error_class(
@@ -128,7 +95,30 @@ class BaseApiClient:
                     tip="Check your internet connection.",
                 )
 
-        # All retries exhausted
+        # All retries exhausted — raise with context from the last failure.
+        self._raise_after_retries_exhausted(last_exception)
+
+    def _wait_before_retry(self, attempt: int, reason: str) -> None:
+        """Log a warning and sleep before the next retry attempt.
+
+        On the final attempt this is a no-op (the caller falls through
+        to ``_raise_after_retries_exhausted``).
+        """
+        if attempt >= self._max_retries:
+            return
+        delay = self._retry_base_delay * (2 ** (attempt - 1))
+        logger.warning(
+            "%s %s (attempt %d/%d). Retrying in %.1fs…",
+            self._service_name,
+            reason,
+            attempt,
+            self._max_retries,
+            delay,
+        )
+        time.sleep(delay)
+
+    def _raise_after_retries_exhausted(self, last_exception: Exception | None) -> None:
+        """Translate the last transient exception into a domain error."""
         if isinstance(last_exception, requests.exceptions.HTTPError):
             tip = self._handle_http_error(last_exception)
             raise self._error_class(

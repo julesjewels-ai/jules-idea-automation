@@ -109,3 +109,17 @@ classDiagram
 - **`CacheProvider` (Protocol):** An interface that provides `get(key)` and `set(key, value)` semantics.
 - **`FileCacheProvider`:** A concrete implementation writing cached responses to the local `.cache/` directory.
 - **Integration:** Supplied to the `GeminiClient` upon initialization. The client abstracts the lookups into private helpers (`_get_cached_content` and `_fetch_from_api`), allowing the core generator logic to remain clean.
+
+## HTTP Resilience
+
+All external API calls (GitHub, Jules) flow through `BaseApiClient._request()` in `src/services/http_client.py`, which provides **automatic retry with exponential backoff**:
+
+- **Retryable failures:** 500, 502, 503, 504, `Timeout`, `ConnectionError`
+- **Not retried:** 4xx errors (permanent failures)
+- **Max attempts:** 3 (configurable per-client via `max_retries`)
+- **Backoff:** `base_delay × 2^(attempt-1)` → `0.5s, 1.0s, 2.0s` by default
+- **Logging:** Each retry emits a `WARNING` with service name, status code, and delay
+
+This is implemented via two helpers that keep the main `_request()` loop clean:
+- `_wait_before_retry()` — logs + sleeps (no-op on final attempt)
+- `_raise_after_retries_exhausted()` — translates the last exception into a domain `AppError`
