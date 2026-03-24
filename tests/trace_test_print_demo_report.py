@@ -1,6 +1,7 @@
+from typing import Any
+
 import pytest
 from pytest_mock import MockerFixture
-from typing import Any
 
 from src.utils.reporter import print_demo_report
 
@@ -10,30 +11,31 @@ def mock_context() -> dict[str, dict[str, Any] | None]:
     return {
         "idea_data": {"title": "Test App", "description": "A test app", "slug": "test-app"},
         "scaffold": {
-            "files": [
-                {"path": "main.py", "description": "Main entry point"}
-            ],
+            "files": [{"path": "main.py", "description": "Main entry point"}],
             "requirements": ["pytest", "requests"],
-            "run_command": "python main.py"
+            "run_command": "python main.py",
         },
         "feature_maps": {
             "mvp_features": [{"name": "Auth", "priority": "High"}],
-            "production_features": [{"name": "Scaling", "priority": "Low"}]
-        }
+            "production_features": [{"name": "Scaling", "priority": "Low"}],
+        },
     }
 
 
-@pytest.mark.parametrize("scenario, modify_context, expected_error", [
-    ("happy_path", {}, None),
-    ("edge_case_empty", {"scaffold": {}, "feature_maps": None}, None),
-    ("error_state_invalid_type", {"scaffold": None}, AttributeError),
-])
+@pytest.mark.parametrize(
+    "scenario, modify_context, expected_error",
+    [
+        ("happy_path", {}, None),
+        ("edge_case_empty", {"scaffold": {}, "feature_maps": None}, None),
+        ("error_state_invalid_type", {"scaffold": None}, AttributeError),
+    ],
+)
 def test_print_demo_report_behavior(
     mocker: MockerFixture,
     mock_context: dict[str, dict[str, Any] | None],
     scenario: str,
     modify_context: dict[str, Any],
-    expected_error: type[Exception] | None
+    expected_error: type[Exception] | None,
 ) -> None:
     # 1. Setup Mocks (Namespace Verified)
     # The function prints using standard print and internal print_panel.
