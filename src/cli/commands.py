@@ -48,9 +48,8 @@ def handle_guide(args: Namespace) -> None:
         "manual": print_manual_guide,
     }
 
-    guide_fn = guides.get(workflow)
-    if guide_fn:
-        guide_fn()
+    if isinstance(workflow, str) and workflow in guides:
+        guides[workflow]()
     else:
         print_welcome_guide()
         print_examples()
