@@ -12,13 +12,13 @@
   - *Acceptance*: Partial success prints repo URL + clear next-step guidance. Test with mock Jules timeout.
   - *Affected*: `src/core/workflow.py` → `execute()`
 
-- [ ] **P1** — **Retry with backoff on GitHub API calls**: `GitHubClient.create_repo` and `create_files` have no retry logic. 5xx from GitHub loses the entire workflow.
+- [x] **P1** — **Retry with backoff on GitHub API calls**: `GitHubClient.create_repo` and `create_files` have no retry logic. 5xx from GitHub loses the entire workflow.
   - *Acceptance*: All GitHub API calls retry up to 3× with exponential backoff. Unit test with mock 502 response.
-  - *Affected*: `src/services/github.py`
+  - *Affected*: `src/services/http_client.py` (retry in `BaseApiClient._request()`), `tests/services/test_http_client.py`
 
-- [ ] **P1** — **Retry with backoff on Jules API calls**: `JulesClient.create_session`, `get_session`, `list_activities` have no retry. 5xx from Jules is unrecoverable.
+- [x] **P1** — **Retry with backoff on Jules API calls**: `JulesClient.create_session`, `get_session`, `list_activities` have no retry. 5xx from Jules is unrecoverable.
   - *Acceptance*: All Jules API calls retry up to 3× with exponential backoff. Unit test with mock 503 response.
-  - *Affected*: `src/services/jules.py`
+  - *Affected*: `src/services/http_client.py` (retry in `BaseApiClient._request()`), `tests/services/test_http_client.py`
 
 - [ ] **P2** — **Structured error output for all CLI commands**: When any command fails, the user should see a clear error panel with the error type, message, and actionable tip — not a raw traceback.
   - *Acceptance*: Top-level `try/except` in `main.py` catches `AppError` subclasses and prints formatted panels. Tracebacks only in `--verbose` mode.
@@ -264,4 +264,4 @@
 
 ---
 
-*Last updated: 2026-03-23 (Phase 11: UX feedback visibility)*
+*Last updated: 2026-03-24 (Phase 12: Retry with exponential backoff)*
