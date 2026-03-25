@@ -40,7 +40,7 @@
   - *Acceptance*: `pytest-cov` added to dev deps. CI fails if coverage drops below 70%. Coverage report uploaded as artifact.
   - *Affected*: `.github/workflows/ci.yml`, `pyproject.toml`
 
-- [ ] **P1** — **Test the audit logger**: `JsonFileAuditLogger` has no dedicated tests. Atomic write and error cases are untested.
+- [x] **P1** — **Test the audit logger**: `JsonFileAuditLogger` has no dedicated tests. Atomic write and error cases are untested.
   - *Acceptance*: `tests/services/test_audit.py` with happy path, write failure, and concurrent write tests.
   - *Affected*: `tests/services/test_audit.py` (new)
 
@@ -264,4 +264,4 @@
 
 ---
 
-*Last updated: 2026-03-24 (Phase 12: Retry with exponential backoff)*
+*Last updated: 2026-03-25 (Phase 14: Audit logger unit tests — 13 tests across 4 classes: happy path, write failure, non-DomainEvent filtering, directory creation)*

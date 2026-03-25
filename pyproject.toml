@@ -60,3 +60,4 @@ explicit_package_bases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--ignore=.DS_Store --ignore=.coverage --ignore=.env"

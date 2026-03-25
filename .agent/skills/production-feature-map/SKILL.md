@@ -91,3 +91,4 @@ User Input → Gemini (idea/scaffold) → GitHub (repo + atomic commit) → Jule
 - Phase 11: UX feedback visibility — spinners on all workflow steps, paste reads, status queries, and credential preflight
 - Phase 12: Graceful API failure recovery — partial-success reporting for scaffold & Jules failures, workflow integration tests
 - Phase 13: Retry with exponential backoff — automatic retry (3×) on 5xx/Timeout/ConnectionError for all HTTP API calls via `BaseApiClient`
+- Phase 14: Audit logger unit tests — 13 tests across 4 classes (happy path, write failure, non-DomainEvent filtering, directory creation) in `tests/services/test_audit.py`; fixed pre-existing macOS PermissionError blocking all pytest collection via new root `conftest.py`
