@@ -35,8 +35,7 @@ def _read_clipboard() -> str:
         return result.stdout
     except FileNotFoundError:
         raise RuntimeError(
-            "Clipboard reading requires 'pbpaste' (macOS only). "
-            "On other systems, use --file or pipe via stdin instead."
+            "Clipboard reading requires 'pbpaste' (macOS only). On other systems, use --file or pipe via stdin instead."
         )
 
 
