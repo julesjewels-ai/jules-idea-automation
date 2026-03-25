@@ -47,7 +47,10 @@ def _make_workflow(
     if not hasattr(gh.create_files, "return_value") or gh.create_files.return_value.__class__.__name__ == "MagicMock":
         gh.create_files.return_value = {"files_created": 3}
 
-    if not hasattr(gm.generate_project_scaffold, "return_value") or gm.generate_project_scaffold.return_value.__class__.__name__ == "MagicMock":
+    if (
+        not hasattr(gm.generate_project_scaffold, "return_value")
+        or gm.generate_project_scaffold.return_value.__class__.__name__ == "MagicMock"
+    ):
         gm.generate_project_scaffold.return_value = {
             "files": [
                 {"path": "main.py", "content": "print('hello')"},
@@ -55,7 +58,10 @@ def _make_workflow(
             "requirements": ["pytest"],
             "run_command": "python main.py",
         }
-    if not hasattr(gm.generate_feature_maps, "return_value") or gm.generate_feature_maps.return_value.__class__.__name__ == "MagicMock":
+    if (
+        not hasattr(gm.generate_feature_maps, "return_value")
+        or gm.generate_feature_maps.return_value.__class__.__name__ == "MagicMock"
+    ):
         gm.generate_feature_maps.return_value = {
             "mvp_features": [],
             "production_features": [],
@@ -63,7 +69,10 @@ def _make_workflow(
 
     if not hasattr(jl.source_exists, "return_value") or jl.source_exists.return_value.__class__.__name__ == "MagicMock":
         jl.source_exists.return_value = True
-    if not hasattr(jl.create_session, "return_value") or jl.create_session.return_value.__class__.__name__ == "MagicMock":
+    if (
+        not hasattr(jl.create_session, "return_value")
+        or jl.create_session.return_value.__class__.__name__ == "MagicMock"
+    ):
         jl.create_session.return_value = {
             "id": "session-123",
             "url": "https://jules.google.com/sessions/session-123",
