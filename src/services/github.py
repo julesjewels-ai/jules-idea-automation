@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -37,6 +39,45 @@ class GitHubClient(BaseApiClient):
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
         )
+
+        self._verify_token_scopes()
+
+    def _verify_token_scopes(self) -> None:
+        """Verifies that the provided GitHub token has the required 'repo' scope."""
+        try:
+            response = requests.get(
+                f"{self.base_url}/user",
+                headers=self.headers,
+                timeout=self._timeout,
+            )
+            response.raise_for_status()
+
+            scopes_header = response.headers.get("x-oauth-scopes", "")
+            scopes = [s.strip() for s in scopes_header.split(",") if s.strip()]
+
+            if "repo" not in scopes:
+                raise ConfigurationError(
+                    "GITHUB_TOKEN is missing the required 'repo' scope.",
+                    tip="Regenerate your token with the 'repo' scope at https://github.com/settings/tokens and update your .env file.",
+                )
+
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 401:
+                raise ConfigurationError(
+                    "GITHUB_TOKEN is invalid or expired.",
+                    tip="Create a new personal access token at https://github.com/settings/tokens and update your .env file.",
+                )
+            if e.response is not None and e.response.status_code == 403:
+                raise ConfigurationError(
+                    "GITHUB_TOKEN has insufficient permissions or is rate limited.",
+                    tip="Check your token at https://github.com/settings/tokens",
+                )
+            raise ConfigurationError(f"Failed to validate GITHUB_TOKEN: {e}")
+        except requests.exceptions.RequestException as e:
+            raise ConfigurationError(
+                f"Network error while validating GITHUB_TOKEN: {e}",
+                tip="Check your internet connection.",
+            )
 
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""

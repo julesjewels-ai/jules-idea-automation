@@ -91,7 +91,7 @@ def test_generate_idea_api_error(client: Any) -> None:
 
 def test_generate_idea_api_error_503_fallback(client: Any) -> None:
     """Test that a 503 error falls back to the second model, which also fails."""
-
+    client.models = ['gemini-2.5-pro', 'gemini-2.5-flash']
 
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
     client.client.models.generate_content.side_effect = mock_error
@@ -106,7 +106,7 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
 
 def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     """Test that a 503 error falls back to the second model which succeeds."""
-
+    client.models = ['gemini-2.5-pro', 'gemini-2.5-flash']
 
     api_error = MockAPIError("503 UNAVAILABLE", 503)
 
