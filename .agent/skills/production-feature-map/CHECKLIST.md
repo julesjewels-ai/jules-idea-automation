@@ -20,7 +20,7 @@
   - *Acceptance*: All Jules API calls retry up to 3× with exponential backoff. Unit test with mock 503 response.
   - *Affected*: `src/services/http_client.py` (retry in `BaseApiClient._request()`), `tests/services/test_http_client.py`
 
-- [ ] **P2** — **Structured error output for all CLI commands**: When any command fails, the user should see a clear error panel with the error type, message, and actionable tip — not a raw traceback.
+- [x] **P2** — **Structured error output for all CLI commands**: When any command fails, the user should see a clear error panel with the error type, message, and actionable tip — not a raw traceback.
   - *Acceptance*: Top-level `try/except` in `main.py` catches `AppError` subclasses and prints formatted panels. Tracebacks only in `--verbose` mode.
   - *Affected*: `main.py`, `src/utils/errors.py`
 

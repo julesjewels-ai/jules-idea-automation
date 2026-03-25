@@ -4,6 +4,41 @@
 
 This log documents the development journey, design decisions, and evolution of the Jules Automation Tool.
 
+### Phase 14: Structured Error Output & `--verbose` Flag
+
+**Date:** 2026-03-25
+
+**Changes:**
+
+Replaced raw Python tracebacks with styled ANSI panels for all CLI error paths, and added a global `--verbose` flag to opt into full stack traces on failure.
+
+1. **Structured Error Panels (`main.py`):**
+   - `AppError` subclasses (configuration, generation, API errors) now display a titled panel with the error message and actionable tip — no traceback by default.
+   - Generic `Exception` catches render an "Unexpected Error" panel with a `--verbose` hint.
+   - Empty-message exceptions fall back to the exception class name as panel content.
+
+2. **`--verbose` Global Flag (`src/cli/parser.py`):**
+   - Added `--verbose` to the root argument parser (before subcommands).
+   - When set, `traceback.print_exc()` is printed to stderr after the panel.
+
+3. **Refactor — DRY helpers (`main.py`):**
+   - Extracted `_maybe_print_traceback(verbose, *, hint_on_silence)` — single source of truth for conditional traceback output across both error handlers.
+   - Extracted `_format_error_title(exc)` — regex-based camelCase-to-words split (`ConfigurationError` → `"Configuration Error"`) replacing the fragile string `replace()` approach.
+
+4. **Tests (`tests/test_main_errors.py`):**
+   - 13 tests across four classes: `TestAppErrorHandler`, `TestGenericExceptionHandler`, `TestParserVerboseFlag`, `TestFormatErrorTitle`.
+   - Helper refactored to return a typed `_RunResult(exit_code, out, err)` NamedTuple — no more manual `capsys.readouterr()` calls scattered across test bodies.
+
+**Files Changed:**
+- `main.py` — Error handlers, `_format_error_title()`, `_maybe_print_traceback()`
+- `src/cli/parser.py` — Global `--verbose` argument
+- `tests/test_main_errors.py` — 13 tests, typed helper, `TestFormatErrorTitle` class
+
+**Rationale:**
+Raw Python tracebacks are intimidating and leak implementation details to end users. Styled panels with actionable messages improve UX significantly. The `--verbose` escape hatch preserves full debugging capability for developers without polluting normal output.
+
+---
+
 ### Phase 13: Retry with Exponential Backoff
 
 **Date:** 2026-03-24

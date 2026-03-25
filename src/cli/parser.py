@@ -22,6 +22,11 @@ def _add_common_execution_args(parser: argparse.ArgumentParser) -> None:
 def create_parser() -> argparse.ArgumentParser:
     """Creates and configures the argument parser."""
     parser = argparse.ArgumentParser(description="Jules Automation Tool")
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output, including full error tracebacks on failure.",
+    )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Command: list-sources
