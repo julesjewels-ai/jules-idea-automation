@@ -89,4 +89,7 @@ def create_parser() -> argparse.ArgumentParser:
     manual_parser.add_argument("--features", help="Comma-separated list of key features (e.g., 'Auth,CRUD,Export')")
     _add_common_execution_args(manual_parser)
 
+    # Command: list
+    subparsers.add_parser("list", help="List past generated projects and Jules sessions")
+
     return parser
