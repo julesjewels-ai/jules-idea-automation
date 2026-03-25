@@ -11,9 +11,8 @@ from src.services.db import HistoryDB
 
 def handle_list_history(args: Namespace) -> None:
     """Display past generated projects from the local history database."""
-    db = HistoryDB()
-    records = db.list_records()
-    db.close()
+    with HistoryDB() as db:
+        records = db.list_records()
 
     if not records:
         print("No history found. Run a workflow first to create entries.")

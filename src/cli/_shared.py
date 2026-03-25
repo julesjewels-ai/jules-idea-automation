@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 from argparse import Namespace
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from src.utils.reporter import (
     Spinner,
@@ -83,20 +86,17 @@ def execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any | 
     try:
         from src.services.db import HistoryDB
 
-        db = HistoryDB()
-        db.add_record(
-            slug=idea_data["slug"],
-            repo_url=result.repo_url,
-            session_id=result.session_id,
-            session_url=result.session_url,
-            pr_url=result.pr_url,
-        )
-        db.close()
+        with HistoryDB() as db:
+            db.add_record(
+                slug=idea_data["slug"],
+                repo_url=result.repo_url,
+                session_id=result.session_id,
+                session_url=result.session_url,
+                pr_url=result.pr_url,
+            )
     except Exception:
         # History tracking is best-effort; never block the workflow
-        import logging
-
-        logging.getLogger(__name__).debug("Failed to save run to history DB", exc_info=True)
+        logger.debug("Failed to save run to history DB", exc_info=True)
 
     if result.session_id and args.watch:
         from src.cli.cmd_watch import watch_session
