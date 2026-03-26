@@ -51,7 +51,9 @@ def handle_guide(args: Namespace) -> None:
         "manual": print_manual_guide,
     }
 
-    guide_fn = guides.get(workflow)
+    guide_fn = None
+    if isinstance(workflow, str):
+        guide_fn = guides.get(workflow)
     if guide_fn:
         guide_fn()
     else:
@@ -76,8 +78,11 @@ def dispatch_command(args: Namespace) -> None:
         "list": partial(handle_list_history, args),
     }
 
-    handler = handlers.get(args.command)
-    if handler:
+    handler = None
+    if isinstance(args.command, str):
+        handler = handlers.get(args.command)
+
+    if callable(handler):
         handler()
     else:
         print(f"Unknown command: {args.command}", file=sys.stderr)
