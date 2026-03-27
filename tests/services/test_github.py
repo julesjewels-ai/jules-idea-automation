@@ -1,20 +1,55 @@
 """Tests for GitHubClient."""
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
 
 from src.services.github import GitHubClient
-from src.utils.errors import GitHubApiError
+from src.utils.errors import ConfigurationError, GitHubApiError
 from tests.conftest import make_http_error, make_ok_response
 
 
 @pytest.fixture
 def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
-    return GitHubClient()
+    with patch("src.services.github.requests.get") as mock_get:
+        # Mock successful token validation
+        mock_response = MagicMock()
+        mock_response.headers = {"x-oauth-scopes": "repo, read:org"}
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+        return GitHubClient()
+
+
+# --- Initialization Tests ---
+
+
+def test_init_missing_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    with pytest.raises(ConfigurationError, match="GITHUB_TOKEN environment variable is not set"):
+        GitHubClient()
+
+
+def test_init_invalid_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "invalid-token")
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_get.side_effect = make_http_error(401)
+        with pytest.raises(ConfigurationError, match="invalid or expired"):
+            GitHubClient()
+
+
+def test_init_missing_repo_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.headers = {"x-oauth-scopes": "read:user"}
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        with pytest.raises(ConfigurationError, match="missing the required 'repo' scope"):
+            GitHubClient()
 
 
 # --- Happy Path ---
@@ -121,12 +156,12 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
 
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
-

@@ -28,7 +28,9 @@ def _run_main_with_args(monkeypatch: Any, capsys: Any, args: list[str]) -> _RunR
         main()
 
     captured = capsys.readouterr()
-    return _RunResult(exc_info.value.code, captured.out, captured.err)
+    # Code is usually an int, but could be None. Default to 1 for error testing.
+    code = exc_info.value.code if isinstance(exc_info.value.code, int) else (0 if exc_info.value.code is None else 1)
+    return _RunResult(code, captured.out, captured.err)
 
 
 class TestAppErrorHandler:
@@ -133,14 +135,14 @@ class TestFormatErrorTitle:
     """_format_error_title should produce readable titles from class names."""
 
     def test_simple_error(self) -> None:
-        from src.utils.errors import ConfigurationError
         from main import _format_error_title
+        from src.utils.errors import ConfigurationError
 
         assert _format_error_title(ConfigurationError("x")) == "Configuration Error"
 
     def test_multi_word_error(self) -> None:
-        from src.utils.errors import GitHubApiError
         from main import _format_error_title
+        from src.utils.errors import GitHubApiError
 
         assert _format_error_title(GitHubApiError("x")) == "Git Hub Api Error"
 
