@@ -67,7 +67,7 @@ pytest-mock==3.15.1
     # via -r requirements.in
 python-dotenv==1.2.1
     # via -r requirements.in
-requests==2.32.5
+requests==2.33.0
     # via
     #   -r requirements.in
     #   google-genai
