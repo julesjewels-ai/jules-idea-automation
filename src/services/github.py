@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -37,6 +39,26 @@ class GitHubClient(BaseApiClient):
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
         )
+
+        try:
+            response = requests.get(f"{self.base_url}/user", headers=self.headers, timeout=self._timeout)
+            if response.status_code == 401:
+                raise ConfigurationError(
+                    "GITHUB_TOKEN is invalid or expired",
+                    tip="Check your .env file or create a personal access token.",
+                )
+            elif response.status_code == 200:
+                scopes = response.headers.get("x-oauth-scopes", "")
+                if "repo" not in [s.strip() for s in scopes.split(",") if s.strip()]:
+                    raise ConfigurationError(
+                        "GITHUB_TOKEN is missing the 'repo' scope",
+                        tip="Create a personal access token at https://github.com/settings/tokens with the 'repo' scope.",
+                    )
+        except requests.exceptions.RequestException as e:
+            raise ConfigurationError(
+                f"Failed to validate GITHUB_TOKEN: {e}",
+                tip="Check your internet connection.",
+            )
 
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""
