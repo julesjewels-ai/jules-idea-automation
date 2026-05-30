@@ -128,7 +128,7 @@
 
 ### A6. Security Hardening
 
-- [ ] **P1** — **Token scope validation**: Verify the GitHub token has `repo` scope at startup. Currently fails mid-workflow with a confusing 404.
+- [x] **P1** — **Token scope validation**: Verify the GitHub token has `repo` scope at startup. Currently fails mid-workflow with a confusing 404.
   - *Acceptance*: `GitHubClient.__init__` checks token scopes via `GET /user` headers. Raises `ConfigurationError` with tip if missing.
   - *Affected*: `src/services/github.py`
 
