@@ -1,6 +1,8 @@
+from typing import Any
+
 import pytest
 from pytest_mock import MockerFixture
-from typing import Any
+
 from src.utils.reporter import print_demo_report
 
 # Mental Model:
@@ -8,9 +10,11 @@ from src.utils.reporter import print_demo_report
 # External Side Effects: Prints to stdout (using builtins.print and src.utils.reporter.print_panel).
 # Output: None (returns implicitly) or raises AttributeError on invalid data (e.g. scaffold=None)
 
+
 @pytest.fixture
 def mock_idea_data() -> dict[str, Any]:
     return {"title": "Test App", "slug": "test-app"}
+
 
 @pytest.fixture
 def happy_scaffold() -> dict[str, Any]:
@@ -20,6 +24,7 @@ def happy_scaffold() -> dict[str, Any]:
         "run_command": "python main.py",
     }
 
+
 @pytest.fixture
 def happy_feature_maps() -> dict[str, Any]:
     return {
@@ -27,12 +32,13 @@ def happy_feature_maps() -> dict[str, Any]:
         "production_features": [{"name": "Feature 2", "priority": "Medium"}],
     }
 
+
 @pytest.mark.parametrize(
     "scaffold_type, feature_maps_type, expected",
     [
-        ("happy", "happy", None),       # Happy Path
-        ("empty", "empty", None),       # Edge Case
-        ("none", "none", AttributeError), # Error State
+        ("happy", "happy", None),  # Happy Path
+        ("empty", "empty", None),  # Edge Case
+        ("none", "none", AttributeError),  # Error State
     ],
 )
 def test_print_demo_report_behavior(
