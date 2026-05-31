@@ -39,6 +39,7 @@ def _completed_event() -> WorkflowCompleted:
 
 from typing import Any
 
+
 def _read_lines(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 

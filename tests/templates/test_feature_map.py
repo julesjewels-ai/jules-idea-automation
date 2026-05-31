@@ -8,14 +8,14 @@ Covers three scenarios:
 
 from __future__ import annotations
 
+from typing import Any
+
 from src.templates.feature_map import (
     render_mvp_checklist_md,
     render_mvp_skill_md,
     render_production_checklist_md,
     render_production_skill_md,
 )
-
-from typing import Any
 
 # ---------------------------------------------------------------------------
 # Fixtures
