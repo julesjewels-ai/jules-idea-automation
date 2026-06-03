@@ -28,7 +28,9 @@ def _run_main_with_args(monkeypatch: Any, capsys: Any, args: list[str]) -> _RunR
         main()
 
     captured = capsys.readouterr()
-    return _RunResult(exc_info.value.code, captured.out, captured.err)
+    code = exc_info.value.code
+    exit_code = int(code) if code is not None else 1
+    return _RunResult(exit_code, captured.out, captured.err)
 
 
 class TestAppErrorHandler:
@@ -43,7 +45,7 @@ class TestAppErrorHandler:
         ):
             result = _run_main_with_args(monkeypatch, capsys, ["agent"])
 
-        assert result.exit_code == 1
+        assert isinstance(result.exit_code, int) and result.exit_code == 1
         # Panel title and message should appear in stdout
         assert "Configuration Error" in result.out
         assert "token missing" in result.out
@@ -73,7 +75,7 @@ class TestGenericExceptionHandler:
         with patch("main.dispatch_command", side_effect=RuntimeError("something broke")):
             result = _run_main_with_args(monkeypatch, capsys, ["agent"])
 
-        assert result.exit_code == 1
+        assert isinstance(result.exit_code, int) and result.exit_code == 1
         assert "Unexpected Error" in result.out
         assert "something broke" in result.out
 
@@ -98,7 +100,7 @@ class TestGenericExceptionHandler:
         with patch("main.dispatch_command", side_effect=ValueError()):
             result = _run_main_with_args(monkeypatch, capsys, ["agent"])
 
-        assert result.exit_code == 1
+        assert isinstance(result.exit_code, int) and result.exit_code == 1
         # Empty str(e) falls back to "ValueError" as panel content
         assert "ValueError" in result.out
 
@@ -133,14 +135,14 @@ class TestFormatErrorTitle:
     """_format_error_title should produce readable titles from class names."""
 
     def test_simple_error(self) -> None:
-        from src.utils.errors import ConfigurationError
         from main import _format_error_title
+        from src.utils.errors import ConfigurationError
 
         assert _format_error_title(ConfigurationError("x")) == "Configuration Error"
 
     def test_multi_word_error(self) -> None:
-        from src.utils.errors import GitHubApiError
         from main import _format_error_title
+        from src.utils.errors import GitHubApiError
 
         assert _format_error_title(GitHubApiError("x")) == "Git Hub Api Error"
 
