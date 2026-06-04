@@ -9,3 +9,7 @@ Summary: Extracted dictionary and list parsing logic into `_parse_dict_requireme
 Target: GeminiClient._map_api_error in src/services/gemini.py
 Delta: Complexity Score 8 -> 4
 Summary: Refactored nested if-else statements for mapping API errors into an iteration over a tuple of error mappings. This flattens the execution flow.
+
+Target: `print_demo_report` in `src/utils/reporter.py`
+Delta: Complexity Score 19 -> 3
+Summary: Extracted `_format_scaffold_tree` and `_format_feature_maps` helpers to flatten the logic tree without changing behavior, simplifying the monolithic `print_demo_report` function.
