@@ -18,6 +18,15 @@ dependencies = [
     "pydantic==2.10.6",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "mypy>=1.10.0",
+    "ruff>=0.5.0",
+]
+
 [project.scripts]
 jules = "main:main"
 
@@ -60,4 +69,4 @@ explicit_package_bases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--ignore=.DS_Store --ignore=.coverage --ignore=.env"
+addopts = "--ignore=.DS_Store --ignore=.coverage --ignore=.env --cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=70"
