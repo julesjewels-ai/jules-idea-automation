@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -20,12 +22,15 @@ class GitHubClient(BaseApiClient):
     """Client for GitHub API operations."""
 
     def __init__(self, token: str | None = None) -> None:
+        """Initialize the GitHub client."""
         token = token or os.environ.get("GITHUB_TOKEN")
         if not token:
             raise ConfigurationError(
                 "GITHUB_TOKEN environment variable is not set",
                 tip="Create a personal access token at https://github.com/settings/tokens and add it to your .env file.",
             )
+
+        self._validate_token_scopes(token)
 
         super().__init__(
             base_url="https://api.github.com",
@@ -38,12 +43,50 @@ class GitHubClient(BaseApiClient):
             status_tips=_STATUS_TIPS,
         )
 
+    def _validate_token_scopes(self, token: str) -> None:
+        """Validate that the provided token has the required scopes."""
+        try:
+            response = requests.request(
+                "GET",
+                "https://api.github.com/user",
+                headers={
+                    "Authorization": f"token {token}",
+                    "Accept": "application/vnd.github.v3+json",
+                },
+                timeout=10,
+            )
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 401:
+                raise ConfigurationError(
+                    "Your GitHub token seems invalid or expired.",
+                    tip="Create a new personal access token at https://github.com/settings/tokens and add it to your .env file.",
+                ) from e
+            # Ignore other HTTP errors for validation purposes to prevent startup crash on network issues
+            return
+        except requests.exceptions.RequestException:
+            # Ignore network errors to avoid blocking startup
+            return
+
+        # Classic PATs return scopes in 'x-oauth-scopes'.
+        # Fine-grained PATs, GitHub Apps, and GitHub Actions tokens omit this header.
+        scopes = response.headers.get("x-oauth-scopes")
+        if scopes is not None:
+            scope_list = [s.strip() for s in scopes.split(",")]
+            if "repo" not in scope_list:
+                raise ConfigurationError(
+                    "GitHub token is missing the required 'repo' scope.",
+                    tip="Please generate a new token at https://github.com/settings/tokens with the 'repo' scope checked.",
+                )
+        # If the header is absent, we assume it's a modern token and proceed,
+        # letting specific API calls fail with 403 if permissions are insufficient.
+
     def get_user(self) -> dict[str, Any]:
-        """Gets information about the authenticated user."""
+        """Get information about the authenticated user."""
         return self._request("GET", f"{self.base_url}/user")
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
-        """Creates a new repository."""
+        """Create a new repository."""
         payload = {
             "name": name,
             "description": description,
@@ -53,7 +96,7 @@ class GitHubClient(BaseApiClient):
         return self._request("POST", f"{self.base_url}/user/repos", json=payload)
 
     def create_file(self, owner: str, repo: str, path: str, content: str, message: str) -> dict[str, Any]:
-        """Creates or updates a file in the repository."""
+        """Create or update a file in the repository."""
         url = f"{self.base_url}/repos/{owner}/{repo}/contents/{path}"
 
         # GitHub API requires content to be base64 encoded
@@ -66,7 +109,7 @@ class GitHubClient(BaseApiClient):
     def create_files(
         self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main"
     ) -> dict[str, Any]:
-        """Creates multiple files in a single commit using the Git Data API.
+        """Create multiple files in a single commit using the Git Data API.
 
         Args:
         ----

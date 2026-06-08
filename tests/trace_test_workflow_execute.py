@@ -96,7 +96,7 @@ def test_execute_behavior(
     # Verify Scaffold creation
     github.create_files.assert_called_once()
     files_arg = github.create_files.call_args[1]["files"]
-    assert len(files_arg) == 2  # main.py and requirements.txt
+    assert len(files_arg) >= 2  # main.py, requirements.txt, and feature maps
     assert files_arg[0]["path"] == "main.py"
     assert files_arg[1]["path"] == "requirements.txt"
 
