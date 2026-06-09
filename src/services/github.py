@@ -20,6 +20,8 @@ class GitHubClient(BaseApiClient):
     """Client for GitHub API operations."""
 
     def __init__(self, token: str | None = None) -> None:
+        """Initialize the GitHub client."""
+        """Initialize the GitHub client."""
         token = token or os.environ.get("GITHUB_TOKEN")
         if not token:
             raise ConfigurationError(
@@ -66,7 +68,7 @@ class GitHubClient(BaseApiClient):
     def create_files(
         self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main"
     ) -> dict[str, Any]:
-        """Creates multiple files in a single commit using the Git Data API.
+        """Create multiple files in a single commit using the Git Data API.
 
         Args:
         ----

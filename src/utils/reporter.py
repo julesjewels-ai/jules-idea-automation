@@ -61,7 +61,7 @@ def _create_top_border(title: str, width: int, color: str) -> str:
 
     # Ensure title fits
     if visual_len > width - 4:
-        title_text = title_text[:max(0, width - 5)] + "…"  # pyre-ignore[16]
+        title_text = title_text[: max(0, width - 5)] + "…"  # pyre-ignore[16]
         visual_len = _visual_width(title_text)
 
     left_pad = 2
@@ -162,6 +162,7 @@ class Spinner:
         self.message = message + " " * padding
 
     def __enter__(self) -> "Spinner":
+        """Enter the context manager."""
         if sys.stdout.isatty():
             sys.stdout.write("\033[?25l")  # Hide cursor
             sys.stdout.flush()
@@ -377,7 +378,7 @@ def print_demo_report(
     scaffold: dict[str, Any],
     feature_maps: dict[str, Any] | None = None,
 ) -> None:
-    """Prints a rich demo-mode report showing what would be created."""
+    """Print a rich demo-mode report showing what would be created."""
     # --- Scaffold file tree ---
     files = scaffold.get("files", [])
     tree_lines = [f"{Colors.BOLD}📂 Generated Scaffold ({len(files)} files):{Colors.ENDC}"]

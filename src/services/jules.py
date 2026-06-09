@@ -19,6 +19,8 @@ class JulesClient(BaseApiClient):
     """Client for Jules API operations."""
 
     def __init__(self, api_key: str | None = None) -> None:
+        """Initialize the Jules client."""
+        """Initialize the Jules client."""
         api_key = api_key or os.environ.get("JULES_API_KEY")
         if not api_key:
             raise ConfigurationError(
@@ -54,7 +56,7 @@ class JulesClient(BaseApiClient):
         return self._request("POST", url, json=payload)
 
     def source_exists(self, source_id: str) -> bool:
-        """Checks if a source exists in the user's connected sources."""
+        """Check if a source exists in the user's connected sources."""
         sources = self.list_sources()
         for source in sources.get("sources", []):
             if source.get("name") == source_id:

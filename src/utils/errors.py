@@ -4,6 +4,8 @@ from __future__ import annotations
 
 
 class AppError(Exception):
+    """Base error class."""
+
     """Base class for application errors."""
 
     def __init__(self, message: str, tip: str | None = None):
