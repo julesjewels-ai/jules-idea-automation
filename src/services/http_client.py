@@ -40,6 +40,7 @@ class BaseApiClient:
         max_retries: int = 3,
         retry_base_delay: float = 0.5,
     ) -> None:
+        """Initialize the base API client."""
         self.base_url = base_url
         self.headers = headers
         self._error_class = error_class
@@ -64,9 +65,7 @@ class BaseApiClient:
 
         for attempt in range(1, self._max_retries + 1):
             try:
-                response = requests.request(
-                    method, url, headers=self.headers, timeout=self._timeout, **kwargs
-                )
+                response = requests.request(method, url, headers=self.headers, timeout=self._timeout, **kwargs)
                 response.raise_for_status()
 
                 if not response.text:
@@ -97,6 +96,7 @@ class BaseApiClient:
 
         # All retries exhausted — raise with context from the last failure.
         self._raise_after_retries_exhausted(last_exception)
+        raise self._error_class(f"{self._service_name} API unreachable.")
 
     def _wait_before_retry(self, attempt: int, reason: str) -> None:
         """Log a warning and sleep before the next retry attempt.

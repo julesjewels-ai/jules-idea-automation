@@ -111,7 +111,7 @@ class GeminiClient:
         return raw  # type: ignore[no-any-return]
 
     def _fetch_from_api(self, prompt: str, schema: Any, error_tip: str, cache_key: str) -> dict[str, Any]:
-        """Fetches content from Gemini API and handles errors/caching."""
+        """Fetch content from Gemini API and handles errors/caching."""
         last_api_error = None
         for i, model in enumerate(self.models):
             try:

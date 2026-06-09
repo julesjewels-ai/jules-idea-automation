@@ -92,7 +92,7 @@ def _extract_text(content: bytes) -> str:
 
 
 def _fetch_response(url: str) -> requests.Response:
-    """Fetches the URL and handles network errors.
+    """Fetch the URL and handles network errors.
 
     Args:
     ----
