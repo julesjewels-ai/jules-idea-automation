@@ -35,6 +35,7 @@ class HistoryDB:
     """
 
     def __init__(self, db_path: str | Path | None = None) -> None:
+        """Initialize the database connection."""
         if db_path is None:
             _DEFAULT_DB_DIR.mkdir(parents=True, exist_ok=True)
             db_path = _DEFAULT_DB_DIR / _DEFAULT_DB_NAME
