@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
+from typing import Any, NoReturn
 
 import requests
 
@@ -40,6 +40,7 @@ class BaseApiClient:
         max_retries: int = 3,
         retry_base_delay: float = 0.5,
     ) -> None:
+        """Initialize the HTTP client."""
         self.base_url = base_url
         self.headers = headers
         self._error_class = error_class
@@ -117,7 +118,7 @@ class BaseApiClient:
         )
         time.sleep(delay)
 
-    def _raise_after_retries_exhausted(self, last_exception: Exception | None) -> None:
+    def _raise_after_retries_exhausted(self, last_exception: Exception | None) -> NoReturn:
         """Translate the last transient exception into a domain error."""
         if isinstance(last_exception, requests.exceptions.HTTPError):
             tip = self._handle_http_error(last_exception)
