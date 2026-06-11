@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -27,12 +29,32 @@ class GitHubClient(BaseApiClient):
                 tip="Create a personal access token at https://github.com/settings/tokens and add it to your .env file.",
             )
 
+        headers = {
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github.v3+json",
+        }
+
+        # Check token scopes
+        try:
+            resp = requests.request("GET", "https://api.github.com/user", headers=headers, timeout=10)
+            if resp.status_code == 200:
+                scopes = resp.headers.get("x-oauth-scopes")
+                # Scopes might be None for Fine-grained PATs or GitHub Apps.
+                # If they are present (Classic PAT), 'repo' is required.
+                if scopes is not None:
+                    scope_list = [s.strip() for s in scopes.split(",")]
+                    if "repo" not in scope_list:
+                        raise ConfigurationError(
+                            "GITHUB_TOKEN is missing the required 'repo' scope",
+                            tip="Regenerate your token with the 'repo' scope checked.",
+                        )
+        except requests.exceptions.RequestException:
+            # Ignore network errors here; the workflow will catch them later.
+            pass
+
         super().__init__(
             base_url="https://api.github.com",
-            headers={
-                "Authorization": f"token {token}",
-                "Accept": "application/vnd.github.v3+json",
-            },
+            headers=headers,
             error_class=GitHubApiError,
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
