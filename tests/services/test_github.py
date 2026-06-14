@@ -7,14 +7,18 @@ import pytest
 import requests
 
 from src.services.github import GitHubClient
-from src.utils.errors import GitHubApiError
+from src.utils.errors import ConfigurationError, GitHubApiError
 from tests.conftest import make_http_error, make_ok_response
 
 
 @pytest.fixture
 def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
-    return GitHubClient()
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_resp = make_ok_response({})
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "repo, read:org"})
+        mock_request.return_value = mock_resp
+        return GitHubClient()
 
 
 # --- Happy Path ---
@@ -121,8 +125,9 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
@@ -130,3 +135,38 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
 
+
+# --- Init Validation ---
+
+
+def test_github_client_init_missing_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_resp = make_ok_response({})
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "read:org, user"})
+        mock_request.return_value = mock_resp
+
+        with pytest.raises(ConfigurationError, match="missing the 'repo' scope"):
+            GitHubClient()
+
+
+def test_github_client_init_fine_grained_pat(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_resp = make_ok_response({})
+        # Fine-grained PATs do not return x-oauth-scopes header
+        mock_resp.headers = requests.structures.CaseInsensitiveDict()
+        mock_request.return_value = mock_resp
+
+        # Should not raise
+        client = GitHubClient()
+        assert isinstance(client, GitHubClient)
+
+
+def test_github_client_init_invalid_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_request.return_value = make_http_error(401).response
+
+        with pytest.raises(ConfigurationError, match="invalid or expired"):
+            GitHubClient()

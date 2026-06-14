@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -20,6 +22,7 @@ class GitHubClient(BaseApiClient):
     """Client for GitHub API operations."""
 
     def __init__(self, token: str | None = None) -> None:
+        """Initialize the GitHubClient with a token."""
         token = token or os.environ.get("GITHUB_TOKEN")
         if not token:
             raise ConfigurationError(
@@ -37,13 +40,36 @@ class GitHubClient(BaseApiClient):
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
         )
+        self._validate_token_scopes()
+
+    def _validate_token_scopes(self) -> None:
+        """Validate that the GitHub token has the required 'repo' scope."""
+        try:
+            response = requests.request("GET", f"{self.base_url}/user", headers=self.headers, timeout=10)
+        except requests.exceptions.RequestException:
+            return  # Don't block startup on network errors
+
+        if response.status_code == 401:
+            raise ConfigurationError(
+                "GitHub token is invalid or expired",
+                tip=_STATUS_TIPS[401],
+            )
+
+        scopes_header = response.headers.get("x-oauth-scopes")
+        if scopes_header is not None:
+            scopes = [s.strip() for s in scopes_header.split(",") if s.strip()]
+            if "repo" not in scopes:
+                raise ConfigurationError(
+                    "GitHub token is missing the 'repo' scope",
+                    tip="Create a new personal access token with the 'repo' scope at https://github.com/settings/tokens and update your .env file.",
+                )
 
     def get_user(self) -> dict[str, Any]:
-        """Gets information about the authenticated user."""
+        """Get information about the authenticated user."""
         return self._request("GET", f"{self.base_url}/user")
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
-        """Creates a new repository."""
+        """Create a new repository."""
         payload = {
             "name": name,
             "description": description,
@@ -53,7 +79,7 @@ class GitHubClient(BaseApiClient):
         return self._request("POST", f"{self.base_url}/user/repos", json=payload)
 
     def create_file(self, owner: str, repo: str, path: str, content: str, message: str) -> dict[str, Any]:
-        """Creates or updates a file in the repository."""
+        """Create or update a file in the repository."""
         url = f"{self.base_url}/repos/{owner}/{repo}/contents/{path}"
 
         # GitHub API requires content to be base64 encoded
@@ -66,7 +92,7 @@ class GitHubClient(BaseApiClient):
     def create_files(
         self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main"
     ) -> dict[str, Any]:
-        """Creates multiple files in a single commit using the Git Data API.
+        """Create multiple files in a single commit using the Git Data API.
 
         Args:
         ----
