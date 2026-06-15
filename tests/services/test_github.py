@@ -7,17 +7,71 @@ import pytest
 import requests
 
 from src.services.github import GitHubClient
-from src.utils.errors import GitHubApiError
+from src.utils.errors import ConfigurationError, GitHubApiError
 from tests.conftest import make_http_error, make_ok_response
 
 
 @pytest.fixture
 def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
-    return GitHubClient()
+    with patch("src.services.github.requests.request") as mock_request:
+        # Mock the scope validation request for general tests
+        mock_resp = make_ok_response({"login": "test"})
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "repo, read:org"})
+        mock_request.return_value = mock_resp
+        return GitHubClient()
 
 
 # --- Happy Path ---
+
+
+def test_init_validates_classic_token_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_resp = make_ok_response({"login": "test"})
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "repo, user"})
+        mock_request.return_value = mock_resp
+
+        # Should not raise
+        GitHubClient()
+        mock_request.assert_called_once_with(
+            "GET",
+            "https://api.github.com/user",
+            headers={"Authorization": "token fake-token", "Accept": "application/vnd.github.v3+json"},
+            timeout=10,
+        )
+
+
+def test_init_validates_fine_grained_token_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_resp = make_ok_response({"login": "test"})
+        # Modern tokens omit the header
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({})
+        mock_request.return_value = mock_resp
+
+        # Should not raise
+        GitHubClient()
+
+
+def test_init_raises_if_missing_repo_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_resp = make_ok_response({"login": "test"})
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "read:user"})
+        mock_request.return_value = mock_resp
+
+        with pytest.raises(ConfigurationError, match="GitHub token is missing required 'repo' scope"):
+            GitHubClient()
+
+
+def test_init_ignores_network_error_during_validation(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_request.side_effect = requests.exceptions.ConnectionError("Network down")
+
+        # Should gracefully ignore network errors during initialization
+        GitHubClient()
 
 
 def test_create_files_success(github_client: Any) -> None:
@@ -121,12 +175,12 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
 
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
-
