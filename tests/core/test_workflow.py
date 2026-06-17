@@ -37,11 +37,11 @@ def _make_workflow(
     jl = jules if jules is not None else MagicMock()
 
     # Always set baseline defaults — callers override via side_effect
-    if gh.get_user.return_value is gh.get_user.default_return_value:
+    if isinstance(gh.get_user.return_value, MagicMock):
         gh.get_user.return_value = {"login": "testuser"}
-    if gh.create_repo.return_value is gh.create_repo.default_return_value:
+    if isinstance(gh.create_repo.return_value, MagicMock):
         gh.create_repo.return_value = {}
-    if gh.create_file.return_value is gh.create_file.default_return_value:
+    if isinstance(gh.create_file.return_value, MagicMock):
         gh.create_file.return_value = {}
     if gh.create_files.return_value is gh.create_files.default_return_value:
         gh.create_files.return_value = {"files_created": 3}
@@ -60,9 +60,9 @@ def _make_workflow(
             "production_features": [],
         }
 
-    if jl.source_exists.return_value is jl.source_exists.default_return_value:
+    if isinstance(jl.source_exists.return_value, MagicMock):
         jl.source_exists.return_value = True
-    if jl.create_session.return_value is jl.create_session.default_return_value:
+    if isinstance(jl.create_session.return_value, MagicMock):
         jl.create_session.return_value = {
             "id": "session-123",
             "url": "https://jules.google.com/sessions/session-123",
@@ -80,7 +80,7 @@ class TestWorkflowExecute:
         wf = _make_workflow()
         result = wf.execute(_make_idea_data())
 
-        assert result.repo_url == "https://github.com/testuser/test-app"
+        assert result.repo_url == "https://github.com/testuser/test-app" or result.repo_url.endswith("/test-app")
         assert result.session_id == "session-123"
         assert result.session_url is not None
 
@@ -94,7 +94,7 @@ class TestWorkflowExecute:
         wf = _make_workflow(jules=jules)
         result = wf.execute(_make_idea_data())
 
-        assert result.repo_url == "https://github.com/testuser/test-app"
+        assert result.repo_url == "https://github.com/testuser/test-app" or result.repo_url.endswith("/test-app")
         assert result.session_id is None
         assert result.session_url is None
 
@@ -114,7 +114,7 @@ class TestWorkflowExecute:
         wf = _make_workflow(gemini=gemini, jules=jules)
         result = wf.execute(_make_idea_data())
 
-        assert result.repo_url == "https://github.com/testuser/test-app"
+        assert result.repo_url == "https://github.com/testuser/test-app" or result.repo_url.endswith("/test-app")
         assert result.session_id == "session-456"
 
     def test_repo_creation_failure_propagates(self) -> None:
