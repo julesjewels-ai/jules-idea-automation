@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -20,12 +22,15 @@ class GitHubClient(BaseApiClient):
     """Client for GitHub API operations."""
 
     def __init__(self, token: str | None = None) -> None:
+        """Initialize the GitHub API client."""
         token = token or os.environ.get("GITHUB_TOKEN")
         if not token:
             raise ConfigurationError(
                 "GITHUB_TOKEN environment variable is not set",
                 tip="Create a personal access token at https://github.com/settings/tokens and add it to your .env file.",
             )
+
+        self._validate_token_scopes(token)
 
         super().__init__(
             base_url="https://api.github.com",
@@ -38,12 +43,45 @@ class GitHubClient(BaseApiClient):
             status_tips=_STATUS_TIPS,
         )
 
+    def _validate_token_scopes(self, token: str) -> None:
+        """Validate that the provided GitHub token has the required 'repo' scope."""
+        headers = {
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github.v3+json",
+        }
+        try:
+            response = requests.request("GET", "https://api.github.com/user", headers=headers, timeout=10)
+        except requests.exceptions.RequestException as e:
+            raise ConfigurationError(f"Network error during token validation: {e}")
+
+        if response.status_code == 401:
+            raise ConfigurationError(
+                "Your GitHub token seems invalid or expired.",
+                tip="Check your .env file. Generate a new token if necessary.",
+            )
+
+        if response.status_code != 200:
+            # Let the API continue and throw the standard errors later
+            return
+
+        scopes_header = response.headers.get("x-oauth-scopes")
+        if scopes_header is None:
+            # Fine-grained PATs, GitHub Apps, and GitHub Actions tokens omit this header.
+            return
+
+        scopes = [s.strip() for s in scopes_header.split(",")]
+        if "repo" not in scopes:
+            raise ConfigurationError(
+                "Insufficient token scopes. The 'repo' scope is missing.",
+                tip="Your GitHub personal access token (Classic) must have the 'repo' scope to create repositories and files. Update your token at https://github.com/settings/tokens.",
+            )
+
     def get_user(self) -> dict[str, Any]:
-        """Gets information about the authenticated user."""
+        """Get information about the authenticated user."""
         return self._request("GET", f"{self.base_url}/user")
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
-        """Creates a new repository."""
+        """Create a new repository."""
         payload = {
             "name": name,
             "description": description,
@@ -53,7 +91,7 @@ class GitHubClient(BaseApiClient):
         return self._request("POST", f"{self.base_url}/user/repos", json=payload)
 
     def create_file(self, owner: str, repo: str, path: str, content: str, message: str) -> dict[str, Any]:
-        """Creates or updates a file in the repository."""
+        """Create or update a file in the repository."""
         url = f"{self.base_url}/repos/{owner}/{repo}/contents/{path}"
 
         # GitHub API requires content to be base64 encoded
@@ -66,7 +104,7 @@ class GitHubClient(BaseApiClient):
     def create_files(
         self, owner: str, repo: str, files: list[dict[str, str]], message: str, branch: str = "main"
     ) -> dict[str, Any]:
-        """Creates multiple files in a single commit using the Git Data API.
+        """Create multiple files in a single commit using the Git Data API.
 
         Args:
         ----
