@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from typing import Any
 
 from src.core.events import WorkflowCompleted, WorkflowStarted
 from src.services.audit import JsonFileAuditLogger
