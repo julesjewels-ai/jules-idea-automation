@@ -15,7 +15,7 @@ def poll_until(
     on_poll: Callable[[int], None] | None = None,
     sleep_fn: Callable[[float], None] = time.sleep,
 ) -> bool:
-    """Polls until a condition is met or timeout is reached.
+    """Poll until a condition is met or timeout is reached.
 
     Args:
     ----
@@ -49,7 +49,7 @@ def poll_with_result(
     status_extractor: Callable[[], str] | None = None,
     sleep_fn: Callable[[float], None] = time.sleep,
 ) -> tuple[bool, T | None, int]:
-    """Polls until completion, returning a result.
+    """Poll until completion, returning a result.
 
     Args:
     ----

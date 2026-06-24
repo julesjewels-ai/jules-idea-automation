@@ -80,6 +80,7 @@ def test_generate_idea_json_error(client: Any) -> None:
 def test_generate_idea_api_error(client: Any) -> None:
     # Simulate an API error (e.g., invalid key)
     mock_error = MockAPIError("400 API key not valid", 400)
+    client.models = ["gemini-2.5-pro", "gemini-2.5-flash"]
     client.client.models.generate_content.side_effect = mock_error
 
     with pytest.raises(GenerationError) as excinfo:
@@ -92,8 +93,8 @@ def test_generate_idea_api_error(client: Any) -> None:
 def test_generate_idea_api_error_503_fallback(client: Any) -> None:
     """Test that a 503 error falls back to the second model, which also fails."""
 
-
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
+    client.models = ["gemini-2.5-pro", "gemini-2.5-flash"]
     client.client.models.generate_content.side_effect = mock_error
 
     with pytest.raises(GenerationError) as excinfo:
@@ -107,7 +108,6 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
 def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     """Test that a 503 error falls back to the second model which succeeds."""
 
-
     api_error = MockAPIError("503 UNAVAILABLE", 503)
 
     mock_success_response = MagicMock()
@@ -115,6 +115,7 @@ def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
         {"title": "Fallback App", "description": "App", "slug": "fallback", "tech_stack": [], "features": []}
     )
 
+    client.models = ["gemini-2.5-pro", "gemini-2.5-flash"]
     client.client.models.generate_content.side_effect = [api_error, mock_success_response]
 
     result = client.generate_idea()
