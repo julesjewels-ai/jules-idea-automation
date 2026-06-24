@@ -19,6 +19,7 @@ class JulesClient(BaseApiClient):
     """Client for Jules API operations."""
 
     def __init__(self, api_key: str | None = None) -> None:
+        """Initialize the object."""
         api_key = api_key or os.environ.get("JULES_API_KEY")
         if not api_key:
             raise ConfigurationError(
@@ -35,11 +36,11 @@ class JulesClient(BaseApiClient):
         )
 
     def list_sources(self) -> dict[str, Any]:
-        """Lists available sources from Jules API."""
+        """List available sources from Jules API."""
         return self._request("GET", f"{self.base_url}/sources")
 
     def create_session(self, source_id: str, prompt: str) -> dict[str, Any]:
-        """Creates a new session with the given source and prompt."""
+        """Create a new session with the given source and prompt."""
         url = f"{self.base_url}/sessions"
 
         # Based on official API documentation:
@@ -54,7 +55,7 @@ class JulesClient(BaseApiClient):
         return self._request("POST", url, json=payload)
 
     def source_exists(self, source_id: str) -> bool:
-        """Checks if a source exists in the user's connected sources."""
+        """Check if a source exists in the user's connected sources."""
         sources = self.list_sources()
         for source in sources.get("sources", []):
             if source.get("name") == source_id:
@@ -62,7 +63,7 @@ class JulesClient(BaseApiClient):
         return False
 
     def get_session(self, session_id: str) -> dict[str, Any]:
-        """Retrieves details for a specific session.
+        """Retrieve details for a specific session.
 
         Args:
         ----
@@ -76,7 +77,7 @@ class JulesClient(BaseApiClient):
         return self._request("GET", f"{self.base_url}/sessions/{session_id}")
 
     def list_sessions(self, page_size: int = 10) -> dict[str, Any]:
-        """Lists recent sessions.
+        """List recent sessions.
 
         Args:
         ----
@@ -86,7 +87,7 @@ class JulesClient(BaseApiClient):
         return self._request("GET", f"{self.base_url}/sessions", params={"pageSize": page_size})
 
     def list_activities(self, session_id: str, page_size: int = 30) -> dict[str, Any]:
-        """Lists activities (progress updates) for a session.
+        """List activities (progress updates) for a session.
 
         Args:
         ----
@@ -97,7 +98,7 @@ class JulesClient(BaseApiClient):
         return self._request("GET", f"{self.base_url}/sessions/{session_id}/activities", params={"pageSize": page_size})
 
     def send_message(self, session_id: str, prompt: str) -> dict[str, Any]:
-        """Sends a follow-up message to an active session.
+        """Send a follow-up message to an active session.
 
         Args:
         ----
@@ -118,7 +119,7 @@ class JulesClient(BaseApiClient):
         return self._request("POST", f"{self.base_url}/sessions/{session_id}:approvePlan")
 
     def is_session_complete(self, session_id: str) -> tuple[bool, str | None]:
-        """Checks if a session has completed and returns PR URL if available.
+        """Check if a session has completed and returns PR URL if available.
 
         Returns
         -------
