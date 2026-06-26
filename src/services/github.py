@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -27,12 +29,41 @@ class GitHubClient(BaseApiClient):
                 tip="Create a personal access token at https://github.com/settings/tokens and add it to your .env file.",
             )
 
+        headers = {
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github.v3+json",
+        }
+
+        # Token Scope Validation: verify the token has 'repo' scope
+        try:
+            response = requests.request("GET", "https://api.github.com/user", headers=headers, timeout=10)
+            response.raise_for_status()
+            scopes_header = response.headers.get("x-oauth-scopes")
+            if scopes_header is not None:
+                scopes = [s.strip() for s in scopes_header.split(",")]
+                if "repo" not in scopes:
+                    raise ConfigurationError(
+                        "GITHUB_TOKEN is missing the required 'repo' scope.",
+                        tip="Your token has scopes: "
+                        + scopes_header
+                        + ". Please regenerate it with the 'repo' scope checked at https://github.com/settings/tokens.",
+                    )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code in (401, 403):
+                raise ConfigurationError(
+                    "GITHUB_TOKEN is invalid or lacks necessary permissions.",
+                    tip=_STATUS_TIPS.get(e.response.status_code, "Check your token."),
+                )
+            # Other HTTP errors might be temporary, ignore or let them fail later
+        except ConfigurationError:
+            raise
+        except Exception:
+            # Let other errors fall through to fail gracefully during normal requests if network is down
+            pass
+
         super().__init__(
             base_url="https://api.github.com",
-            headers={
-                "Authorization": f"token {token}",
-                "Accept": "application/vnd.github.v3+json",
-            },
+            headers=headers,
             error_class=GitHubApiError,
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
