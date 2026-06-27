@@ -29,4 +29,5 @@ def make_ok_response(json_data: Any, status_code: int = 200) -> MagicMock:
     resp.status_code = status_code
     resp.text = "{}"
     resp.raise_for_status.return_value = None
+    resp.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "repo"})
     return resp
