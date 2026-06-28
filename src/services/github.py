@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -26,6 +28,34 @@ class GitHubClient(BaseApiClient):
                 "GITHUB_TOKEN environment variable is not set",
                 tip="Create a personal access token at https://github.com/settings/tokens and add it to your .env file.",
             )
+
+        try:
+            resp = requests.get(
+                "https://api.github.com/user",
+                headers={
+                    "Authorization": f"token {token}",
+                    "Accept": "application/vnd.github.v3+json",
+                },
+                timeout=10,
+            )
+            if resp.status_code == 401:
+                raise ConfigurationError(
+                    "GitHub token is invalid or expired.",
+                    tip="Regenerate your token at https://github.com/settings/tokens and update your .env file.",
+                )
+
+            resp.raise_for_status()
+
+            scopes_header = resp.headers.get("x-oauth-scopes")
+            if scopes_header is not None:
+                scopes = [s.strip() for s in scopes_header.split(",")]
+                if "repo" not in scopes:
+                    raise ConfigurationError(
+                        "GitHub token is missing required 'repo' scope.",
+                        tip="Regenerate your token with the 'repo' scope at https://github.com/settings/tokens",
+                    )
+        except requests.exceptions.RequestException:
+            pass  # Ignore network errors here, let the actual request fail later if needed
 
         super().__init__(
             base_url="https://api.github.com",
