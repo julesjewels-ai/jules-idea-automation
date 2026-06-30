@@ -14,7 +14,12 @@ from tests.conftest import make_http_error, make_ok_response
 @pytest.fixture
 def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
-    return GitHubClient()
+    with patch("src.services.http_client.requests.request") as mock_request:
+        mock_resp = requests.Response()
+        mock_resp.status_code = 200
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({'x-oauth-scopes': 'repo'})
+        mock_request.return_value = mock_resp
+        return GitHubClient()
 
 
 # --- Happy Path ---
@@ -130,3 +135,52 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
 
+
+
+def test_init_success_classic_pat(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.http_client.requests.request") as mock_request:
+        mock_resp = requests.Response()
+        mock_resp.status_code = 200
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({'x-oauth-scopes': 'repo, write:packages'})
+        mock_request.return_value = mock_resp
+
+        client = GitHubClient()
+        assert client is not None
+
+def test_init_success_fine_grained_pat(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.http_client.requests.request") as mock_request:
+        mock_resp = requests.Response()
+        mock_resp.status_code = 200
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({})
+        mock_request.return_value = mock_resp
+
+        client = GitHubClient()
+        assert client is not None
+
+def test_init_fails_missing_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    from src.utils.errors import ConfigurationError
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.http_client.requests.request") as mock_request:
+        mock_resp = requests.Response()
+        mock_resp.status_code = 200
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({'x-oauth-scopes': 'read:user'})
+        mock_request.return_value = mock_resp
+
+        with pytest.raises(ConfigurationError, match="missing required 'repo' scope"):
+            GitHubClient()
+
+def test_init_fails_401(monkeypatch: pytest.MonkeyPatch) -> None:
+    from src.utils.errors import ConfigurationError
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.http_client.requests.request") as mock_request:
+        mock_resp = requests.Response()
+        mock_resp.status_code = 401
+
+        err = requests.exceptions.HTTPError()
+        err.response = mock_resp
+        mock_request.side_effect = err
+
+        with pytest.raises(ConfigurationError, match="invalid or expired"):
+            GitHubClient()
