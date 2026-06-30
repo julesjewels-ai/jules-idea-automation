@@ -37,6 +37,28 @@ class GitHubClient(BaseApiClient):
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
         )
+        self._validate_token_scopes()
+
+    def _validate_token_scopes(self) -> None:
+        """Validates that the token has the necessary scopes."""
+        try:
+            response = self._request_raw("GET", f"{self.base_url}/user")
+        except GitHubApiError as e:
+            if e.tip and "invalid or expired" in e.tip:
+                raise ConfigurationError(
+                    "Your GitHub token seems invalid or expired.",
+                    tip="Check your .env file and ensure the token is correct.",
+                ) from e
+            raise ConfigurationError(f"Failed to validate GitHub token: {e}") from e
+
+        scopes_header = response.headers.get("x-oauth-scopes")
+        if scopes_header is not None:
+            scopes = [s.strip() for s in scopes_header.split(",")]
+            if "repo" not in scopes:
+                raise ConfigurationError(
+                    "GitHub token is missing required 'repo' scope.",
+                    tip="Create a new token with 'repo' scope at https://github.com/settings/tokens.",
+                )
 
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""
