@@ -62,9 +62,7 @@ class BaseApiClient:
 
         for attempt in range(1, self._max_retries + 1):
             try:
-                response = requests.request(
-                    method, url, headers=self.headers, timeout=self._timeout, **kwargs
-                )
+                response = requests.request(method, url, headers=self.headers, timeout=self._timeout, **kwargs)
                 response.raise_for_status()
                 return response
 
@@ -104,7 +102,6 @@ class BaseApiClient:
         if not response.text:
             return {}
         return response.json()  # type: ignore[no-any-return]
-
 
     def _wait_before_retry(self, attempt: int, reason: str) -> None:
         """Log a warning and sleep before the next retry attempt.
