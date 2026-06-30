@@ -1,7 +1,10 @@
+from typing import Any
+
 import pytest
 from pytest_mock import MockerFixture
-from typing import Any
+
 from src.utils.reporter import print_demo_report
+
 
 @pytest.fixture
 def mock_context() -> dict[str, Any]:
@@ -10,24 +13,25 @@ def mock_context() -> dict[str, Any]:
         "scaffold": {
             "files": [{"path": "main.py", "description": "Entry point"}],
             "requirements": ["pytest"],
-            "run_command": "python main.py"
+            "run_command": "python main.py",
         },
         "feature_maps": {
             "mvp_features": [{"name": "Auth", "priority": "P0"}],
-            "production_features": [{"name": "Scaling", "priority": "P1"}]
-        }
+            "production_features": [{"name": "Scaling", "priority": "P1"}],
+        },
     }
 
-@pytest.mark.parametrize("scenario, expected", [
-    ("happy_path", None),
-    ("edge_case", None),
-    ("error_state", AttributeError),
-])
+
+@pytest.mark.parametrize(
+    "scenario, expected",
+    [
+        ("happy_path", None),
+        ("edge_case", None),
+        ("error_state", AttributeError),
+    ],
+)
 def test_print_demo_report_behavior(
-    mocker: MockerFixture,
-    mock_context: dict[str, Any],
-    scenario: str,
-    expected: type[Exception] | None
+    mocker: MockerFixture, mock_context: dict[str, Any], scenario: str, expected: type[Exception] | None
 ) -> None:
     # 1. Setup Mocks (Namespace Verified)
     # The file uses `print_panel(...)` (internal to reporter) and `print(...)` (builtins)
@@ -37,17 +41,13 @@ def test_print_demo_report_behavior(
     # 2. Setup scenario data
     if scenario == "edge_case":
         # Empty dicts for edge case
-        kwargs = {
-            "idea_data": {},
-            "scaffold": {},
-            "feature_maps": {}
-        }
+        kwargs = {"idea_data": {}, "scaffold": {}, "feature_maps": {}}
     elif scenario == "error_state":
         # None for scaffold will cause AttributeError: 'NoneType' object has no attribute 'get'
         kwargs = {
             "idea_data": {},
-            "scaffold": None, # type: ignore
-            "feature_maps": None
+            "scaffold": None,  # type: ignore
+            "feature_maps": None,
         }
     else:
         # Happy path
