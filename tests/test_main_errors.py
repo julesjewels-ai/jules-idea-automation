@@ -28,7 +28,10 @@ def _run_main_with_args(monkeypatch: Any, capsys: Any, args: list[str]) -> _RunR
         main()
 
     captured = capsys.readouterr()
-    return _RunResult(exc_info.value.code, captured.out, captured.err)
+    code = exc_info.value.code
+    if not isinstance(code, int):
+        code = 1
+    return _RunResult(code, captured.out, captured.err)
 
 
 class TestAppErrorHandler:
