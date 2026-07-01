@@ -20,7 +20,7 @@ def _add_common_execution_args(parser: argparse.ArgumentParser) -> None:
 
 
 def create_parser() -> argparse.ArgumentParser:
-    """Creates and configures the argument parser."""
+    """Create and configure the argument parser."""
     parser = argparse.ArgumentParser(description="Jules Automation Tool")
     parser.add_argument(
         "--verbose",
