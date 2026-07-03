@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -26,6 +28,31 @@ class GitHubClient(BaseApiClient):
                 "GITHUB_TOKEN environment variable is not set",
                 tip="Create a personal access token at https://github.com/settings/tokens and add it to your .env file.",
             )
+
+        # Validate token scopes for Classic PATs
+        try:
+            resp = requests.get(
+                "https://api.github.com/user",
+                headers={
+                    "Authorization": f"token {token}",
+                    "Accept": "application/vnd.github.v3+json",
+                },
+                timeout=10,
+            )
+            # 401 is handled by typical downstream calls, but we can catch it here for clarity if we wanted.
+            # We specifically care about scopes. Fine-grained PATs / Action tokens might omit this header.
+            scopes_header = resp.headers.get("x-oauth-scopes")
+            if scopes_header is not None:
+                scopes = [s.strip() for s in scopes_header.split(",")]
+                if "repo" not in scopes:
+                    raise ConfigurationError(
+                        "GitHub token lacks required 'repo' scope",
+                        tip="Update your Classic Personal Access Token to include the 'repo' scope, or use a Fine-grained PAT with Repository permissions.",
+                    )
+        except requests.exceptions.RequestException:
+            # We silently ignore network errors here so the tool doesn't crash offline at initialization.
+            # Connection errors will be caught later during actual API operations.
+            pass
 
         super().__init__(
             base_url="https://api.github.com",
