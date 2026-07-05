@@ -39,6 +39,9 @@ def _make_workflow(
     # Always set baseline defaults — callers override via side_effect
     if gh.get_user.return_value is gh.get_user.default_return_value:
         gh.get_user.return_value = {"login": "testuser"}
+    elif not isinstance(gh.get_user.return_value, dict):
+        gh.get_user.return_value = {"login": "testuser"}
+
     if gh.create_repo.return_value is gh.create_repo.default_return_value:
         gh.create_repo.return_value = {}
     if gh.create_file.return_value is gh.create_file.default_return_value:
@@ -62,7 +65,10 @@ def _make_workflow(
 
     if jl.source_exists.return_value is jl.source_exists.default_return_value:
         jl.source_exists.return_value = True
-    if jl.create_session.return_value is jl.create_session.default_return_value:
+    if (
+        not isinstance(jl.create_session.return_value, dict)
+        or jl.create_session.return_value is jl.create_session.default_return_value
+    ):
         jl.create_session.return_value = {
             "id": "session-123",
             "url": "https://jules.google.com/sessions/session-123",
