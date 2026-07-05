@@ -7,14 +7,18 @@ import pytest
 import requests
 
 from src.services.github import GitHubClient
-from src.utils.errors import GitHubApiError
+from src.utils.errors import ConfigurationError, GitHubApiError
 from tests.conftest import make_http_error, make_ok_response
 
 
 @pytest.fixture
 def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
-    return GitHubClient()
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_resp = make_ok_response({})
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({})
+        mock_request.return_value = mock_resp
+        return GitHubClient()
 
 
 # --- Happy Path ---
@@ -130,3 +134,38 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
 
+
+def test_github_client_init_missing_repo_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that a ConfigurationError is raised if the token lacks the 'repo' scope."""
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_resp = make_ok_response({})
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "read:user, user:email"})
+        mock_request.return_value = mock_resp
+
+        with pytest.raises(ConfigurationError, match="missing required 'repo' scope"):
+            GitHubClient()
+
+
+def test_github_client_init_fine_grained_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that missing x-oauth-scopes header is allowed (e.g. Fine-grained PATs)."""
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_resp = make_ok_response({})
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({})
+        mock_request.return_value = mock_resp
+
+        client = GitHubClient()
+        assert client is not None
+
+
+def test_github_client_init_with_repo_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that having the 'repo' scope allows initialization."""
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.request") as mock_request:
+        mock_resp = make_ok_response({})
+        mock_resp.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "read:user, repo, workflow"})
+        mock_request.return_value = mock_resp
+
+        client = GitHubClient()
+        assert client is not None

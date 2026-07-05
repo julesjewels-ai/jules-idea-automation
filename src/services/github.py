@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -37,6 +39,19 @@ class GitHubClient(BaseApiClient):
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
         )
+
+        try:
+            resp = requests.request("GET", f"{self.base_url}/user", headers=self.headers, timeout=self._timeout)
+            scopes = resp.headers.get("x-oauth-scopes")
+            if scopes is not None:
+                scope_list = [s.strip() for s in scopes.split(",")]
+                if "repo" not in scope_list:
+                    raise ConfigurationError(
+                        "GitHub token is missing required 'repo' scope",
+                        tip="Create a new token with 'repo' scope at https://github.com/settings/tokens.",
+                    )
+        except requests.exceptions.RequestException:
+            pass
 
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""
