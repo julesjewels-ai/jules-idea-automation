@@ -65,7 +65,10 @@ def _make_workflow(
 
     if jl.source_exists.return_value is jl.source_exists.default_return_value:
         jl.source_exists.return_value = True
-    if not isinstance(jl.create_session.return_value, dict) or jl.create_session.return_value is jl.create_session.default_return_value:
+    if (
+        not isinstance(jl.create_session.return_value, dict)
+        or jl.create_session.return_value is jl.create_session.default_return_value
+    ):
         jl.create_session.return_value = {
             "id": "session-123",
             "url": "https://jules.google.com/sessions/session-123",
