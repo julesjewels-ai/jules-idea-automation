@@ -25,6 +25,7 @@ def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
 
 # --- Scope Validation ---
 
+
 def test_scope_validation_missing_repo(monkeypatch: pytest.MonkeyPatch) -> None:
     """Initialization should fail if token doesn't have 'repo' scope."""
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
@@ -36,6 +37,7 @@ def test_scope_validation_missing_repo(monkeypatch: pytest.MonkeyPatch) -> None:
         with pytest.raises(ConfigurationError, match="missing the required 'repo' scope"):
             GitHubClient()
 
+
 def test_scope_validation_fine_grained_token(monkeypatch: pytest.MonkeyPatch) -> None:
     """Initialization should pass for fine-grained tokens that omit the header."""
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
@@ -46,6 +48,7 @@ def test_scope_validation_fine_grained_token(monkeypatch: pytest.MonkeyPatch) ->
     with patch("src.services.github.requests.request", return_value=mock_resp):
         client = GitHubClient()
         assert client is not None
+
 
 def test_scope_validation_network_error_graceful_fail(monkeypatch: pytest.MonkeyPatch) -> None:
     """Initialization should raise ConfigurationError on 401/403."""
@@ -160,12 +163,12 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
 
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
-
