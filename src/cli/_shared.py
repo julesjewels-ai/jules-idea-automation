@@ -98,6 +98,24 @@ def execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any | 
         # History tracking is best-effort; never block the workflow
         logger.debug("Failed to save run to history DB", exc_info=True)
 
+    # Generate an automated report
+    try:
+        from src.services.reporting import (
+            AutomatedReportingService,
+            FileReportStorage,
+            MarkdownReportGenerator,
+        )
+        from src.utils.reporter import print_panel
+
+        reporting_service = AutomatedReportingService(generator=MarkdownReportGenerator(), storage=FileReportStorage())
+        report_data = result.model_dump()
+        report_location = reporting_service.create_and_store_report(data=report_data, identifier=idea_data["slug"])
+        print_panel(
+            f"Report generated successfully:\n  {report_location}", title="📊 Automated Report", color="cyan", width=70
+        )
+    except Exception as e:
+        logger.warning("Failed to generate automated report: %s", e, exc_info=True)
+
     if result.session_id and args.watch:
         from src.cli.cmd_watch import watch_session
 
