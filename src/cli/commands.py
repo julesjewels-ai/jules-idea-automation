@@ -43,7 +43,7 @@ def handle_guide(args: Namespace) -> None:
         print_welcome_guide,
     )
 
-    workflow = getattr(args, "workflow", None)
+    workflow = str(getattr(args, "workflow", ""))
 
     guides = {
         "agent": print_agent_guide,
@@ -77,7 +77,7 @@ def dispatch_command(args: Namespace) -> None:
     }
 
     handler = handlers.get(args.command)
-    if handler:
+    if handler and callable(handler):
         handler()
     else:
         print(f"Unknown command: {args.command}", file=sys.stderr)
