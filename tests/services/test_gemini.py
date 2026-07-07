@@ -80,6 +80,7 @@ def test_generate_idea_json_error(client: Any) -> None:
 def test_generate_idea_api_error(client: Any) -> None:
     # Simulate an API error (e.g., invalid key)
     mock_error = MockAPIError("400 API key not valid", 400)
+    client.models = ["gemini-2.5-flash", "gemini-2.5-pro"]
     client.client.models.generate_content.side_effect = mock_error
 
     with pytest.raises(GenerationError) as excinfo:
@@ -93,6 +94,7 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
     """Test that a 503 error falls back to the second model, which also fails."""
 
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
+    client.models = ["gemini-2.5-flash", "gemini-2.5-pro"]
     client.client.models.generate_content.side_effect = mock_error
 
     with pytest.raises(GenerationError) as excinfo:
@@ -109,6 +111,7 @@ def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     api_error = MockAPIError("503 UNAVAILABLE", 503)
 
     mock_success_response = MagicMock()
+    client.models = ["gemini-2.5-flash", "gemini-2.5-pro"]
     mock_success_response.text = json.dumps(
         {"title": "Fallback App", "description": "App", "slug": "fallback", "tech_stack": [], "features": []}
     )
@@ -121,8 +124,8 @@ def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     assert client.client.models.generate_content.call_count == 2
 
     calls = client.client.models.generate_content.call_args_list
-    assert calls[0].kwargs["model"] == "gemini-2.5-pro"
-    assert calls[1].kwargs["model"] == "gemini-2.5-flash"
+    assert calls[0].kwargs["model"] == "gemini-2.5-flash"
+    assert calls[1].kwargs["model"] == "gemini-2.5-pro"
 
 
 def test_extract_idea_from_text_success(client: Any) -> None:
