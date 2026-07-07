@@ -1,21 +1,22 @@
 import pytest
 from pytest_mock import MockerFixture
+
 from src.utils.reporter import print_demo_report
+
 
 @pytest.fixture
 def mock_context() -> dict:
-    return {
-        "title": "Test Idea",
-        "description": "Test Desc"
-    }
+    return {"title": "Test Idea", "description": "Test Desc"}
+
 
 @pytest.fixture
 def mock_scaffold() -> dict:
     return {
         "files": [{"path": "main.py", "description": "Main entry point"}],
         "requirements": ["pytest"],
-        "run_command": "python main.py"
+        "run_command": "python main.py",
     }
+
 
 @pytest.fixture
 def mock_feature_maps() -> dict:
@@ -33,21 +34,25 @@ def mock_feature_maps() -> dict:
             {"name": "P2", "priority": "Low"},
             {"name": "P3", "priority": "Low"},
             {"name": "P4", "priority": "Low"},
-        ]
+        ],
     }
 
-@pytest.mark.parametrize("scenario, expected", [
-    ("happy_path", None),
-    ("edge_case", None),
-    ("error_state", AttributeError),
-])
+
+@pytest.mark.parametrize(
+    "scenario, expected",
+    [
+        ("happy_path", None),
+        ("edge_case", None),
+        ("error_state", AttributeError),
+    ],
+)
 def test_print_demo_report_behavior(
     mocker: MockerFixture,
     mock_context: dict,
     mock_scaffold: dict,
     mock_feature_maps: dict,
     scenario: str,
-    expected: type[Exception] | None
+    expected: type[Exception] | None,
 ) -> None:
     # 1. Setup Mocks (Namespace Verified)
     # Both print and print_panel are used inside src.utils.reporter.
