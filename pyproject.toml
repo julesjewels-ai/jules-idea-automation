@@ -23,7 +23,7 @@ dev = [
     "pytest<9.0.0",
     "pytest-cov",
     "mypy",
-    "ruff"
+    "ruff==0.5.4"
 ]
 
 [project.scripts]

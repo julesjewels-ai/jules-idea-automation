@@ -167,7 +167,7 @@ class IdeaWorkflow:
                 step="Scaffold generation",
                 error=str(exc),
                 repo_url=repo_url,
-                tip="The repository was created but has no scaffold. You can push code manually or re-run the tool.",
+                tip="The repository was created but has no scaffold. " "You can push code manually or re-run the tool.",
             )
 
         # Step 3: Wait for Jules indexing and create session (recoverable)
