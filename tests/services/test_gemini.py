@@ -90,6 +90,7 @@ def test_generate_idea_api_error(client: Any) -> None:
 
 
 def test_generate_idea_api_error_503_fallback(client: Any) -> None:
+    client.models = ["gemini-2.5-flash", "gemini-2.5-pro"]
     """Test that a 503 error falls back to the second model, which also fails."""
 
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
@@ -104,6 +105,7 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
 
 
 def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
+    client.models = ["gemini-2.5-flash", "gemini-2.5-pro"]
     """Test that a 503 error falls back to the second model which succeeds."""
 
     api_error = MockAPIError("503 UNAVAILABLE", 503)
@@ -121,8 +123,8 @@ def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     assert client.client.models.generate_content.call_count == 2
 
     calls = client.client.models.generate_content.call_args_list
-    assert calls[0].kwargs["model"] == "gemini-2.5-pro"
-    assert calls[1].kwargs["model"] == "gemini-2.5-flash"
+    assert calls[0].kwargs["model"] == "gemini-2.5-flash"
+    assert calls[1].kwargs["model"] == "gemini-2.5-pro"
 
 
 def test_extract_idea_from_text_success(client: Any) -> None:
