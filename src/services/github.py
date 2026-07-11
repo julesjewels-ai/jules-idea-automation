@@ -29,14 +29,24 @@ class GitHubClient(BaseApiClient):
                 tip="Create a personal access token at https://github.com/settings/tokens and add it to your .env file.",
             )
 
+        super().__init__(
+            base_url="https://api.github.com",
+            headers={
+                "Authorization": f"token {token}",
+                "Accept": "application/vnd.github.v3+json",
+            },
+            error_class=GitHubApiError,
+            service_name="GitHub",
+            status_tips=_STATUS_TIPS,
+        )
+
+    def validate_token(self) -> None:
+        """Validates the GitHub token has the required scopes via a network request."""
         try:
             response = requests.request(
                 "GET",
-                "https://api.github.com/user",
-                headers={
-                    "Authorization": f"token {token}",
-                    "Accept": "application/vnd.github.v3+json",
-                },
+                f"{self.base_url}/user",
+                headers=self.headers,
                 timeout=10,
             )
             response.raise_for_status()
@@ -55,20 +65,9 @@ class GitHubClient(BaseApiClient):
                     "GitHub token is invalid or lacks required permissions",
                     tip="Check your token and its scopes (needs 'repo').",
                 ) from e
-            raise ConfigurationError(f"GitHub API error during initialization: {e}") from e
+            raise ConfigurationError(f"GitHub API error during validation: {e}") from e
         except requests.exceptions.RequestException as e:
-            raise ConfigurationError(f"Network error during GitHub API initialization: {e}") from e
-
-        super().__init__(
-            base_url="https://api.github.com",
-            headers={
-                "Authorization": f"token {token}",
-                "Accept": "application/vnd.github.v3+json",
-            },
-            error_class=GitHubApiError,
-            service_name="GitHub",
-            status_tips=_STATUS_TIPS,
-        )
+            raise ConfigurationError(f"Network error during GitHub API validation: {e}") from e
 
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""

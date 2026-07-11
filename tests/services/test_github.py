@@ -135,37 +135,40 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
             github_client.get_user()
 
 
-def test_init_scope_validation_success(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_token_success(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    client = GitHubClient()
     with patch("src.services.github.requests.request") as mock_request:
         mock_resp = mock_request.return_value
         mock_resp.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "repo, write:packages"})
-        client = GitHubClient()
-        assert client is not None
+        client.validate_token()
         mock_request.assert_called_once()
 
 
-def test_init_missing_repo_scope_raises_error(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_token_missing_repo_scope_raises_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    client = GitHubClient()
     with patch("src.services.github.requests.request") as mock_request:
         mock_resp = mock_request.return_value
         mock_resp.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "read:user"})
         with pytest.raises(ConfigurationError, match="missing required 'repo' scope"):
-            GitHubClient()
+            client.validate_token()
 
 
-def test_init_network_error_raises_error(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_token_network_error_raises_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    client = GitHubClient()
     with patch("src.services.github.requests.request") as mock_request:
         mock_request.side_effect = requests.exceptions.ConnectionError("Network error")
-        with pytest.raises(ConfigurationError, match="Network error during GitHub API initialization"):
-            GitHubClient()
+        with pytest.raises(ConfigurationError, match="Network error during GitHub API validation"):
+            client.validate_token()
 
 
-def test_init_modern_token_no_scopes_header(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_validate_token_modern_token_no_scopes_header(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    client = GitHubClient()
     with patch("src.services.github.requests.request") as mock_request:
         mock_resp = mock_request.return_value
         mock_resp.headers = requests.structures.CaseInsensitiveDict({})
-        client = GitHubClient()
-        assert client is not None
+        client.validate_token()
+        mock_request.assert_called_once()
