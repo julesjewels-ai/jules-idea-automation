@@ -100,7 +100,10 @@ def preflight_check_credentials() -> None:
         try:
             from src.services.github import GitHubClient
 
-            GitHubClient(token=github_token).get_user()
+            GitHubClient(token=github_token).validate_token()
+        except ConfigurationError as exc:
+            logger.debug("GitHub token validation failed: %s", exc)
+            errors.append(f"{str(exc)}\n  → {exc.tip}")
         except Exception as exc:
             logger.debug("GitHub preflight failed: %s", exc)
             errors.append(
