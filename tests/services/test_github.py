@@ -121,8 +121,9 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
@@ -130,3 +131,42 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
 
+
+def test_validate_token_success_with_scope(github_client: Any) -> None:
+    """Classic PAT with 'repo' scope should succeed."""
+    with patch.object(GitHubClient, "_request_raw") as mock_request:
+        mock_response = mock_request.return_value
+        mock_response.status_code = 200
+        mock_response.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "repo, read:org"})
+        github_client.validate_token()
+
+
+def test_validate_token_success_without_scope_header(github_client: Any) -> None:
+    """Modern tokens omit x-oauth-scopes header and should succeed."""
+    with patch.object(GitHubClient, "_request_raw") as mock_request:
+        mock_response = mock_request.return_value
+        mock_response.status_code = 200
+        mock_response.headers = requests.structures.CaseInsensitiveDict({})
+        github_client.validate_token()
+
+
+def test_validate_token_fails_missing_repo_scope(github_client: Any) -> None:
+    """Classic PAT without 'repo' scope should raise ConfigurationError."""
+    with patch.object(GitHubClient, "_request_raw") as mock_request:
+        mock_response = mock_request.return_value
+        mock_response.status_code = 200
+        mock_response.headers = requests.structures.CaseInsensitiveDict({"x-oauth-scopes": "read:org, user"})
+
+        from src.utils.errors import ConfigurationError
+
+        with pytest.raises(ConfigurationError, match="missing the required 'repo' scope"):
+            github_client.validate_token()
+
+
+def test_validate_token_fails_401(github_client: Any) -> None:
+    """401 response should raise ConfigurationError for invalid token."""
+    from src.utils.errors import ConfigurationError, GitHubApiError
+
+    with patch.object(GitHubClient, "_request_raw", side_effect=GitHubApiError("401 invalid or expired")):
+        with pytest.raises(ConfigurationError, match="invalid or expired"):
+            github_client.validate_token()
