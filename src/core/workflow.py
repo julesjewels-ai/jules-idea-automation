@@ -7,7 +7,7 @@ import uuid
 from typing import Any
 
 from src.core.events import WorkflowCompleted, WorkflowStarted
-from src.core.interfaces import EventBus
+from src.core.interfaces import EventBus, ReportGenerator
 from src.core.models import IdeaResponse, WorkflowResult
 from src.core.readme_builder import build_readme
 from src.services.bus import NullEventBus
@@ -112,6 +112,7 @@ class IdeaWorkflow:
         gemini: GeminiClient | None = None,
         jules: JulesClient | None = None,
         event_bus: EventBus | None = None,
+        report_generator: ReportGenerator | None = None,
     ):
         """Initialize workflow with optional service instances.
 
@@ -121,12 +122,14 @@ class IdeaWorkflow:
             gemini: GeminiClient instance (created if None)
             jules: JulesClient instance (created if None)
             event_bus: EventBus instance (optional)
+            report_generator: ReportGenerator instance (optional)
 
         """
         self.github = github or GitHubClient()
         self.event_bus = event_bus or NullEventBus()
         self.gemini = gemini or GeminiClient(cache_provider=FileCacheProvider())
         self.jules = jules or JulesClient()
+        self.report_generator = report_generator
 
     def execute(self, idea_data: dict[str, Any], private: bool = True, timeout: int = 1800) -> WorkflowResult:
         """Execute the full workflow.
@@ -167,8 +170,7 @@ class IdeaWorkflow:
                 step="Scaffold generation",
                 error=str(exc),
                 repo_url=repo_url,
-                tip="The repository was created but has no scaffold. "
-                "You can push code manually or re-run the tool.",
+                tip="The repository was created but has no scaffold. You can push code manually or re-run the tool.",
             )
 
         # Step 3: Wait for Jules indexing and create session (recoverable)
@@ -211,6 +213,13 @@ class IdeaWorkflow:
                 session_url=result.session_url,
             )
         )
+
+        if self.report_generator:
+            try:
+                report_path = self.report_generator.export(result)
+                print(f"\n📝 Workflow summary exported to: {report_path}")
+            except Exception as e:
+                logger.warning(f"Failed to generate report: {e}")
 
         return result
 
@@ -341,9 +350,7 @@ class IdeaWorkflow:
         ) as spinner:
 
             def on_poll(elapsed: int) -> None:
-                spinner.update(
-                    f"[{format_duration(elapsed)}] Waiting for Jules to index repository…"
-                )
+                spinner.update(f"[{format_duration(elapsed)}] Waiting for Jules to index repository…")
 
             source_found = poll_until(
                 condition=lambda: self.jules.source_exists(source_id),

@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from src.core.models import WorkflowResult
 
 
 class EventHandler(Protocol):
@@ -68,6 +71,24 @@ class CacheProvider(Protocol):
         ----
             key: The unique cache key.
             value: The value to cache (must be JSON-serializable).
+
+        """
+        ...
+
+
+class ReportGenerator(Protocol):
+    """Protocol for generating summary reports."""
+
+    def export(self, result: "WorkflowResult") -> str:
+        """Generate and export a report based on the workflow result.
+
+        Args:
+        ----
+            result: The result of a completed workflow.
+
+        Returns:
+        -------
+            The file path where the report was saved, or a string indicating success.
 
         """
         ...

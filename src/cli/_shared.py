@@ -62,6 +62,7 @@ def execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any | 
     from src.core.workflow import IdeaWorkflow
     from src.services.audit import JsonFileAuditLogger
     from src.services.bus import LocalEventBus
+    from src.services.reporting import MarkdownReportGenerator
     from src.utils.config import preflight_check_credentials
 
     # Verify GitHub/Jules tokens are valid before spending Gemini credits
@@ -78,7 +79,8 @@ def execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any | 
     event_bus.subscribe(WorkflowStarted, audit_logger)
     event_bus.subscribe(WorkflowCompleted, audit_logger)
 
-    workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus)
+    report_generator = MarkdownReportGenerator()
+    workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus, report_generator=report_generator)
 
     result = workflow.execute(idea_data, private=not args.public, timeout=args.timeout)
 
