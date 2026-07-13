@@ -38,6 +38,29 @@ class GitHubClient(BaseApiClient):
             status_tips=_STATUS_TIPS,
         )
 
+    def validate_token(self) -> None:
+        """Validates that the token is valid and has the required 'repo' scope.
+
+        Modern tokens (Fine-grained PATs, GitHub Apps, GitHub Actions) omit the
+        'x-oauth-scopes' header. We only enforce the scope check for Classic PATs
+        that return this header.
+
+        Raises:
+            ConfigurationError: If the token is invalid or missing required scopes.
+
+        """
+        response = self._request_raw("GET", f"{self.base_url}/user")
+
+        # Check scopes if present (Classic PATs)
+        scopes_header = response.headers.get("x-oauth-scopes")
+        if scopes_header is not None:
+            scopes = [s.strip() for s in scopes_header.split(",")]
+            if "repo" not in scopes:
+                raise ConfigurationError(
+                    "GitHub token is missing required 'repo' scope",
+                    tip="Regenerate your personal access token with the 'repo' scope enabled.",
+                )
+
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""
         return self._request("GET", f"{self.base_url}/user")

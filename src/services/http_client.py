@@ -53,8 +53,8 @@ class BaseApiClient:
     # Request helpers
     # ------------------------------------------------------------------
 
-    def _request(self, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
-        """Execute an HTTP request and return parsed JSON.
+    def _request_raw(self, method: str, url: str, **kwargs: Any) -> requests.Response:
+        """Execute an HTTP request and return the raw requests.Response object.
 
         Retries up to ``max_retries`` times on transient failures
         (5xx, Timeout, ConnectionError) with exponential backoff.
@@ -64,14 +64,9 @@ class BaseApiClient:
 
         for attempt in range(1, self._max_retries + 1):
             try:
-                response = requests.request(
-                    method, url, headers=self.headers, timeout=self._timeout, **kwargs
-                )
+                response = requests.request(method, url, headers=self.headers, timeout=self._timeout, **kwargs)
                 response.raise_for_status()
-
-                if not response.text:
-                    return {}
-                return response.json()  # type: ignore[no-any-return]
+                return response
 
             except requests.exceptions.HTTPError as e:
                 status = e.response.status_code if e.response is not None else 0
@@ -97,6 +92,20 @@ class BaseApiClient:
 
         # All retries exhausted — raise with context from the last failure.
         self._raise_after_retries_exhausted(last_exception)
+
+        # This point is unreachable because _raise_after_retries_exhausted raises an exception,
+        # but mypy doesn't know that unless it's typed NoReturn, so we raise just in case
+        raise self._error_class(f"{self._service_name} request failed unexpectedly")
+
+    def _request(self, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
+        """Execute an HTTP request and return parsed JSON.
+
+        Wraps `_request_raw` and handles JSON decoding.
+        """
+        response = self._request_raw(method, url, **kwargs)
+        if not response.text:
+            return {}
+        return response.json()  # type: ignore[no-any-return]
 
     def _wait_before_retry(self, attempt: int, reason: str) -> None:
         """Log a warning and sleep before the next retry attempt.
