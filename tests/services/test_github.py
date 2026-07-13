@@ -121,8 +121,9 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
@@ -130,3 +131,54 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
 
+
+# --- Token Validation ---
+
+
+def test_validate_token_success(github_client: Any) -> None:
+    """Classic PAT with 'repo' scope should pass validation."""
+    with patch.object(GitHubClient, "_request_raw") as mock_request:
+        mock_response = mock_request.return_value
+        mock_response.headers = {"x-oauth-scopes": "read:user, repo, workflow"}
+
+        # Should not raise
+        github_client.validate_token()
+
+        mock_request.assert_called_once_with("GET", "https://api.github.com/user")
+
+
+def test_validate_token_missing_scope(github_client: Any) -> None:
+    """Classic PAT missing 'repo' scope should raise ConfigurationError."""
+    with patch.object(GitHubClient, "_request_raw") as mock_request:
+        mock_response = mock_request.return_value
+        mock_response.headers = {"x-oauth-scopes": "read:user, gist"}
+
+        from src.utils.errors import ConfigurationError
+
+        with pytest.raises(ConfigurationError, match="missing required 'repo' scope") as exc_info:
+            github_client.validate_token()
+
+        assert "repo" in (exc_info.value.tip or "")
+        mock_request.assert_called_once_with("GET", "https://api.github.com/user")
+
+
+def test_validate_token_fine_grained_pat(github_client: Any) -> None:
+    """Fine-grained PAT (missing x-oauth-scopes header) should pass validation."""
+    with patch.object(GitHubClient, "_request_raw") as mock_request:
+        mock_response = mock_request.return_value
+        mock_response.headers = {}
+
+        # Should not raise (scope validation skipped)
+        github_client.validate_token()
+
+        mock_request.assert_called_once_with("GET", "https://api.github.com/user")
+
+
+def test_validate_token_missing_token_on_init(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Initializing GitHubClient without a token should raise ConfigurationError."""
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+
+    from src.utils.errors import ConfigurationError
+
+    with pytest.raises(ConfigurationError, match="GITHUB_TOKEN environment variable is not set"):
+        GitHubClient()
