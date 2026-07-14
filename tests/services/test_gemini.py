@@ -34,7 +34,7 @@ def mock_genai_client() -> typing.Generator[unittest.mock.MagicMock, None, None]
 def client(mock_genai_client: Any) -> GeminiClient:
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
         client = GeminiClient()
-        client.models = ['gemini-2.5-flash', 'gemini-2.5-pro']
+        client.models = ["gemini-2.5-flash", "gemini-2.5-pro"]
         return client
 
 
