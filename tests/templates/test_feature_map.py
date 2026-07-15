@@ -1,4 +1,3 @@
-
 """Tests for the feature map renderers (MVP + Production).
 
 Covers three scenarios:

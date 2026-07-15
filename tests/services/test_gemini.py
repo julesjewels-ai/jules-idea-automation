@@ -34,7 +34,7 @@ def mock_genai_client() -> typing.Generator[unittest.mock.MagicMock, None, None]
 def client(mock_genai_client: Any) -> GeminiClient:
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
         c = GeminiClient()
-        c.models = ['gemini-2.5-flash', 'gemini-2.5-pro']
+        c.models = ["gemini-2.5-flash", "gemini-2.5-pro"]
         return c
 
 
@@ -94,7 +94,6 @@ def test_generate_idea_api_error(client: Any) -> None:
 def test_generate_idea_api_error_503_fallback(client: Any) -> None:
     """Test that a 503 error falls back to the second model, which also fails."""
 
-
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
     client.client.models.generate_content.side_effect = mock_error
 
@@ -108,7 +107,6 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
 
 def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     """Test that a 503 error falls back to the second model which succeeds."""
-
 
     api_error = MockAPIError("503 UNAVAILABLE", 503)
 

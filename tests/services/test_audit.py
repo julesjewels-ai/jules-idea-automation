@@ -1,4 +1,3 @@
-
 """Unit tests for JsonFileAuditLogger."""
 
 from __future__ import annotations
