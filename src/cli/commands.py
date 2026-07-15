@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import sys
 from argparse import Namespace
-from typing import Callable, Any
 from functools import partial
+from typing import Any, Callable
 
 from src.cli.cmd_agent import handle_agent
 from src.cli.cmd_list import handle_list_history
