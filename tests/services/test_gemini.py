@@ -33,7 +33,9 @@ def mock_genai_client() -> typing.Generator[unittest.mock.MagicMock, None, None]
 @pytest.fixture
 def client(mock_genai_client: Any) -> GeminiClient:
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
-        return GeminiClient()
+        c = GeminiClient()
+        c.models = ['gemini-2.5-flash', 'gemini-2.5-pro']
+        return c
 
 
 def test_init_raises_error_without_api_key() -> None:
@@ -123,8 +125,8 @@ def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     assert client.client.models.generate_content.call_count == 2
 
     calls = client.client.models.generate_content.call_args_list
-    assert calls[0].kwargs["model"] == "gemini-2.5-pro"
-    assert calls[1].kwargs["model"] == "gemini-2.5-flash"
+    assert calls[0].kwargs["model"] == "gemini-2.5-flash"
+    assert calls[1].kwargs["model"] == "gemini-2.5-pro"
 
 
 def test_extract_idea_from_text_success(client: Any) -> None:
