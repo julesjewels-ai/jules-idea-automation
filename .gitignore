@@ -64,3 +64,6 @@ env/
 *.mov
 *.mkv
 *.webm
+# Coverage artifacts
+.coverage
+coverage.xml
