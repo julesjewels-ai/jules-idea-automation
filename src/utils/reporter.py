@@ -61,7 +61,7 @@ def _create_top_border(title: str, width: int, color: str) -> str:
 
     # Ensure title fits
     if visual_len > width - 4:
-        title_text = title_text[:max(0, width - 5)] + "…"  # pyre-ignore[16]
+        title_text = title_text[: max(0, width - 5)] + "…"  # pyre-ignore[16]
         visual_len = _visual_width(title_text)
 
     left_pad = 2
@@ -372,18 +372,20 @@ def print_idea_summary(idea_data: dict[str, Any]) -> None:
     print("")  # spacing after
 
 
-def print_demo_report(
-    idea_data: dict[str, Any],
-    scaffold: dict[str, Any],
-    feature_maps: dict[str, Any] | None = None,
-) -> None:
-    """Prints a rich demo-mode report showing what would be created."""
-    # --- Scaffold file tree ---
+def _get_field(item: Any, field_name: str, default: str = "") -> str:
+    """Extracts a field from either a dictionary or an object."""
+    if isinstance(item, dict):
+        return item.get(field_name, default)
+    return getattr(item, field_name, default)
+
+
+def _build_scaffold_preview(scaffold: dict[str, Any]) -> list[str]:
+    """Builds the lines for the scaffold preview."""
     files = scaffold.get("files", [])
     tree_lines = [f"{Colors.BOLD}📂 Generated Scaffold ({len(files)} files):{Colors.ENDC}"]
     for f in files:
-        path = f.get("path", "") if isinstance(f, dict) else getattr(f, "path", "")
-        desc = f.get("description", "") if isinstance(f, dict) else getattr(f, "description", "")
+        path = _get_field(f, "path")
+        desc = _get_field(f, "description")
         suffix = f"  {Colors.CYAN}# {desc}{Colors.ENDC}" if desc else ""
         tree_lines.append(f"  📄 {path}{suffix}")
 
@@ -399,34 +401,57 @@ def print_demo_report(
         tree_lines.append(f"{Colors.BOLD}▶  Run command:{Colors.ENDC}")
         tree_lines.append(f"  {Colors.GREEN}{run_cmd}{Colors.ENDC}")
 
-    print_panel("\n".join(tree_lines), title="🏗️  MVP Scaffold Preview", color=Colors.BLUE, width=70)
-    print("")
+    return tree_lines
+
+
+def _build_feature_maps_preview(feature_maps: dict[str, Any] | None) -> list[str]:
+    """Builds the lines for the feature maps preview."""
+    if not feature_maps:
+        return []
+
+    mvp = feature_maps.get("mvp_features", [])
+    prod = feature_maps.get("production_features", [])
+    fm_lines = []
+
+    if mvp:
+        fm_lines.append(f"{Colors.BOLD}🎯 MVP Features ({len(mvp)} items):{Colors.ENDC}")
+        for item in mvp[:5]:
+            name = _get_field(item, "name")
+            prio = _get_field(item, "priority")
+            fm_lines.append(f"  [{prio}] {name}")
+        if len(mvp) > 5:
+            fm_lines.append(f"  ... and {len(mvp) - 5} more")
+
+    if prod:
+        fm_lines.append("")
+        fm_lines.append(f"{Colors.BOLD}🚀 Production Features ({len(prod)} items):{Colors.ENDC}")
+        for item in prod[:3]:
+            name = _get_field(item, "name")
+            prio = _get_field(item, "priority")
+            fm_lines.append(f"  [{prio}] {name}")
+        if len(prod) > 3:
+            fm_lines.append(f"  ... and {len(prod) - 3} more")
+
+    return fm_lines
+
+
+def print_demo_report(
+    idea_data: dict[str, Any],
+    scaffold: dict[str, Any],
+    feature_maps: dict[str, Any] | None = None,
+) -> None:
+    """Prints a rich demo-mode report showing what would be created."""
+    # --- Scaffold file tree ---
+    tree_lines = _build_scaffold_preview(scaffold)
+    if tree_lines:
+        print_panel("\n".join(tree_lines), title="🏗️  MVP Scaffold Preview", color=Colors.BLUE, width=70)
+        print("")
 
     # --- Feature maps summary ---
-    if feature_maps:
-        mvp = feature_maps.get("mvp_features", [])
-        prod = feature_maps.get("production_features", [])
-        fm_lines = []
-        if mvp:
-            fm_lines.append(f"{Colors.BOLD}🎯 MVP Features ({len(mvp)} items):{Colors.ENDC}")
-            for item in mvp[:5]:
-                name = item.get("name", "") if isinstance(item, dict) else getattr(item, "name", "")
-                prio = item.get("priority", "") if isinstance(item, dict) else getattr(item, "priority", "")
-                fm_lines.append(f"  [{prio}] {name}")
-            if len(mvp) > 5:
-                fm_lines.append(f"  ... and {len(mvp) - 5} more")
-        if prod:
-            fm_lines.append("")
-            fm_lines.append(f"{Colors.BOLD}🚀 Production Features ({len(prod)} items):{Colors.ENDC}")
-            for item in prod[:3]:
-                name = item.get("name", "") if isinstance(item, dict) else getattr(item, "name", "")
-                prio = item.get("priority", "") if isinstance(item, dict) else getattr(item, "priority", "")
-                fm_lines.append(f"  [{prio}] {name}")
-            if len(prod) > 3:
-                fm_lines.append(f"  ... and {len(prod) - 3} more")
-        if fm_lines:
-            print_panel("\n".join(fm_lines), title="📋 Feature Maps", color=Colors.HEADER, width=70)
-            print("")
+    fm_lines = _build_feature_maps_preview(feature_maps)
+    if fm_lines:
+        print_panel("\n".join(fm_lines), title="📋 Feature Maps", color=Colors.HEADER, width=70)
+        print("")
 
     # --- What's Next ---
     next_steps = f"""{Colors.BOLD}You just saw the full AI pipeline in demo mode!{Colors.ENDC}
