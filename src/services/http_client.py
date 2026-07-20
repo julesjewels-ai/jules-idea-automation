@@ -64,9 +64,7 @@ class BaseApiClient:
 
         for attempt in range(1, self._max_retries + 1):
             try:
-                response = requests.request(
-                    method, url, headers=self.headers, timeout=self._timeout, **kwargs
-                )
+                response = requests.request(method, url, headers=self.headers, timeout=self._timeout, **kwargs)
                 response.raise_for_status()
 
                 if not response.text:

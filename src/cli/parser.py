@@ -91,5 +91,10 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Command: list
     subparsers.add_parser("list", help="List past generated projects and Jules sessions")
+    # Command: export
+    export_parser = subparsers.add_parser("export", help="Export audit history as CSV or JSON")
+    export_parser.add_argument(
+        "--format", choices=["csv", "json"], default="csv", help="Format to export history as (default: csv)"
+    )
 
     return parser
