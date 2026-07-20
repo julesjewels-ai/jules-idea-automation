@@ -12,6 +12,7 @@ from argparse import Namespace
 from functools import partial
 
 from src.cli.cmd_agent import handle_agent
+from src.cli.cmd_export import handle_export_history
 from src.cli.cmd_list import handle_list_history
 from src.cli.cmd_manual import handle_manual
 from src.cli.cmd_paste import handle_paste
@@ -28,6 +29,7 @@ __all__ = [
     "handle_status",
     "handle_list_sources",
     "handle_list_history",
+    "handle_export_history",
     "handle_guide",
     "dispatch_command",
 ]
@@ -74,6 +76,7 @@ def dispatch_command(args: Namespace) -> None:
         "guide": partial(handle_guide, args),
         "manual": partial(handle_manual, args),
         "list": partial(handle_list_history, args),
+        "export": partial(handle_export_history, args),
     }
 
     handler = handlers.get(args.command)

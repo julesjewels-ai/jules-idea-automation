@@ -71,3 +71,26 @@ class CacheProvider(Protocol):
 
         """
         ...
+
+
+class Exporter(Protocol):
+    """Protocol for data export utilities."""
+
+    def export(self, records: list[dict[str, Any]], fmt: str = "csv") -> str:
+        """Export a list of records to the specified format.
+
+        Args:
+        ----
+            records: List of dictionaries representing records.
+            fmt: The format to export to (e.g., "csv", "json").
+
+        Returns:
+        -------
+            A string containing the exported data.
+
+        Raises:
+        ------
+            ExportError: If the format is unsupported or export fails.
+
+        """
+        ...
