@@ -24,6 +24,15 @@ jules = "main:main"
 [project.urls]
 Repository = "https://github.com/julesjewels-ai/jules-idea-automation"
 
+[project.optional-dependencies]
+dev = [
+    "mypy",
+    "ruff",
+    "pytest",
+    "pytest-cov",
+    "pydocstyle",
+]
+
 [tool.ruff]
 line-length = 120
 target-version = "py312"
@@ -60,4 +69,4 @@ explicit_package_bases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--ignore=.DS_Store --ignore=.coverage --ignore=.env"
+addopts = "--ignore=.DS_Store --ignore=.coverage --ignore=.env --cov=src --cov=main --cov-report=xml --cov-fail-under=70"
