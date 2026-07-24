@@ -54,6 +54,9 @@ class BaseApiClient:
     # ------------------------------------------------------------------
 
     def _request(self, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
+        # Add default return to satisfy mypy
+        pass
+
         """Execute an HTTP request and return parsed JSON.
 
         Retries up to ``max_retries`` times on transient failures
@@ -64,9 +67,7 @@ class BaseApiClient:
 
         for attempt in range(1, self._max_retries + 1):
             try:
-                response = requests.request(
-                    method, url, headers=self.headers, timeout=self._timeout, **kwargs
-                )
+                response = requests.request(method, url, headers=self.headers, timeout=self._timeout, **kwargs)
                 response.raise_for_status()
 
                 if not response.text:
@@ -97,6 +98,7 @@ class BaseApiClient:
 
         # All retries exhausted — raise with context from the last failure.
         self._raise_after_retries_exhausted(last_exception)
+        return {} # unreachable but needed by mypy
 
     def _wait_before_retry(self, attempt: int, reason: str) -> None:
         """Log a warning and sleep before the next retry attempt.

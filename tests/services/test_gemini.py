@@ -15,7 +15,7 @@ from src.utils.errors import ConfigurationError, GenerationError
 class MockAPIError(errors.APIError):  # type: ignore[misc]
     """Reusable mock for google.genai APIError (used across several tests)."""
 
-    def __init__(self, message: str, code: int):
+    def __init__(self, message: str, code: int) -> None:
         self.message = message
         self.code = code
         super(Exception, self).__init__(message)  # type: ignore[misc]
@@ -92,7 +92,6 @@ def test_generate_idea_api_error(client: Any) -> None:
 def test_generate_idea_api_error_503_fallback(client: Any) -> None:
     """Test that a 503 error falls back to the second model, which also fails."""
 
-
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
     client.client.models.generate_content.side_effect = mock_error
 
@@ -106,7 +105,6 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
 
 def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     """Test that a 503 error falls back to the second model which succeeds."""
-
 
     api_error = MockAPIError("503 UNAVAILABLE", 503)
 

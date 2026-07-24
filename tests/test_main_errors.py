@@ -10,7 +10,7 @@ import pytest
 
 
 class _RunResult(NamedTuple):
-    exit_code: int
+    exit_code: int | str | None
     out: str
     err: str
 
@@ -133,14 +133,14 @@ class TestFormatErrorTitle:
     """_format_error_title should produce readable titles from class names."""
 
     def test_simple_error(self) -> None:
-        from src.utils.errors import ConfigurationError
         from main import _format_error_title
+        from src.utils.errors import ConfigurationError
 
         assert _format_error_title(ConfigurationError("x")) == "Configuration Error"
 
     def test_multi_word_error(self) -> None:
-        from src.utils.errors import GitHubApiError
         from main import _format_error_title
+        from src.utils.errors import GitHubApiError
 
         assert _format_error_title(GitHubApiError("x")) == "Git Hub Api Error"
 
