@@ -1,3 +1,5 @@
+# Dependabot configuration file
+# This ensures dependabot bumps dependencies in pip packages
 version: 2
 updates:
   - package-ecosystem: "pip"
