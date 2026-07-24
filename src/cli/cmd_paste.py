@@ -24,7 +24,7 @@ def _read_clipboard() -> str:
 
     """
     try:
-        result = subprocess.run(  # nosec B603
+        result = subprocess.run(
             ["pbpaste"],
             capture_output=True,
             text=True,
@@ -35,8 +35,7 @@ def _read_clipboard() -> str:
         return result.stdout
     except FileNotFoundError:
         raise RuntimeError(
-            "Clipboard reading requires 'pbpaste' (macOS only). "
-            "On other systems, use --file or pipe via stdin instead."
+            "Clipboard reading requires 'pbpaste' (macOS only). On other systems, use --file or pipe via stdin instead."
         )
 
 
