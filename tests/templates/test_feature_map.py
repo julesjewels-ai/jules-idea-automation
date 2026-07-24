@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+
+from typing import Any
+
 """Tests for the feature map renderers (MVP + Production).
 
 Covers three scenarios:
@@ -6,7 +11,7 @@ Covers three scenarios:
 3. Integration: _build_feature_map_files wiring
 """
 
-from __future__ import annotations
+
 
 from src.templates.feature_map import (
     render_mvp_checklist_md,
@@ -19,7 +24,7 @@ from src.templates.feature_map import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
-SAMPLE_IDEA: dict = {
+SAMPLE_IDEA: dict[str, Any] = {
     "title": "CodePulse",
     "description": "A developer productivity tracker.",
     "slug": "code-pulse",
@@ -27,7 +32,7 @@ SAMPLE_IDEA: dict = {
     "features": ["Session tracking", "Analytics dashboard", "VS Code extension"],
 }
 
-SAMPLE_AI_MVP_ITEMS: list[dict] = [
+SAMPLE_AI_MVP_ITEMS: list[dict[str, Any]] = [
     {
         "priority": "P0",
         "name": "Implement session recording in main.py",
@@ -47,7 +52,7 @@ SAMPLE_AI_MVP_ITEMS: list[dict] = [
     },
 ]
 
-SAMPLE_AI_PROD_ITEMS: list[dict] = [
+SAMPLE_AI_PROD_ITEMS: list[dict[str, Any]] = [
     {
         "priority": "P0",
         "name": "Structured logging with structlog",
@@ -64,7 +69,7 @@ SAMPLE_AI_PROD_ITEMS: list[dict] = [
     },
 ]
 
-MINIMAL_IDEA: dict = {"title": "X", "slug": "x"}
+MINIMAL_IDEA: dict[str, Any] = {"title": "X", "slug": "x"}
 
 
 # ---------------------------------------------------------------------------

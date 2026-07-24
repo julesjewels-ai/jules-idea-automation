@@ -10,7 +10,7 @@ import pytest
 
 
 class _RunResult(NamedTuple):
-    exit_code: int
+    exit_code: int | str | None
     out: str
     err: str
 

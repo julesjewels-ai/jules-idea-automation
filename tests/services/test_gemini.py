@@ -15,7 +15,7 @@ from src.utils.errors import ConfigurationError, GenerationError
 class MockAPIError(errors.APIError):  # type: ignore[misc]
     """Reusable mock for google.genai APIError (used across several tests)."""
 
-    def __init__(self, message: str, code: int):
+    def __init__(self, message: str, code: int) -> None:
         self.message = message
         self.code = code
         super(Exception, self).__init__(message)  # type: ignore[misc]

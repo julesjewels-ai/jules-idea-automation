@@ -1,6 +1,11 @@
+from __future__ import annotations
+
+
+from typing import Any
+
 """Unit tests for JsonFileAuditLogger."""
 
-from __future__ import annotations
+
 
 import json
 from pathlib import Path
@@ -37,7 +42,7 @@ def _completed_event() -> WorkflowCompleted:
     )
 
 
-def _read_lines(path: Path) -> list[dict]:
+def _read_lines(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
@@ -152,7 +157,7 @@ class TestNonDomainEventFiltering:
         log_file = tmp_path / "audit.jsonl"
         logger = JsonFileAuditLogger(log_file=str(log_file))
 
-        logger.handle({"some": "dict"})
+        logger.handle({"some": "dict[str, Any]"})
 
         assert not log_file.exists()
 

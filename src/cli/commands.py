@@ -43,7 +43,7 @@ def handle_guide(args: Namespace) -> None:
         print_welcome_guide,
     )
 
-    workflow = getattr(args, "workflow", None)
+    workflow: str | None = getattr(args, "workflow", None)
 
     guides = {
         "agent": print_agent_guide,
@@ -51,9 +51,8 @@ def handle_guide(args: Namespace) -> None:
         "manual": print_manual_guide,
     }
 
-    guide_fn = guides.get(workflow)
-    if guide_fn:
-        guide_fn()
+    if workflow and workflow in guides:
+        guides[workflow]()
     else:
         print_welcome_guide()
         print_examples()
@@ -65,7 +64,8 @@ def dispatch_command(args: Namespace) -> None:
 
     validate_env_keys(args.command, is_demo=getattr(args, "demo", False))
 
-    handlers = {
+    from typing import Callable, Any
+    handlers: dict[str, Callable[[], Any]] = {
         "list-sources": handle_list_sources,
         "agent": partial(handle_agent, args),
         "website": partial(handle_website, args),
@@ -76,8 +76,10 @@ def dispatch_command(args: Namespace) -> None:
         "list": partial(handle_list_history, args),
     }
 
-    handler = handlers.get(args.command)
-    if handler:
+    cmd: str | None = getattr(args, "command", None)
+
+    if cmd and cmd in handlers:
+        handler = handlers[cmd]
         handler()
     else:
         print(f"Unknown command: {args.command}", file=sys.stderr)
