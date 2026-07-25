@@ -1,7 +1,7 @@
 """Tests for GitHubClient."""
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -121,8 +121,9 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
@@ -130,3 +131,35 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
 
+
+def test_validate_token_success(github_client: Any) -> None:
+    """A token with 'repo' scope should pass validation."""
+    with patch.object(GitHubClient, "_request_raw") as mock_request_raw:
+        mock_response = MagicMock()
+        mock_response.headers = {"x-oauth-scopes": "read:user, repo"}
+        mock_request_raw.return_value = mock_response
+
+        github_client.validate_token()
+
+
+def test_validate_token_missing_scope(github_client: Any) -> None:
+    """A classic PAT missing the 'repo' scope should raise ConfigurationError."""
+    with patch.object(GitHubClient, "_request_raw") as mock_request_raw:
+        mock_response = MagicMock()
+        mock_response.headers = {"x-oauth-scopes": "read:user, gist"}
+        mock_request_raw.return_value = mock_response
+
+        from src.utils.errors import ConfigurationError
+
+        with pytest.raises(ConfigurationError, match="missing the required 'repo' scope"):
+            github_client.validate_token()
+
+
+def test_validate_token_fine_grained(github_client: Any) -> None:
+    """A fine-grained PAT (missing x-oauth-scopes header) should pass if the request succeeded."""
+    with patch.object(GitHubClient, "_request_raw") as mock_request_raw:
+        mock_response = MagicMock()
+        mock_response.headers = {}
+        mock_request_raw.return_value = mock_response
+
+        github_client.validate_token()

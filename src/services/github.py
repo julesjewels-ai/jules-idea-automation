@@ -38,6 +38,18 @@ class GitHubClient(BaseApiClient):
             status_tips=_STATUS_TIPS,
         )
 
+    def validate_token(self) -> None:
+        """Validates the GitHub token has the required scopes."""
+        response = self._request_raw("GET", f"{self.base_url}/user")
+        scopes_header = response.headers.get("x-oauth-scopes")
+        if scopes_header is not None:
+            scopes = [s.strip() for s in scopes_header.split(",")]
+            if "repo" not in scopes:
+                raise ConfigurationError(
+                    "GitHub token is missing the required 'repo' scope.",
+                    tip="Regenerate your token at https://github.com/settings/tokens with 'repo' scope enabled.",
+                )
+
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""
         return self._request("GET", f"{self.base_url}/user")
