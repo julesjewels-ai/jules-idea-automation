@@ -92,4 +92,8 @@ def create_parser() -> argparse.ArgumentParser:
     # Command: list
     subparsers.add_parser("list", help="List past generated projects and Jules sessions")
 
+    # Command: export
+    export_parser = subparsers.add_parser("export", help="Export past generated projects history")
+    export_parser.add_argument("--format", choices=["csv", "json"], default="csv", help="Export format (csv or json)")
+
     return parser
