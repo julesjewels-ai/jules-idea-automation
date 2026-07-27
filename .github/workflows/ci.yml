@@ -35,6 +35,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff==0.5.4
           pip install -r requirements.txt
+          pip install -e ".[dev]"
+          pip install pytest-cov
 
       - name: Lint with ruff
         run: ruff check src/ tests/
@@ -44,3 +46,11 @@ jobs:
 
       - name: Run tests
         run: pytest tests/ -v --tb=short
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 14
