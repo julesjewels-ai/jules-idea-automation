@@ -71,3 +71,21 @@ class CacheProvider(Protocol):
 
         """
         ...
+
+
+class Exporter(Protocol):
+    """Protocol for data exporters."""
+
+    def export(self, data: list[dict[str, Any]]) -> str:
+        """Export a list of dictionaries to a string format.
+
+        Args:
+        ----
+            data: The list of dictionaries to export.
+
+        Returns:
+        -------
+            The exported data as a string.
+
+        """
+        ...
