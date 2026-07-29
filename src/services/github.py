@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import base64
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import requests
 
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
@@ -37,6 +40,41 @@ class GitHubClient(BaseApiClient):
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
         )
+
+    def _request_raw(self, method: str, url: str, **kwargs: Any) -> requests.Response:
+        import requests
+
+        try:
+            response = requests.request(method, url, headers=self.headers, timeout=self._timeout, **kwargs)
+            response.raise_for_status()
+            return response
+        except requests.exceptions.HTTPError as e:
+            status = e.response.status_code if e.response is not None else 0
+            if status == 401:
+                raise ConfigurationError(
+                    "Your GitHub token seems invalid or expired. Check your .env file.",
+                    tip="Create a personal access token at https://github.com/settings/tokens and add it to your .env file.",
+                )
+            if status == 403:
+                raise ConfigurationError(
+                    "Insufficient permissions or rate limited. Check the scopes of your GitHub token.",
+                    tip="Create a new personal access token with the 'repo' scope selected.",
+                )
+            raise GitHubApiError(f"GitHub API Error: {e}", tip=_STATUS_TIPS.get(status))
+        except requests.exceptions.RequestException as e:
+            raise GitHubApiError(f"Network error: {e}", tip="Check your internet connection.")
+
+    def validate_token(self) -> None:
+        """Validates that the provided token has the 'repo' scope."""
+        response = self._request_raw("GET", f"{self.base_url}/user")
+        scopes_header = response.headers.get("x-oauth-scopes")
+        if scopes_header is not None:
+            scopes = [s.strip() for s in scopes_header.split(",") if s.strip()]
+            if "repo" not in scopes:
+                raise ConfigurationError(
+                    f"GitHub token is missing 'repo' scope. Current scopes: {scopes_header}",
+                    tip="Create a new personal access token with the 'repo' scope selected.",
+                )
 
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""
