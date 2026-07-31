@@ -18,6 +18,16 @@ dependencies = [
     "pydantic==2.10.6",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "mypy",
+    "ruff",
+    "pytest",
+    "pytest-cov",
+    "pydocstyle",
+]
+
+
 [project.scripts]
 jules = "main:main"
 
