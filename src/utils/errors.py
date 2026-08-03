@@ -51,3 +51,9 @@ class AuditError(AppError):
     """Raised when an error occurs during audit logging."""
 
     pass
+
+
+class NotificationError(AppError):
+    """Raised when sending a notification fails."""
+
+    pass

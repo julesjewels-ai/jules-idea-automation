@@ -71,3 +71,18 @@ class CacheProvider(Protocol):
 
         """
         ...
+
+
+class NotificationProvider(Protocol):
+    """Protocol for sending notifications to external systems."""
+
+    def send(self, message: str, title: str | None = None) -> None:
+        """Send a notification.
+
+        Args:
+        ----
+            message: The main content of the notification.
+            title: An optional title for the notification.
+
+        """
+        ...
