@@ -63,7 +63,7 @@ def test_workflow_notification_handler_completed() -> None:
         idea_title="Test Idea",
         idea_slug="test-idea",
         repo_url="https://github.com/user/test-idea",
-                session_url="https://jules.google.com/session/123",
+        session_url="https://jules.google.com/session/123",
     )
 
     handler.handle(event)
