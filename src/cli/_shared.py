@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from argparse import Namespace
 from typing import Any
 
@@ -62,6 +63,7 @@ def execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any | 
     from src.core.workflow import IdeaWorkflow
     from src.services.audit import JsonFileAuditLogger
     from src.services.bus import LocalEventBus
+    from src.services.notifications import WebhookNotificationProvider, WorkflowNotificationHandler
     from src.utils.config import preflight_check_credentials
 
     # Verify GitHub/Jules tokens are valid before spending Gemini credits
@@ -77,6 +79,13 @@ def execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any | 
     audit_logger = JsonFileAuditLogger()
     event_bus.subscribe(WorkflowStarted, audit_logger)
     event_bus.subscribe(WorkflowCompleted, audit_logger)
+
+    webhook_url = os.environ.get("WEBHOOK_URL")
+    if webhook_url:
+        webhook_provider = WebhookNotificationProvider(webhook_url=webhook_url)
+        notification_handler = WorkflowNotificationHandler(provider=webhook_provider)
+        event_bus.subscribe(WorkflowStarted, notification_handler)
+        event_bus.subscribe(WorkflowCompleted, notification_handler)
 
     workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus)
 
