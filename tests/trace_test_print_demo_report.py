@@ -18,28 +18,33 @@ class MockFeature:
         self.priority = priority
 
 
-HAPPY_SCAFFOLD: dict[str, Any] = {
-    "files": [MockFile("main.py", "Main entry point"), {"path": "utils.py", "description": "Utilities"}],
-    "requirements": ["pytest", "pydantic"],
-    "run_command": "pytest tests/",
-}
+@pytest.fixture
+def happy_scaffold() -> dict[str, Any]:
+    return {
+        "files": [MockFile("main.py", "Main entry point"), {"path": "utils.py", "description": "Utilities"}],
+        "requirements": ["pytest", "pydantic"],
+        "run_command": "pytest tests/",
+    }
 
-HAPPY_FEATURE_MAPS: dict[str, Any] = {
-    "mvp_features": [
-        MockFeature("Auth", "High"),
-        MockFeature("DB", "High"),
-        {"name": "API", "priority": "Medium"},
-        {"name": "UI", "priority": "Medium"},
-        {"name": "Docs", "priority": "Low"},
-        {"name": "Tests", "priority": "Low"},
-    ],
-    "production_features": [
-        MockFeature("Scale", "High"),
-        MockFeature("Cache", "Medium"),
-        {"name": "Metrics", "priority": "Low"},
-        {"name": "Alerts", "priority": "Low"},
-    ],
-}
+
+@pytest.fixture
+def happy_feature_maps() -> dict[str, Any]:
+    return {
+        "mvp_features": [
+            MockFeature("Auth", "High"),
+            MockFeature("DB", "High"),
+            {"name": "API", "priority": "Medium"},
+            {"name": "UI", "priority": "Medium"},
+            {"name": "Docs", "priority": "Low"},
+            {"name": "Tests", "priority": "Low"},
+        ],
+        "production_features": [
+            MockFeature("Scale", "High"),
+            MockFeature("Cache", "Medium"),
+            {"name": "Metrics", "priority": "Low"},
+            {"name": "Alerts", "priority": "Low"},
+        ],
+    }
 
 
 @pytest.fixture
@@ -48,16 +53,25 @@ def mock_idea_data() -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    "scaffold, feature_maps, expected",
+    "scaffold_fixture, feature_maps_fixture, expected",
     [
-        (HAPPY_SCAFFOLD, HAPPY_FEATURE_MAPS, None),  # Happy Path
+        ("happy_scaffold", "happy_feature_maps", None),  # Happy Path
         ({}, {}, None),  # Edge Case
         (None, None, AttributeError),  # Error State
     ],
 )
 def test_print_demo_report_behavior(
-    mocker: MockerFixture, mock_idea_data: dict[str, Any], scaffold: Any, feature_maps: Any, expected: Any
+    mocker: MockerFixture,
+    mock_idea_data: dict[str, Any],
+    scaffold_fixture: Any,
+    feature_maps_fixture: Any,
+    expected: Any,
+    request: pytest.FixtureRequest,
 ) -> None:
+    scaffold = request.getfixturevalue(scaffold_fixture) if isinstance(scaffold_fixture, str) else scaffold_fixture
+    feature_maps = (
+        request.getfixturevalue(feature_maps_fixture) if isinstance(feature_maps_fixture, str) else feature_maps_fixture
+    )
     # 1. Setup Mocks (Namespace Verified)
     mock_print_panel = mocker.patch("src.utils.reporter.print_panel", autospec=True)
     mock_print = mocker.patch("builtins.print", autospec=True)
