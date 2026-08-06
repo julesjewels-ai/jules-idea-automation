@@ -57,6 +57,7 @@ env/
 .Jules/
 .benchmarks/
 .jules_history.jsonl
+reports/
 
 # Media
 *.mp4

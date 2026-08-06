@@ -73,10 +73,18 @@ def execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any | 
     if gemini is None:
         gemini = build_gemini_client()
 
+    from src.services.jules import JulesClient
+    from src.services.summary import MarkdownSummaryGenerator
+
+    jules_client = JulesClient()
+    summary_generator = MarkdownSummaryGenerator(jules_client=jules_client)
+
     event_bus = LocalEventBus()
     audit_logger = JsonFileAuditLogger()
     event_bus.subscribe(WorkflowStarted, audit_logger)
     event_bus.subscribe(WorkflowCompleted, audit_logger)
+    event_bus.subscribe(WorkflowStarted, summary_generator)
+    event_bus.subscribe(WorkflowCompleted, summary_generator)
 
     workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus)
 
