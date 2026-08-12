@@ -78,7 +78,7 @@ def dispatch_command(args: Namespace) -> None:
 
     cmd: str | None = getattr(args, "command", None)
     if not isinstance(cmd, str):
-        print(f"Unknown command format.", file=sys.stderr)
+        print("Unknown command format.", file=sys.stderr)
         sys.exit(1)
 
     handler = handlers.get(cmd)
