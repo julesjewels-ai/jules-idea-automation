@@ -60,4 +60,9 @@ explicit_package_bases = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--ignore=.DS_Store --ignore=.coverage --ignore=.env"
+addopts = "--ignore=.DS_Store --ignore=.coverage --ignore=.env --cov=src --cov=main --cov-fail-under=70 --cov-report=xml"
+
+[project.optional-dependencies]
+dev = [
+    "pytest-cov>=4.0.0",
+]
