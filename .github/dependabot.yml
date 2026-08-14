@@ -4,3 +4,5 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+
+# Configured to ensure automated version bumps and vulnerability alerts
