@@ -18,6 +18,11 @@ dependencies = [
     "pydantic==2.10.6",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest-cov==7.0.0",
+]
+
 [project.scripts]
 jules = "main:main"
 
