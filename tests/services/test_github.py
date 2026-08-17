@@ -14,7 +14,12 @@ from tests.conftest import make_http_error, make_ok_response
 @pytest.fixture
 def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
-    return GitHubClient()
+    with patch("requests.get") as mock_get:
+        mock_response = requests.Response()
+        mock_response.status_code = 200
+        mock_response.headers = {"X-OAuth-Scopes": "repo, read:user"}
+        mock_get.return_value = mock_response
+        return GitHubClient()
 
 
 # --- Happy Path ---
@@ -121,8 +126,9 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
@@ -130,3 +136,30 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
 
+
+def test_verify_token_scopes_missing_repo(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    from src.utils.errors import ConfigurationError
+
+    with patch("requests.get") as mock_get:
+        mock_response = requests.Response()
+        mock_response.status_code = 200
+        mock_response.headers = {"X-OAuth-Scopes": "read:user"}
+        mock_get.return_value = mock_response
+        with pytest.raises(ConfigurationError, match="missing the required 'repo' scope"):
+            GitHubClient()
+
+
+def test_verify_token_scopes_invalid_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    from src.utils.errors import ConfigurationError
+
+    with patch("requests.get") as mock_get:
+        mock_response = requests.Response()
+        mock_response.status_code = 401
+
+        err = requests.exceptions.HTTPError(response=mock_response)
+        mock_get.side_effect = err
+
+        with pytest.raises(ConfigurationError, match="GITHUB_TOKEN is invalid"):
+            GitHubClient()
