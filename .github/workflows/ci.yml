@@ -35,6 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff==0.5.4
           pip install -r requirements.txt
+          pip install pytest-cov==5.0.0
 
       - name: Lint with ruff
         run: ruff check src/ tests/
@@ -43,4 +44,11 @@ jobs:
         run: ruff format --check src/ tests/
 
       - name: Run tests
-        run: pytest tests/ -v --tb=short
+        run: pytest tests/ -v --tb=short --cov=src --cov=main --cov-fail-under=80
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: .coverage
