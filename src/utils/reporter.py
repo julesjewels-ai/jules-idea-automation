@@ -61,7 +61,7 @@ def _create_top_border(title: str, width: int, color: str) -> str:
 
     # Ensure title fits
     if visual_len > width - 4:
-        title_text = title_text[:max(0, width - 5)] + "…"  # pyre-ignore[16]
+        title_text = title_text[: max(0, width - 5)] + "…"  # pyre-ignore[16]
         visual_len = _visual_width(title_text)
 
     left_pad = 2
@@ -372,6 +372,64 @@ def print_idea_summary(idea_data: dict[str, Any]) -> None:
     print("")  # spacing after
 
 
+def _get_field(obj: Any, field_name: str, default: Any = "") -> Any:
+    if isinstance(obj, dict):
+        return obj.get(field_name, default)
+    return getattr(obj, field_name, default)
+
+
+def _build_scaffold_lines(scaffold: dict[str, Any]) -> list[str]:
+    files = scaffold.get("files", [])
+    lines = [f"{Colors.BOLD}📂 Generated Scaffold ({len(files)} files):{Colors.ENDC}"]
+
+    for f in files:
+        path = _get_field(f, "path", "")
+        desc = _get_field(f, "description", "")
+        suffix = f"  {Colors.CYAN}# {desc}{Colors.ENDC}" if desc else ""
+        lines.append(f"  📄 {path}{suffix}")
+
+    reqs = scaffold.get("requirements", [])
+    if reqs:
+        lines.extend(["", f"{Colors.BOLD}📦 Dependencies:{Colors.ENDC}", f"  {', '.join(reqs)}"])
+
+    run_cmd = scaffold.get("run_command")
+    if run_cmd:
+        lines.extend(["", f"{Colors.BOLD}▶  Run command:{Colors.ENDC}", f"  {Colors.GREEN}{run_cmd}{Colors.ENDC}"])
+
+    return lines
+
+
+def _build_feature_map_lines(feature_maps: dict[str, Any] | None) -> list[str]:
+    if not feature_maps:
+        return []
+
+    lines = []
+    mvp = feature_maps.get("mvp_features", [])
+    prod = feature_maps.get("production_features", [])
+
+    if mvp:
+        lines.append(f"{Colors.BOLD}🎯 MVP Features ({len(mvp)} items):{Colors.ENDC}")
+        for item in mvp[:5]:
+            name = _get_field(item, "name", "")
+            prio = _get_field(item, "priority", "")
+            lines.append(f"  [{prio}] {name}")
+        if len(mvp) > 5:
+            lines.append(f"  ... and {len(mvp) - 5} more")
+
+    if prod:
+        if mvp:
+            lines.append("")
+        lines.append(f"{Colors.BOLD}🚀 Production Features ({len(prod)} items):{Colors.ENDC}")
+        for item in prod[:3]:
+            name = _get_field(item, "name", "")
+            prio = _get_field(item, "priority", "")
+            lines.append(f"  [{prio}] {name}")
+        if len(prod) > 3:
+            lines.append(f"  ... and {len(prod) - 3} more")
+
+    return lines
+
+
 def print_demo_report(
     idea_data: dict[str, Any],
     scaffold: dict[str, Any],
@@ -379,54 +437,15 @@ def print_demo_report(
 ) -> None:
     """Prints a rich demo-mode report showing what would be created."""
     # --- Scaffold file tree ---
-    files = scaffold.get("files", [])
-    tree_lines = [f"{Colors.BOLD}📂 Generated Scaffold ({len(files)} files):{Colors.ENDC}"]
-    for f in files:
-        path = f.get("path", "") if isinstance(f, dict) else getattr(f, "path", "")
-        desc = f.get("description", "") if isinstance(f, dict) else getattr(f, "description", "")
-        suffix = f"  {Colors.CYAN}# {desc}{Colors.ENDC}" if desc else ""
-        tree_lines.append(f"  📄 {path}{suffix}")
-
-    reqs = scaffold.get("requirements", [])
-    if reqs:
-        tree_lines.append("")
-        tree_lines.append(f"{Colors.BOLD}📦 Dependencies:{Colors.ENDC}")
-        tree_lines.append(f"  {', '.join(reqs)}")
-
-    run_cmd = scaffold.get("run_command")
-    if run_cmd:
-        tree_lines.append("")
-        tree_lines.append(f"{Colors.BOLD}▶  Run command:{Colors.ENDC}")
-        tree_lines.append(f"  {Colors.GREEN}{run_cmd}{Colors.ENDC}")
-
+    tree_lines = _build_scaffold_lines(scaffold)
     print_panel("\n".join(tree_lines), title="🏗️  MVP Scaffold Preview", color=Colors.BLUE, width=70)
     print("")
 
     # --- Feature maps summary ---
-    if feature_maps:
-        mvp = feature_maps.get("mvp_features", [])
-        prod = feature_maps.get("production_features", [])
-        fm_lines = []
-        if mvp:
-            fm_lines.append(f"{Colors.BOLD}🎯 MVP Features ({len(mvp)} items):{Colors.ENDC}")
-            for item in mvp[:5]:
-                name = item.get("name", "") if isinstance(item, dict) else getattr(item, "name", "")
-                prio = item.get("priority", "") if isinstance(item, dict) else getattr(item, "priority", "")
-                fm_lines.append(f"  [{prio}] {name}")
-            if len(mvp) > 5:
-                fm_lines.append(f"  ... and {len(mvp) - 5} more")
-        if prod:
-            fm_lines.append("")
-            fm_lines.append(f"{Colors.BOLD}🚀 Production Features ({len(prod)} items):{Colors.ENDC}")
-            for item in prod[:3]:
-                name = item.get("name", "") if isinstance(item, dict) else getattr(item, "name", "")
-                prio = item.get("priority", "") if isinstance(item, dict) else getattr(item, "priority", "")
-                fm_lines.append(f"  [{prio}] {name}")
-            if len(prod) > 3:
-                fm_lines.append(f"  ... and {len(prod) - 3} more")
-        if fm_lines:
-            print_panel("\n".join(fm_lines), title="📋 Feature Maps", color=Colors.HEADER, width=70)
-            print("")
+    fm_lines = _build_feature_map_lines(feature_maps)
+    if fm_lines:
+        print_panel("\n".join(fm_lines), title="📋 Feature Maps", color=Colors.HEADER, width=70)
+        print("")
 
     # --- What's Next ---
     next_steps = f"""{Colors.BOLD}You just saw the full AI pipeline in demo mode!{Colors.ENDC}
