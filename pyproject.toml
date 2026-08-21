@@ -61,3 +61,12 @@ explicit_package_bases = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--ignore=.DS_Store --ignore=.coverage --ignore=.env"
+
+[project.optional-dependencies]
+dev = [
+    "pytest<9.0.0",
+    "pytest-cov==7.0.0",
+    "pytest-mock==3.15.1",
+    "ruff==0.15.6",
+    "mypy==1.19.1",
+]
