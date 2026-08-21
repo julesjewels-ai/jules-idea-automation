@@ -24,7 +24,7 @@ def _read_clipboard() -> str:
 
     """
     try:
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B603
             ["pbpaste"],
             capture_output=True,
             text=True,
