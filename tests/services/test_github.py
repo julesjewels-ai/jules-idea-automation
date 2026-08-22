@@ -7,14 +7,69 @@ import pytest
 import requests
 
 from src.services.github import GitHubClient
-from src.utils.errors import GitHubApiError
+from src.utils.errors import ConfigurationError, GitHubApiError
 from tests.conftest import make_http_error, make_ok_response
 
 
 @pytest.fixture
 def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
-    return GitHubClient()
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = make_ok_response({}, 200)
+        mock_response.headers = {"X-OAuth-Scopes": "repo, workflow"}
+        mock_get.return_value = mock_response
+        return GitHubClient()
+
+
+# --- Initialization & Scopes ---
+
+
+def test_github_client_init_validates_scopes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Initialization validates scopes via GET /user."""
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = make_ok_response({}, 200)
+        mock_response.headers = {"X-OAuth-Scopes": "repo"}
+        mock_get.return_value = mock_response
+
+        client = GitHubClient(token="valid-token")
+
+        mock_get.assert_called_once_with("https://api.github.com/user", headers=client.headers, timeout=10)
+
+
+def test_github_client_init_missing_repo_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Initialization raises ConfigurationError if repo scope is missing."""
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = make_ok_response({}, 200)
+        mock_response.headers = {"X-OAuth-Scopes": "read:user, user:email"}
+        mock_get.return_value = mock_response
+
+        with pytest.raises(ConfigurationError, match="GitHub token is missing required 'repo' scope"):
+            GitHubClient(token="invalid-token")
+
+
+def test_github_client_init_fine_grained_pat_passes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Initialization passes if X-OAuth-Scopes header is completely missing (Fine-grained PAT)."""
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = make_ok_response({}, 200)
+        # No X-OAuth-Scopes header
+        mock_response.headers = {}
+        mock_get.return_value = mock_response
+
+        GitHubClient(token="fine-grained-token")
+
+        mock_get.assert_called_once()
+
+
+def test_github_client_init_invalid_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Initialization raises ConfigurationError if token is invalid (401)."""
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = make_ok_response({}, 401)
+        mock_get.return_value = mock_response
+
+        with pytest.raises(ConfigurationError, match="Your GitHub token is invalid or expired."):
+            GitHubClient(token="expired-token")
 
 
 # --- Happy Path ---
@@ -121,12 +176,12 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
 
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
-
