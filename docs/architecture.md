@@ -62,8 +62,7 @@ classDiagram
 ### Subscribing to Events
 Features can subscribe to these events by implementing the `EventHandler` protocol:
 ```python
-def handle(self, event: Event) -> None:
-    ...
+def handle(self, event: Event) -> None: ...
 ```
 
 ## Audit Logging
