@@ -1,20 +1,25 @@
 """Tests for GitHubClient."""
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
 
 from src.services.github import GitHubClient
-from src.utils.errors import GitHubApiError
+from src.utils.errors import GitHubApiError, ConfigurationError
 from tests.conftest import make_http_error, make_ok_response
 
 
 @pytest.fixture
 def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
-    return GitHubClient()
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.headers = {"X-OAuth-Scopes": "repo, read:user"}
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+        return GitHubClient()
 
 
 # --- Happy Path ---
@@ -130,3 +135,27 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
 
+
+
+def test_init_missing_repo_scope_raises_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.headers = {"X-OAuth-Scopes": "read:user"}
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+
+        with pytest.raises(ConfigurationError, match="missing the required 'repo' scope"):
+            GitHubClient()
+
+def test_init_invalid_token_raises_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+
+        mock_error = requests.exceptions.HTTPError(response=mock_response)
+        mock_get.side_effect = mock_error
+
+        with pytest.raises(ConfigurationError, match="invalid or expired"):
+            GitHubClient()
