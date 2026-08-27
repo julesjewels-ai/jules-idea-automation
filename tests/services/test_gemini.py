@@ -33,7 +33,9 @@ def mock_genai_client() -> typing.Generator[unittest.mock.MagicMock, None, None]
 @pytest.fixture
 def client(mock_genai_client: Any) -> GeminiClient:
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
-        return GeminiClient()
+        c = GeminiClient()
+        c.models = ["gemini-2.5-pro", "gemini-2.5-flash"]
+        return c
 
 
 def test_init_raises_error_without_api_key() -> None:
