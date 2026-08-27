@@ -61,7 +61,7 @@ def _create_top_border(title: str, width: int, color: str) -> str:
 
     # Ensure title fits
     if visual_len > width - 4:
-        title_text = title_text[:max(0, width - 5)] + "…"  # pyre-ignore[16]
+        title_text = title_text[: max(0, width - 5)] + "…"  # pyre-ignore[16]
         visual_len = _visual_width(title_text)
 
     left_pad = 2
@@ -372,15 +372,10 @@ def print_idea_summary(idea_data: dict[str, Any]) -> None:
     print("")  # spacing after
 
 
-def print_demo_report(
-    idea_data: dict[str, Any],
-    scaffold: dict[str, Any],
-    feature_maps: dict[str, Any] | None = None,
-) -> None:
-    """Prints a rich demo-mode report showing what would be created."""
-    # --- Scaffold file tree ---
+def _build_scaffold_tree_lines(scaffold: dict[str, Any]) -> list[str]:
     files = scaffold.get("files", [])
     tree_lines = [f"{Colors.BOLD}📂 Generated Scaffold ({len(files)} files):{Colors.ENDC}"]
+
     for f in files:
         path = f.get("path", "") if isinstance(f, dict) else getattr(f, "path", "")
         desc = f.get("description", "") if isinstance(f, dict) else getattr(f, "description", "")
@@ -399,31 +394,56 @@ def print_demo_report(
         tree_lines.append(f"{Colors.BOLD}▶  Run command:{Colors.ENDC}")
         tree_lines.append(f"  {Colors.GREEN}{run_cmd}{Colors.ENDC}")
 
+    return tree_lines
+
+
+def _format_feature_list(features: list[Any], title: str, limit: int) -> list[str]:
+    if not features:
+        return []
+
+    lines = [f"{Colors.BOLD}{title} ({len(features)} items):{Colors.ENDC}"]
+
+    for item in features[:limit]:
+        name = item.get("name", "") if isinstance(item, dict) else getattr(item, "name", "")
+        prio = item.get("priority", "") if isinstance(item, dict) else getattr(item, "priority", "")
+        lines.append(f"  [{prio}] {name}")
+
+    if len(features) > limit:
+        lines.append(f"  ... and {len(features) - limit} more")
+
+    return lines
+
+
+def _build_feature_maps_lines(feature_maps: dict[str, Any]) -> list[str]:
+    fm_lines = []
+
+    mvp = feature_maps.get("mvp_features", [])
+    if mvp:
+        fm_lines.extend(_format_feature_list(mvp, "🎯 MVP Features", 5))
+
+    prod = feature_maps.get("production_features", [])
+    if prod:
+        if fm_lines:
+            fm_lines.append("")
+        fm_lines.extend(_format_feature_list(prod, "🚀 Production Features", 3))
+
+    return fm_lines
+
+
+def print_demo_report(
+    idea_data: dict[str, Any],
+    scaffold: dict[str, Any],
+    feature_maps: dict[str, Any] | None = None,
+) -> None:
+    """Prints a rich demo-mode report showing what would be created."""
+    # --- Scaffold file tree ---
+    tree_lines = _build_scaffold_tree_lines(scaffold)
     print_panel("\n".join(tree_lines), title="🏗️  MVP Scaffold Preview", color=Colors.BLUE, width=70)
     print("")
 
     # --- Feature maps summary ---
     if feature_maps:
-        mvp = feature_maps.get("mvp_features", [])
-        prod = feature_maps.get("production_features", [])
-        fm_lines = []
-        if mvp:
-            fm_lines.append(f"{Colors.BOLD}🎯 MVP Features ({len(mvp)} items):{Colors.ENDC}")
-            for item in mvp[:5]:
-                name = item.get("name", "") if isinstance(item, dict) else getattr(item, "name", "")
-                prio = item.get("priority", "") if isinstance(item, dict) else getattr(item, "priority", "")
-                fm_lines.append(f"  [{prio}] {name}")
-            if len(mvp) > 5:
-                fm_lines.append(f"  ... and {len(mvp) - 5} more")
-        if prod:
-            fm_lines.append("")
-            fm_lines.append(f"{Colors.BOLD}🚀 Production Features ({len(prod)} items):{Colors.ENDC}")
-            for item in prod[:3]:
-                name = item.get("name", "") if isinstance(item, dict) else getattr(item, "name", "")
-                prio = item.get("priority", "") if isinstance(item, dict) else getattr(item, "priority", "")
-                fm_lines.append(f"  [{prio}] {name}")
-            if len(prod) > 3:
-                fm_lines.append(f"  ... and {len(prod) - 3} more")
+        fm_lines = _build_feature_maps_lines(feature_maps)
         if fm_lines:
             print_panel("\n".join(fm_lines), title="📋 Feature Maps", color=Colors.HEADER, width=70)
             print("")
