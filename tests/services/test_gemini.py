@@ -90,8 +90,8 @@ def test_generate_idea_api_error(client: Any) -> None:
 
 
 def test_generate_idea_api_error_503_fallback(client: Any) -> None:
+    client.models = ["gemini-2.5-pro", "gemini-2.5-flash"]
     """Test that a 503 error falls back to the second model, which also fails."""
-
 
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
     client.client.models.generate_content.side_effect = mock_error
@@ -101,12 +101,12 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
 
     assert "Gemini API Error" in str(excinfo.value)
     assert excinfo.value.tip is not None and "currently overloaded" in excinfo.value.tip
-    assert client.client.models.generate_content.call_count == 2
+    assert client.client.models.generate_content.call_count == len(client.models)
 
 
 def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
+    client.models = ["gemini-2.5-pro", "gemini-2.5-flash"]
     """Test that a 503 error falls back to the second model which succeeds."""
-
 
     api_error = MockAPIError("503 UNAVAILABLE", 503)
 
@@ -120,7 +120,7 @@ def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     result = client.generate_idea()
 
     assert result["title"] == "Fallback App"
-    assert client.client.models.generate_content.call_count == 2
+    assert client.client.models.generate_content.call_count == len(client.models)
 
     calls = client.client.models.generate_content.call_args_list
     assert calls[0].kwargs["model"] == "gemini-2.5-pro"
@@ -207,6 +207,7 @@ def test_generate_project_scaffold_escapes_input(client: Any) -> None:
 
 
 def test_generate_project_scaffold_retry_then_success(client: Any) -> None:
+    client.models = ["gemini-2.5-pro", "gemini-2.5-flash"]
     # First call raises exception, second call succeeds
     mock_response = MagicMock()
     mock_response.text = json.dumps({"files": [], "requirements": [], "run_command": "python main.py"})
@@ -217,10 +218,11 @@ def test_generate_project_scaffold_retry_then_success(client: Any) -> None:
     result = client.generate_project_scaffold(idea_data)
 
     assert result["run_command"] == "python main.py"
-    assert client.client.models.generate_content.call_count == 2
+    assert client.client.models.generate_content.call_count == len(client.models)
 
 
 def test_generate_project_scaffold_fallback(client: Any) -> None:
+    client.models = ["gemini-2.5-pro", "gemini-2.5-flash"]
     # All calls fail
     client.client.models.generate_content.side_effect = Exception("API Error")
 
@@ -231,4 +233,4 @@ def test_generate_project_scaffold_fallback(client: Any) -> None:
     # Check for fallback structure
     assert result["run_command"] == "python main.py"
     assert any(f["path"] == "main.py" for f in result["files"])
-    assert client.client.models.generate_content.call_count == 2
+    assert client.client.models.generate_content.call_count == len(client.models)
