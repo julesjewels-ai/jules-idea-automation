@@ -95,10 +95,10 @@ def create_parser() -> argparse.ArgumentParser:
     # Command: export
     export_parser = subparsers.add_parser("export", help="Export audit history to CSV or JSON")
     export_parser.add_argument(
-        "--format",
-        choices=["csv", "json"],
-        default="csv",
-        help="The format to export the history in (default: csv)"
+        "--format", choices=["csv", "json"], default="csv", help="The format to export the history in (default: csv)"
+    )
+    export_parser.add_argument(
+        "--limit", type=int, default=1000, help="Maximum number of records to export (default: 1000)"
     )
 
     return parser

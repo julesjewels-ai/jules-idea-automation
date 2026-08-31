@@ -13,12 +13,13 @@ from src.utils.errors import ExportError
 def handle_export(args: Namespace) -> None:
     """Export the local history database to the requested format."""
     fmt = getattr(args, "format", "csv")
+    limit = getattr(args, "limit", 1000)
 
     try:
         exporter = ExporterFactory.get_exporter(fmt)
         with HistoryDB() as db:
             service = ExportService(provider=db, exporter=exporter)
-            output = service.export()
+            output = service.export(limit=limit)
 
         if output:
             print(output)

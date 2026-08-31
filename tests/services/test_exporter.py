@@ -28,10 +28,7 @@ class MockRecordProvider(RecordProvider[dict[str, Any]]):
 def test_csv_exporter() -> None:
     """Test CSVExporter generates correct CSV strings."""
     exporter = CSVExporter()
-    records = [
-        {"id": 1, "name": "Alice"},
-        {"id": 2, "name": "Bob"}
-    ]
+    records = [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]
 
     output = exporter.export(records)
 
@@ -51,9 +48,7 @@ def test_csv_exporter_empty() -> None:
 def test_json_exporter() -> None:
     """Test JSONExporter generates correct JSON strings."""
     exporter = JSONExporter()
-    records = [
-        {"id": 1, "name": "Alice"}
-    ]
+    records = [{"id": 1, "name": "Alice"}]
 
     output = exporter.export(records)
 
@@ -101,3 +96,23 @@ def test_export_service_provider_error() -> None:
 
     with pytest.raises(ExportError, match="Failed to fetch records: Database error"):
         service.export()
+
+
+def test_export_service_limit() -> None:
+    """Test ExportService passes the correct limit to the provider."""
+    records = [
+        {"id": 1},
+        {"id": 2},
+        {"id": 3},
+        {"id": 4},
+        {"id": 5},
+    ]
+    provider = MockRecordProvider(records)
+    exporter = JSONExporter()
+    service = ExportService(provider=provider, exporter=exporter)
+
+    output = service.export(limit=2)
+    parsed = json.loads(output)
+
+    assert len(parsed) == 2
+    assert parsed == [{"id": 1}, {"id": 2}]

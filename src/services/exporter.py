@@ -30,7 +30,7 @@ class CSVExporter(DataExporter[dict[str, Any]]):
             return ""
 
         output = io.StringIO()
-        fieldnames = list(records[0].keys())
+        fieldnames = list({k for r in records for k in r.keys()})
         writer = csv.DictWriter(output, fieldnames=fieldnames)
 
         try:
@@ -64,6 +64,7 @@ class JSONExporter(DataExporter[dict[str, Any]]):
             return json.dumps(records, indent=2)
         except Exception as e:
             raise ExportError(f"Failed to generate JSON: {e}") from e
+
 
 class ExporterFactory:
     """Factory for creating exporters based on format string."""
@@ -111,11 +112,12 @@ class ExportService:
         ----
             provider: Service that provides records.
             exporter: Service that formats the records.
+
         """
         self._provider = provider
         self._exporter = exporter
 
-    def export(self, limit: int = 50) -> str:
+    def export(self, limit: int = 1000) -> str:
         """Fetch records and return them as a formatted string.
 
         Args:

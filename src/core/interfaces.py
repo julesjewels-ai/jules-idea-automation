@@ -28,7 +28,7 @@ class DataExporter(Protocol[T]):
 class RecordProvider(Protocol[T]):
     """Protocol for providing records to export."""
 
-    def list_records(self, limit: int = 50) -> list[T]:
+    def list_records(self, limit: int = 1000) -> list[T]:
         """List records.
 
         Args:
