@@ -2,7 +2,45 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Protocol, TypeVar
+
+T = TypeVar("T")
+
+
+class DataExporter(Protocol[T]):
+    """Protocol for data exporters."""
+
+    def export(self, records: list[T]) -> str:
+        """Export records to a string format.
+
+        Args:
+        ----
+            records: A list of records to export.
+
+        Returns:
+        -------
+            The exported string.
+
+        """
+        ...
+
+
+class RecordProvider(Protocol[T]):
+    """Protocol for providing records to export."""
+
+    def list_records(self, limit: int = 1000) -> list[T]:
+        """List records.
+
+        Args:
+        ----
+            limit: Maximum number of records to return.
+
+        Returns:
+        -------
+            A list of records.
+
+        """
+        ...
 
 
 class EventHandler(Protocol):
