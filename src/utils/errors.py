@@ -51,3 +51,15 @@ class AuditError(AppError):
     """Raised when an error occurs during audit logging."""
 
     pass
+
+
+class ExportError(AppError):
+    """Raised when an error occurs during data export."""
+
+    pass
+
+
+class ExportFormatError(ExportError):
+    """Raised when an unsupported export format is requested."""
+
+    pass
