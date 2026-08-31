@@ -30,7 +30,7 @@ class CSVExporter(DataExporter[dict[str, Any]]):
             return ""
 
         output = io.StringIO()
-        fieldnames = list({k for r in records for k in r.keys()})
+        fieldnames = list(dict.fromkeys(k for r in records for k in r.keys()))
         writer = csv.DictWriter(output, fieldnames=fieldnames)
 
         try:
