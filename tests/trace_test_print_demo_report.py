@@ -1,12 +1,15 @@
-import pytest
 from typing import Any
+
+import pytest
 from pytest_mock import MockerFixture
 
 from src.utils.reporter import print_demo_report
 
+
 @pytest.fixture
 def mock_idea_data() -> dict[str, Any]:
     return {"title": "Test App"}
+
 
 @pytest.fixture
 def happy_scaffold() -> dict[str, Any]:
@@ -16,6 +19,7 @@ def happy_scaffold() -> dict[str, Any]:
         "run_command": "python main.py",
     }
 
+
 @pytest.fixture
 def happy_feature_maps() -> dict[str, Any]:
     return {
@@ -23,19 +27,25 @@ def happy_feature_maps() -> dict[str, Any]:
         "production_features": [{"name": "Feature 2", "priority": "P1"}],
     }
 
+
 @pytest.fixture
 def empty_dict() -> dict[str, Any]:
     return {}
+
 
 @pytest.fixture
 def none_val() -> None:
     return None
 
-@pytest.mark.parametrize("scaffold_name, feature_maps_name, expected", [
-    ("happy_scaffold", "happy_feature_maps", None),   # Happy Path
-    ("empty_dict", "none_val", None),                 # Edge Case
-    ("none_val", "none_val", AttributeError),         # Error State
-])
+
+@pytest.mark.parametrize(
+    "scaffold_name, feature_maps_name, expected",
+    [
+        ("happy_scaffold", "happy_feature_maps", None),  # Happy Path
+        ("empty_dict", "none_val", None),  # Edge Case
+        ("none_val", "none_val", AttributeError),  # Error State
+    ],
+)
 def test_print_demo_report_behavior(
     mocker: MockerFixture,
     request: pytest.FixtureRequest,
