@@ -58,6 +58,15 @@ ignore_missing_imports = true
 strict = true
 explicit_package_bases = true
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "mypy",
+    "ruff"
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--ignore=.DS_Store --ignore=.coverage --ignore=.env"
