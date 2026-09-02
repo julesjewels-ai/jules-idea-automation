@@ -10,6 +10,7 @@ from __future__ import annotations
 import sys
 from argparse import Namespace
 from functools import partial
+from typing import Any, Callable
 
 from src.cli.cmd_agent import handle_agent
 from src.cli.cmd_list import handle_list_history
@@ -45,13 +46,13 @@ def handle_guide(args: Namespace) -> None:
 
     workflow = getattr(args, "workflow", None)
 
-    guides = {
+    guides: dict[str, Callable[[], None]] = {
         "agent": print_agent_guide,
         "website": print_website_guide,
         "manual": print_manual_guide,
     }
 
-    guide_fn = guides.get(workflow)
+    guide_fn = guides.get(str(workflow)) if workflow else None
     if guide_fn:
         guide_fn()
     else:
@@ -65,7 +66,7 @@ def dispatch_command(args: Namespace) -> None:
 
     validate_env_keys(args.command, is_demo=getattr(args, "demo", False))
 
-    handlers = {
+    handlers: dict[str, Callable[[], Any]] = {
         "list-sources": handle_list_sources,
         "agent": partial(handle_agent, args),
         "website": partial(handle_website, args),
@@ -76,7 +77,7 @@ def dispatch_command(args: Namespace) -> None:
         "list": partial(handle_list_history, args),
     }
 
-    handler = handlers.get(args.command)
+    handler: Callable[[], Any] | None = handlers.get(args.command)
     if handler:
         handler()
     else:
