@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+import typing
 from typing import Any
 
 import requests
@@ -64,9 +65,7 @@ class BaseApiClient:
 
         for attempt in range(1, self._max_retries + 1):
             try:
-                response = requests.request(
-                    method, url, headers=self.headers, timeout=self._timeout, **kwargs
-                )
+                response = requests.request(method, url, headers=self.headers, timeout=self._timeout, **kwargs)
                 response.raise_for_status()
 
                 if not response.text:
@@ -117,7 +116,7 @@ class BaseApiClient:
         )
         time.sleep(delay)
 
-    def _raise_after_retries_exhausted(self, last_exception: Exception | None) -> None:
+    def _raise_after_retries_exhausted(self, last_exception: Exception | None) -> typing.NoReturn:
         """Translate the last transient exception into a domain error."""
         if isinstance(last_exception, requests.exceptions.HTTPError):
             tip = self._handle_http_error(last_exception)
