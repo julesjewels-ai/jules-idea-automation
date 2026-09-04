@@ -24,6 +24,17 @@ jules = "main:main"
 [project.urls]
 Repository = "https://github.com/julesjewels-ai/jules-idea-automation"
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "mypy",
+    "ruff",
+    "types-requests",
+    "types-beautifulsoup4",
+]
+
 [tool.ruff]
 line-length = 120
 target-version = "py312"
