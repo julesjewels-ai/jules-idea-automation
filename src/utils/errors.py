@@ -51,3 +51,9 @@ class AuditError(AppError):
     """Raised when an error occurs during audit logging."""
 
     pass
+
+
+class ReportError(AppError):
+    """Raised when an error occurs during report generation."""
+
+    pass

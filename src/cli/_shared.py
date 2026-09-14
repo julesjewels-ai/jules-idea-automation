@@ -78,6 +78,12 @@ def execute_and_watch(args: Namespace, idea_data: dict[str, Any], gemini: Any | 
     event_bus.subscribe(WorkflowStarted, audit_logger)
     event_bus.subscribe(WorkflowCompleted, audit_logger)
 
+    from src.services.reporting import FileReportStorage, MarkdownReportHandler
+
+    report_storage = FileReportStorage()
+    report_handler = MarkdownReportHandler(storage=report_storage)
+    event_bus.subscribe(WorkflowCompleted, report_handler)
+
     workflow = IdeaWorkflow(gemini=gemini, event_bus=event_bus)
 
     result = workflow.execute(idea_data, private=not args.public, timeout=args.timeout)

@@ -19,6 +19,21 @@ class EventHandler(Protocol):
         ...
 
 
+class ReportStorage(Protocol):
+    """Protocol for the report storage mechanism."""
+
+    def save(self, report_id: str, content: str) -> None:
+        """Save the generated report content.
+
+        Args:
+        ----
+            report_id: A unique identifier for the report.
+            content: The rendered report content.
+
+        """
+        ...
+
+
 class EventBus(Protocol):
     """Protocol for the application event bus."""
 
