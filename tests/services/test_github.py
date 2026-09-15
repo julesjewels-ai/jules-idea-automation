@@ -129,4 +129,3 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
 
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
-
