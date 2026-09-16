@@ -1,3 +1,5 @@
+"""Pytest configuration and fixtures."""
+
 from __future__ import annotations
 
 import os
@@ -12,7 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 
 def make_http_error(status_code: int, body: dict[str, Any] | None = None) -> requests.exceptions.HTTPError:
-    """Factory for HTTPError with a mock response.
+    """Create for HTTPError with a mock response.
 
     Shared across test_github.py and test_jules.py.
     """
@@ -23,7 +25,7 @@ def make_http_error(status_code: int, body: dict[str, Any] | None = None) -> req
 
 
 def make_ok_response(json_data: Any, status_code: int = 200) -> MagicMock:
-    """Factory for successful mock responses."""
+    """Create for successful mock responses."""
     resp = MagicMock()
     resp.json.return_value = json_data
     resp.status_code = status_code
