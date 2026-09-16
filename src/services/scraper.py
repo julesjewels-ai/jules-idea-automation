@@ -29,7 +29,7 @@ BLOCKED_INDICATORS = [
 
 
 def scrape_text(url: str) -> str:
-    """Fetches the content of a URL and extracts validated text.
+    """Fetch the content of a URL and extracts validated text.
 
     Args:
     ----
@@ -61,7 +61,7 @@ def scrape_text(url: str) -> str:
 
 
 def _extract_text(content: bytes) -> str:
-    """Extracts clean text from HTML content.
+    """Extract clean text from HTML content.
 
     Args:
     ----
@@ -92,7 +92,7 @@ def _extract_text(content: bytes) -> str:
 
 
 def _fetch_response(url: str) -> requests.Response:
-    """Fetches the URL and handles network errors.
+    """Fetch the URL and handles network errors.
 
     Args:
     ----
