@@ -128,6 +128,8 @@ class FeatureMapResponse(BaseModel):
 class WorkflowResult(BaseModel):
     """Result of the idea-to-repository workflow."""
 
+    model_config = {"arbitrary_types_allowed": True}
+
     idea: IdeaResponse
     repo_url: str
     session_id: str | None = None

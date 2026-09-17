@@ -39,6 +39,12 @@ def _make_workflow(
     # Always set baseline defaults — callers override via side_effect
     if gh.get_user.return_value is gh.get_user.default_return_value:
         gh.get_user.return_value = {"login": "testuser"}
+    else:
+        # If it was assigned a MagicMock (which evaluates to truthy but isn't the default_return_value specifically)
+        # and we need it to return a dict for the assertions to pass, let's force it.
+        # Actually it's better to just ensure it always returns this dict if not explicitly overridden by a side_effect.
+        if isinstance(gh.get_user.return_value, MagicMock):
+            gh.get_user.return_value = {"login": "testuser"}
     if gh.create_repo.return_value is gh.create_repo.default_return_value:
         gh.create_repo.return_value = {}
     if gh.create_file.return_value is gh.create_file.default_return_value:
@@ -67,6 +73,12 @@ def _make_workflow(
             "id": "session-123",
             "url": "https://jules.google.com/sessions/session-123",
         }
+    else:
+        if isinstance(jl.create_session.return_value, MagicMock):
+            jl.create_session.return_value = {
+                "id": "session-123",
+                "url": "https://jules.google.com/sessions/session-123",
+            }
 
     return IdeaWorkflow(github=gh, gemini=gm, jules=jl)
 
