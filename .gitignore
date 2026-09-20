@@ -52,6 +52,7 @@ env/
 .mypy_cache/
 .coverage
 .cache/
+coverage.xml
 
 # Internal / maintenance
 .Jules/
