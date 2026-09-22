@@ -1,7 +1,10 @@
+from typing import Any, Type, Union
+
 import pytest
 from pytest_mock import MockerFixture
-from typing import Any, Union, Tuple, Type
+
 from src.utils.reporter import print_demo_report
+
 
 @pytest.fixture
 def mock_context() -> dict[str, Any]:
@@ -10,40 +13,42 @@ def mock_context() -> dict[str, Any]:
         "scaffold": {
             "files": [{"path": "main.py", "description": "Entry point"}],
             "requirements": ["pytest", "requests"],
-            "run_command": "python main.py"
+            "run_command": "python main.py",
         },
         "feature_maps": {
             "mvp_features": [{"name": "Auth", "priority": "P0"}],
-            "production_features": [{"name": "Billing", "priority": "P1"}]
-        }
+            "production_features": [{"name": "Billing", "priority": "P1"}],
+        },
     }
+
 
 @pytest.fixture
 def edge_case_context() -> dict[str, Any]:
-    return {
-        "idea_data": {},
-        "scaffold": {},
-        "feature_maps": None
-    }
+    return {"idea_data": {}, "scaffold": {}, "feature_maps": None}
+
 
 @pytest.fixture
 def error_case_context() -> dict[str, Any]:
     return {
         "idea_data": {},
         "scaffold": {"files": 42},  # Intentionally bad type to trigger TypeError
-        "feature_maps": None
+        "feature_maps": None,
     }
 
-@pytest.mark.parametrize("input_fixture_name, expected", [
-    ("mock_context", 3),             # Happy Path: 3 print_panel calls
-    ("edge_case_context", 2),        # Edge Case: 2 print_panel calls (No feature map)
-    ("error_case_context", TypeError), # Error State: TypeError because files is int
-])
+
+@pytest.mark.parametrize(
+    "input_fixture_name, expected",
+    [
+        ("mock_context", 3),  # Happy Path: 3 print_panel calls
+        ("edge_case_context", 2),  # Edge Case: 2 print_panel calls (No feature map)
+        ("error_case_context", TypeError),  # Error State: TypeError because files is int
+    ],
+)
 def test_print_demo_report_behavior(
     request: pytest.FixtureRequest,
     mocker: MockerFixture,
     input_fixture_name: str,
-    expected: Union[int, Type[Exception]]
+    expected: Union[int, Type[Exception]],
 ) -> None:
     # 1. Setup Mocks (Namespace Verified)
     # The file imports `print_panel` implicitly via being in the same module, but uses it directly.
