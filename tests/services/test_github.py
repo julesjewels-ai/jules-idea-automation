@@ -7,14 +7,43 @@ import pytest
 import requests
 
 from src.services.github import GitHubClient
-from src.utils.errors import GitHubApiError
+from src.utils.errors import ConfigurationError, GitHubApiError
 from tests.conftest import make_http_error, make_ok_response
 
 
 @pytest.fixture
 def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
-    return GitHubClient()
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_get.return_value = make_ok_response(None, 200)
+        mock_get.return_value.headers = {"X-OAuth-Scopes": "repo, read:org"}
+        return GitHubClient()
+
+
+def test_init_checks_repo_scope_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_get.return_value = make_ok_response(None, 200)
+        mock_get.return_value.headers = {"X-OAuth-Scopes": "repo, read:org"}
+        client = GitHubClient()
+        assert client.headers["Authorization"] == "token fake-token"
+
+
+def test_init_raises_configuration_error_if_missing_repo_scope(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_get.return_value = make_ok_response(None, 200)
+        mock_get.return_value.headers = {"X-OAuth-Scopes": "read:user"}
+        with pytest.raises(ConfigurationError, match="GitHub token is missing 'repo' scope"):
+            GitHubClient()
+
+
+def test_init_raises_configuration_error_if_401(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_get.return_value = make_ok_response(None, 401)
+        with pytest.raises(ConfigurationError, match="Your GitHub token seems invalid or expired"):
+            GitHubClient()
 
 
 # --- Happy Path ---

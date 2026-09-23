@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -27,12 +29,33 @@ class GitHubClient(BaseApiClient):
                 tip="Create a personal access token at https://github.com/settings/tokens and add it to your .env file.",
             )
 
+        headers = {
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github.v3+json",
+        }
+
+        try:
+            resp = requests.get("https://api.github.com/user", headers=headers, timeout=10)
+            if resp.status_code == 401:
+                raise ConfigurationError(
+                    "Your GitHub token seems invalid or expired.",
+                    tip="Check your .env file and ensure the token is correct.",
+                )
+            if resp.status_code == 200:
+                scopes_header = resp.headers.get("X-OAuth-Scopes", "")
+                scopes = [s.strip() for s in scopes_header.split(",") if s.strip()]
+                if "repo" not in scopes:
+                    raise ConfigurationError(
+                        "GitHub token is missing 'repo' scope",
+                        tip="Update your token to include the 'repo' scope at https://github.com/settings/tokens",
+                    )
+        except requests.exceptions.RequestException:
+            # If the network fails, we'll let BaseApiClient handle it later.
+            pass
+
         super().__init__(
             base_url="https://api.github.com",
-            headers={
-                "Authorization": f"token {token}",
-                "Accept": "application/vnd.github.v3+json",
-            },
+            headers=headers,
             error_class=GitHubApiError,
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
