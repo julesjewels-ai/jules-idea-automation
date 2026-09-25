@@ -46,7 +46,10 @@ def _make_workflow(
     if isinstance(gh.create_files.return_value, MagicMock):
         gh.create_files.return_value = {"files_created": 3}
 
-    if isinstance(gm.generate_project_scaffold.return_value, MagicMock) and not gm.generate_project_scaffold.side_effect:
+    if (
+        isinstance(gm.generate_project_scaffold.return_value, MagicMock)
+        and not gm.generate_project_scaffold.side_effect
+    ):
         gm.generate_project_scaffold.return_value = {
             "files": [
                 {"path": "main.py", "content": "print('hello')"},
