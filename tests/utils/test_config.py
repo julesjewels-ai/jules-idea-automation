@@ -106,3 +106,14 @@ class TestValidateEnvKeys:
             assert "github.com/settings/tokens" in exc_info.value.tip
             assert "jules.google.com" in exc_info.value.tip
             assert "aistudio.google.com" in exc_info.value.tip
+
+def test_preflight_check_credentials_validates_github_scope() -> None:
+    """Preflight check should call validate_token_scope on GitHubClient."""
+    env = _env_with(GITHUB_TOKEN="ghp_test")
+    with patch.dict(os.environ, env, clear=True):
+        with patch("src.services.github.GitHubClient") as mock_gh:
+            from src.utils.config import preflight_check_credentials
+            mock_client_instance = mock_gh.return_value
+            preflight_check_credentials()
+            mock_client_instance.get_user.assert_called_once()
+            mock_client_instance.validate_token_scope.assert_called_once()

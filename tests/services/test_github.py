@@ -17,6 +17,52 @@ def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     return GitHubClient()
 
 
+# --- Token Scope Validation Tests ---
+
+def test_validate_token_scope_success(github_client: GitHubClient) -> None:
+    """Validation succeeds when the token has the 'repo' scope."""
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = requests.Response()
+        mock_response.status_code = 200
+        mock_response.headers.update({"X-OAuth-Scopes": "read:user, repo, workflow"})
+        mock_get.return_value = mock_response
+
+        github_client.validate_token_scope()
+        mock_get.assert_called_once()
+
+def test_validate_token_scope_raises_error_if_repo_scope_missing(github_client: GitHubClient) -> None:
+    """Validation fails if the token is missing the 'repo' scope."""
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = requests.Response()
+        mock_response.status_code = 200
+        mock_response.headers.update({"X-OAuth-Scopes": "read:user, workflow"})
+        mock_get.return_value = mock_response
+
+        from src.utils.errors import ConfigurationError
+        with pytest.raises(ConfigurationError, match="missing the required 'repo' scope"):
+            github_client.validate_token_scope()
+
+def test_validate_token_scope_raises_error_if_token_invalid_status(github_client: GitHubClient) -> None:
+    """Validation fails if the GitHub API returns 401 or 403 during validation."""
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = requests.Response()
+        mock_response.status_code = 401
+        mock_get.return_value = mock_response
+
+        from src.utils.errors import ConfigurationError
+        with pytest.raises(ConfigurationError, match="invalid or lacks basic permissions"):
+            github_client.validate_token_scope()
+
+def test_validate_token_scope_raises_error_on_network_failure(github_client: GitHubClient) -> None:
+    """Validation fails if there's a network error during validation."""
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_get.side_effect = requests.RequestException("Connection refused")
+
+        from src.utils.errors import ConfigurationError
+        with pytest.raises(ConfigurationError, match="Failed to validate GitHub token"):
+            github_client.validate_token_scope()
+
+
 # --- Happy Path ---
 
 
