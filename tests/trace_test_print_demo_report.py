@@ -1,5 +1,6 @@
 import pytest
 from pytest_mock import MockerFixture
+
 from src.utils.reporter import print_demo_report
 
 
