@@ -36,7 +36,7 @@
   - *Acceptance*: `tests/core/test_workflow.py` exists with at least 3 scenarios: happy path, partial failure (Jules down), scaffold failure (fallback used). All mocked.
   - *Affected*: `tests/core/test_workflow.py` (new)
 
-- [ ] **P1** — **Test coverage gate in CI**: CI runs tests but has no minimum coverage threshold.
+- [x] **P1** — **Test coverage gate in CI**: CI runs tests but has no minimum coverage threshold.
   - *Acceptance*: `pytest-cov` added to dev deps. CI fails if coverage drops below 70%. Coverage report uploaded as artifact.
   - *Affected*: `.github/workflows/ci.yml`, `pyproject.toml`
 
