@@ -1,13 +1,11 @@
 name: Security Audit
-
 on:
   schedule:
     - cron: '0 8 * * 1'  # Weekly on Mondays at 8 AM
-  workflow_dispatch:       # Allow manual runs when needed
-
-permissions:
-  contents: read
-  pull-requests: read
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   secrets:
@@ -19,8 +17,6 @@ jobs:
           fetch-depth: 0
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   sast:
     name: Subprocess & Code Audit
