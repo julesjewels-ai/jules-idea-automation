@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.utils.config import validate_env_keys
+from src.utils.config import preflight_check_credentials, validate_env_keys
 from src.utils.errors import ConfigurationError
 
 
@@ -106,3 +106,62 @@ class TestValidateEnvKeys:
             assert "github.com/settings/tokens" in exc_info.value.tip
             assert "jules.google.com" in exc_info.value.tip
             assert "aistudio.google.com" in exc_info.value.tip
+
+
+class TestPreflightCheckCredentials:
+    """Tests for preflight_check_credentials()."""
+
+    def test_preflight_success(self) -> None:
+        """If all keys are valid, no error is raised."""
+        env = _env_with(GITHUB_TOKEN="ghp_test", JULES_API_KEY="jk_test")
+        with patch.dict(os.environ, env, clear=True):
+            with (
+                patch("src.services.github.GitHubClient.validate_token_scope") as mock_gh,
+                patch("src.services.jules.JulesClient.list_sources") as mock_jules,
+            ):
+                preflight_check_credentials()
+
+                mock_gh.assert_called_once()
+                mock_jules.assert_called_once()
+
+    def test_preflight_github_invalid(self) -> None:
+        """If GitHub token is invalid, raises ConfigurationError with tip."""
+        env = _env_with(GITHUB_TOKEN="ghp_test")
+        with patch.dict(os.environ, env, clear=True):
+            with patch(
+                "src.services.github.GitHubClient.validate_token_scope",
+                side_effect=ConfigurationError(
+                    "GITHUB_TOKEN is missing required 'repo' scope.",
+                    tip="Regenerate the token with 'repo' scope at https://github.com/settings/tokens",
+                ),
+            ):
+                with pytest.raises(ConfigurationError, match="Credential check failed") as exc_info:
+                    preflight_check_credentials()
+
+                msg = str(exc_info.value)
+                assert "GITHUB_TOKEN is missing required 'repo' scope" in msg
+                assert "Regenerate the token with 'repo' scope" in msg
+
+    def test_preflight_jules_invalid(self) -> None:
+        """If Jules token is invalid, raises ConfigurationError with tip."""
+        env = _env_with(JULES_API_KEY="jk_test")
+        with patch.dict(os.environ, env, clear=True):
+            with patch("src.services.jules.JulesClient.list_sources", side_effect=RuntimeError("Jules API 401")):
+                with pytest.raises(ConfigurationError, match="Credential check failed") as exc_info:
+                    preflight_check_credentials()
+
+                msg = str(exc_info.value)
+                assert "JULES_API_KEY is set but invalid or expired" in msg
+
+    def test_preflight_unexpected_github_error(self) -> None:
+        """If GitHub client raises an unexpected error, a fallback message is used."""
+        env = _env_with(GITHUB_TOKEN="ghp_test")
+        with patch.dict(os.environ, env, clear=True):
+            with patch(
+                "src.services.github.GitHubClient.validate_token_scope", side_effect=RuntimeError("Network Error")
+            ):
+                with pytest.raises(ConfigurationError, match="Credential check failed") as exc_info:
+                    preflight_check_credentials()
+
+                msg = str(exc_info.value)
+                assert "GITHUB_TOKEN is set but invalid or expired" in msg

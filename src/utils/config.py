@@ -100,9 +100,13 @@ def preflight_check_credentials() -> None:
         try:
             from src.services.github import GitHubClient
 
-            GitHubClient(token=github_token).get_user()
-        except Exception as exc:
+            GitHubClient(token=github_token).validate_token_scope()
+        except ConfigurationError as exc:
             logger.debug("GitHub preflight failed: %s", exc)
+            tip_msg = f"\n  → {exc.tip}" if exc.tip else ""
+            errors.append(f"{exc}{tip_msg}")
+        except Exception as exc:
+            logger.debug("GitHub preflight unexpected failure: %s", exc)
             errors.append(
                 "GITHUB_TOKEN is set but invalid or expired.\n  → Regenerate at https://github.com/settings/tokens"
             )
