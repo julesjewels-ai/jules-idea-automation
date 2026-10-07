@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -11,7 +12,6 @@ import pytest
 from src.core.events import WorkflowCompleted, WorkflowStarted
 from src.services.audit import JsonFileAuditLogger
 from src.utils.errors import AuditError
-
 
 # ---------------------------------------------------------------------------
 # Fixtures / helpers
@@ -38,7 +38,7 @@ def _completed_event() -> WorkflowCompleted:
     )
 
 
-def _read_lines(path: Path) -> list[dict]:
+def _read_lines(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
