@@ -28,7 +28,11 @@ def _run_main_with_args(monkeypatch: Any, capsys: Any, args: list[str]) -> _RunR
         main()
 
     captured = capsys.readouterr()
-    exit_code = int(exc_info.value.code) if isinstance(exc_info.value.code, (int, str)) and exc_info.value.code is not None else 1
+    exit_code = (
+        int(exc_info.value.code)
+        if isinstance(exc_info.value.code, (int, str)) and exc_info.value.code is not None
+        else 1
+    )
     return _RunResult(exit_code, captured.out, captured.err)
 
 
