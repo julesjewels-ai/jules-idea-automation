@@ -6,6 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from google.genai import errors
 
 from src.services.gemini import GeminiClient
@@ -16,12 +17,23 @@ class MockAPIError(errors.APIError):  # type: ignore[misc]
     """Reusable mock for google.genai APIError (used across several tests)."""
 
     def __init__(self, message: str, code: int):
-        self.message = message
         self.code = code
-        super(Exception, self).__init__(message)  # type: ignore[misc]
+        resp = requests.Response()
+        resp.status_code = code
+        resp._content = b"{}"
+        super().__init__(code, resp)  # type: ignore[misc]
+        self.message = message
+
+    @property
+    def message(self) -> str:
+        return self._message
+
+    @message.setter
+    def message(self, value: str) -> None:
+        self._message = value
 
     def __str__(self) -> str:
-        return self.message
+        return self._message
 
 
 @pytest.fixture
@@ -91,7 +103,7 @@ def test_generate_idea_api_error(client: Any) -> None:
 
 def test_generate_idea_api_error_503_fallback(client: Any) -> None:
     """Test that a 503 error falls back to the second model, which also fails."""
-
+    client.models = ["gemini-2.5-pro", "gemini-2.5-flash"]
 
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
     client.client.models.generate_content.side_effect = mock_error
@@ -106,7 +118,7 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
 
 def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     """Test that a 503 error falls back to the second model which succeeds."""
-
+    client.models = ["gemini-2.5-pro", "gemini-2.5-flash"]
 
     api_error = MockAPIError("503 UNAVAILABLE", 503)
 
