@@ -45,11 +45,13 @@ class GitHubClient(BaseApiClient):
     def validate_token_scope(self) -> None:
         """Verifies the GitHub token has the required 'repo' scope.
 
-        Raises:
+        Raises
         ------
             ConfigurationError: If the 'repo' scope is missing.
+
         """
         import requests  # noqa
+
         response = requests.get(f"{self.base_url}/user", headers=self.headers, timeout=10)
         response.raise_for_status()
 
@@ -59,7 +61,7 @@ class GitHubClient(BaseApiClient):
         if "repo" not in scope_list:
             raise ConfigurationError(
                 "GITHUB_TOKEN is missing the required 'repo' scope.",
-                tip="Regenerate your token at https://github.com/settings/tokens with the 'repo' scope selected and update your .env file."
+                tip="Regenerate your token at https://github.com/settings/tokens with the 'repo' scope selected and update your .env file.",
             )
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:

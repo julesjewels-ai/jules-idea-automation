@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import logging
 import time
+import typing
 from typing import Any
 
 import requests
 
-import typing
 from src.utils.errors import AppError
 
 logger = logging.getLogger(__name__)
@@ -65,9 +65,7 @@ class BaseApiClient:
 
         for attempt in range(1, self._max_retries + 1):
             try:
-                response = requests.request(
-                    method, url, headers=self.headers, timeout=self._timeout, **kwargs
-                )
+                response = requests.request(method, url, headers=self.headers, timeout=self._timeout, **kwargs)
                 response.raise_for_status()
 
                 if not response.text:
