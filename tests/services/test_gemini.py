@@ -13,9 +13,13 @@ from src.utils.errors import ConfigurationError, GenerationError
 
 
 class MockAPIError(errors.APIError):  # type: ignore[misc]
-    """Reusable mock for google.genai APIError (used across several tests)."""
-
     def __init__(self, message: str, code: int):
+        import requests
+
+        mock_response = requests.Response()
+        mock_response.status_code = code
+        mock_response._content = b'{"error": {"message": "' + message.encode("utf-8") + b'"}}'
+        super().__init__(code, mock_response)
         self.message = message
         self.code = code
         super(Exception, self).__init__(message)  # type: ignore[misc]
@@ -92,7 +96,6 @@ def test_generate_idea_api_error(client: Any) -> None:
 def test_generate_idea_api_error_503_fallback(client: Any) -> None:
     """Test that a 503 error falls back to the second model, which also fails."""
 
-
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
     client.client.models.generate_content.side_effect = mock_error
 
@@ -106,7 +109,6 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
 
 def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     """Test that a 503 error falls back to the second model which succeeds."""
-
 
     api_error = MockAPIError("503 UNAVAILABLE", 503)
 
@@ -123,8 +125,8 @@ def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     assert client.client.models.generate_content.call_count == 2
 
     calls = client.client.models.generate_content.call_args_list
-    assert calls[0].kwargs["model"] == "gemini-2.5-pro"
-    assert calls[1].kwargs["model"] == "gemini-2.5-flash"
+    assert calls[0].kwargs["model"] == "gemini-2.5-flash"
+    assert calls[1].kwargs["model"] == "gemini-2.5-pro"
 
 
 def test_extract_idea_from_text_success(client: Any) -> None:
