@@ -49,7 +49,7 @@ class GeminiClient:
             )
 
         self.client = genai.Client(api_key=self.api_key, http_options={"api_version": "v1beta"})
-        self.models = ["gemini-2.5-flash"]
+        self.models = ["gemini-2.5-flash", "gemini-2.5-pro"]
         self.cache_provider = cache_provider
 
     def _map_api_error(self, e: errors.APIError) -> GenerationError:

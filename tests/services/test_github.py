@@ -7,7 +7,7 @@ import pytest
 import requests
 
 from src.services.github import GitHubClient
-from src.utils.errors import GitHubApiError
+from src.utils.errors import ConfigurationError, GitHubApiError
 from tests.conftest import make_http_error, make_ok_response
 
 
@@ -15,6 +15,41 @@ from tests.conftest import make_http_error, make_ok_response
 def github_client(monkeypatch: pytest.MonkeyPatch) -> GitHubClient:
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
     return GitHubClient()
+
+
+# --- Token Validation ---
+
+def test_validate_token_scope_success(github_client: Any) -> None:
+    """Token with 'repo' scope passes validation."""
+    with patch("requests.get") as mock_requests_get:
+        mock_response = make_ok_response({})
+        mock_response.headers = {"X-OAuth-Scopes": "read:user, repo, user:email"}
+        mock_requests_get.return_value = mock_response
+
+        # Should not raise
+        github_client.validate_token_scope()
+
+
+def test_validate_token_scope_missing_repo(github_client: Any) -> None:
+    """Token missing 'repo' scope raises ConfigurationError."""
+    with patch("requests.get") as mock_requests_get:
+        mock_response = make_ok_response({})
+        mock_response.headers = {"X-OAuth-Scopes": "read:user, user:email"}
+        mock_requests_get.return_value = mock_response
+
+        with pytest.raises(ConfigurationError, match="missing the required 'repo' scope"):
+            github_client.validate_token_scope()
+
+def test_validate_token_scope_no_scopes_header(github_client: Any) -> None:
+    """Token missing the scopes header raises ConfigurationError."""
+    with patch("requests.get") as mock_requests_get:
+        mock_response = make_ok_response({})
+        mock_response.headers = {}
+        # No X-OAuth-Scopes header
+        mock_requests_get.return_value = mock_response
+
+        with pytest.raises(ConfigurationError, match="missing the required 'repo' scope"):
+            github_client.validate_token_scope()
 
 
 # --- Happy Path ---

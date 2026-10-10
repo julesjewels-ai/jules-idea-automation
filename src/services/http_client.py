@@ -8,6 +8,7 @@ from typing import Any
 
 import requests
 
+import typing
 from src.utils.errors import AppError
 
 logger = logging.getLogger(__name__)
@@ -117,7 +118,7 @@ class BaseApiClient:
         )
         time.sleep(delay)
 
-    def _raise_after_retries_exhausted(self, last_exception: Exception | None) -> None:
+    def _raise_after_retries_exhausted(self, last_exception: Exception | None) -> "typing.NoReturn":
         """Translate the last transient exception into a domain error."""
         if isinstance(last_exception, requests.exceptions.HTTPError):
             tip = self._handle_http_error(last_exception)

@@ -42,6 +42,26 @@ class GitHubClient(BaseApiClient):
         """Gets information about the authenticated user."""
         return self._request("GET", f"{self.base_url}/user")
 
+    def validate_token_scope(self) -> None:
+        """Verifies the GitHub token has the required 'repo' scope.
+
+        Raises:
+        ------
+            ConfigurationError: If the 'repo' scope is missing.
+        """
+        import requests  # noqa
+        response = requests.get(f"{self.base_url}/user", headers=self.headers, timeout=10)
+        response.raise_for_status()
+
+        scopes = response.headers.get("X-OAuth-Scopes", "")
+        scope_list = [s.strip() for s in scopes.split(",") if s.strip()]
+
+        if "repo" not in scope_list:
+            raise ConfigurationError(
+                "GITHUB_TOKEN is missing the required 'repo' scope.",
+                tip="Regenerate your token at https://github.com/settings/tokens with the 'repo' scope selected and update your .env file."
+            )
+
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
         """Creates a new repository."""
         payload = {
