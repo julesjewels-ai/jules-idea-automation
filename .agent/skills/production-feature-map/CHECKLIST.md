@@ -152,7 +152,7 @@
   - *Acceptance*: `python main.py list` shows a table of all tracked repos. `--status running` filters.
   - *Affected*: `src/cli/parser.py`, `src/cli/commands.py`, `src/services/db.py`
 
-- [ ] **P2** — **History export**: Export audit history as CSV or JSON.
+- [x] **P2** — **History export**: Export audit history as CSV or JSON.
   - *Acceptance*: `python main.py export --format csv > history.csv` works. Reads from SQLite or JSONL.
   - *Affected*: `src/cli/commands.py`, new `src/utils/exporter.py`
 

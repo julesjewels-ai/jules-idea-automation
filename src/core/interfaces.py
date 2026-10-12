@@ -71,3 +71,39 @@ class CacheProvider(Protocol):
 
         """
         ...
+
+
+class HistoryRepository(Protocol):
+    """Protocol for history data access."""
+
+    def list_records(self, limit: int = 50) -> list[dict[str, Any]]:
+        """Return a list of history records.
+
+        Args:
+        ----
+            limit: Maximum number of records to return.
+
+        Returns:
+        -------
+            A list of dictionary representations of the history records.
+
+        """
+        ...
+
+
+class DataExporter(Protocol):
+    """Protocol for exporting data to a specific format."""
+
+    def export(self, data: list[dict[str, Any]]) -> str:
+        """Export the provided data to a string representation.
+
+        Args:
+        ----
+            data: The list of records to export.
+
+        Returns:
+        -------
+            The formatted string representation of the data.
+
+        """
+        ...

@@ -92,4 +92,19 @@ def create_parser() -> argparse.ArgumentParser:
     # Command: list
     subparsers.add_parser("list", help="List past generated projects and Jules sessions")
 
+    # Command: export
+    export_parser = subparsers.add_parser("export", help="Export historical run data")
+    export_parser.add_argument(
+        "--format",
+        choices=["csv", "json"],
+        default="csv",
+        help="The format to export the data in (default: csv)",
+    )
+    export_parser.add_argument(
+        "--limit",
+        type=int,
+        default=50,
+        help="Maximum number of history records to export (default: 50)",
+    )
+
     return parser
