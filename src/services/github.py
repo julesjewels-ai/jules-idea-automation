@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -41,6 +43,40 @@ class GitHubClient(BaseApiClient):
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""
         return self._request("GET", f"{self.base_url}/user")
+
+    def validate_token_scopes(self) -> None:
+        """Verifies that the GitHub token has the required 'repo' scope.
+
+        Raises
+        ------
+            ConfigurationError: If the token is invalid or missing required scopes.
+
+        """
+        try:
+            response = requests.get(
+                f"{self.base_url}/user",
+                headers=self.headers,
+                timeout=30,
+            )
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                raise ConfigurationError(
+                    "GitHub API Error: 401 Unauthorized",
+                    tip="Your GitHub token seems invalid or expired. Check your .env file.",
+                ) from e
+            raise GitHubApiError(f"GitHub API Error: {e}") from e
+        except requests.exceptions.RequestException as e:
+            raise GitHubApiError(f"Network error: {e}") from e
+
+        scopes_header = response.headers.get("X-OAuth-Scopes", "")
+        scopes = [s.strip() for s in scopes_header.split(",") if s.strip()]
+
+        if "repo" not in scopes:
+            raise ConfigurationError(
+                "GITHUB_TOKEN is missing required scopes",
+                tip=f"Your token has scopes: {scopes}. The tool requires 'repo' scope. Regenerate your token at https://github.com/settings/tokens.",
+            )
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
         """Creates a new repository."""
