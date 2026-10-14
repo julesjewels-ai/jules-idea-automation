@@ -7,7 +7,7 @@ import pytest
 import requests
 
 from src.services.github import GitHubClient
-from src.utils.errors import GitHubApiError
+from src.utils.errors import ConfigurationError, GitHubApiError
 from tests.conftest import make_http_error, make_ok_response
 
 
@@ -56,6 +56,45 @@ def test_create_files_success(github_client: Any) -> None:
 
         assert result == {"commit_sha": new_commit_sha, "files_created": 2}
         assert mock_requests.request.call_count == 7
+
+
+# --- Token Scope Validation ---
+
+
+@patch("src.services.github.requests")
+def test_validate_token_scopes_success(mock_requests: Any, github_client: Any) -> None:
+    """Should return without error if 'repo' scope is present."""
+    mock_resp = make_ok_response({})
+    mock_resp.headers = {"X-OAuth-Scopes": "repo, read:org"}
+    mock_requests.get.return_value = mock_resp
+
+    # Should not raise
+    github_client.validate_token_scopes()
+
+
+@patch("src.services.github.requests")
+def test_validate_token_scopes_missing_repo(mock_requests: Any, github_client: Any) -> None:
+    """Should raise ConfigurationError if 'repo' scope is missing."""
+    mock_resp = make_ok_response({})
+    mock_resp.headers = {"X-OAuth-Scopes": "read:org"}
+    mock_requests.get.return_value = mock_resp
+
+    with pytest.raises(ConfigurationError) as exc_info:
+        github_client.validate_token_scopes()
+
+    assert "missing required scopes" in str(exc_info.value)
+
+
+@patch("src.services.github.requests")
+def test_validate_token_scopes_invalid_token(mock_requests: Any, github_client: Any) -> None:
+    """Should raise ConfigurationError on 401 response."""
+    mock_requests.get.side_effect = make_http_error(401)
+    mock_requests.exceptions = requests.exceptions
+
+    with pytest.raises(ConfigurationError) as exc_info:
+        github_client.validate_token_scopes()
+
+    assert "401 Unauthorized" in str(exc_info.value)
 
 
 # --- Error Handling ---
@@ -121,12 +160,12 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
 
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
-
