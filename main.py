@@ -27,6 +27,7 @@ def _format_error_title(exc: BaseException) -> str:
         ConfigurationError  -> "Configuration Error"
         GitHubApiError      -> "Git Hub Api Error"  (camelCase split)
         RuntimeError        -> "Runtime Error"
+
     """
     return re.sub(r"(?<=[a-z])(?=[A-Z])", " ", type(exc).__name__)
 
@@ -38,6 +39,7 @@ def _maybe_print_traceback(verbose: bool, *, hint_on_silence: bool = False) -> N
         verbose: If True, print the full traceback.
         hint_on_silence: If True and not verbose, print a brief hint directing
             the user to re-run with --verbose.
+
     """
     if verbose:
         print(file=sys.stderr)

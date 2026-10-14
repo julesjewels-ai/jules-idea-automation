@@ -17,4 +17,3 @@ def pytest_ignore_collect(collection_path: Path, config: object) -> bool | None:
         return None  # Let pytest decide
     except PermissionError:
         return True  # Skip this path
-
