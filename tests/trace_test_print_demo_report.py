@@ -1,8 +1,10 @@
+from typing import Any
+
 import pytest
 from pytest_mock import MockerFixture
-from typing import Any
-import builtins
+
 from src.utils.reporter import print_demo_report
+
 
 @pytest.fixture
 def mock_context() -> dict[str, Any]:

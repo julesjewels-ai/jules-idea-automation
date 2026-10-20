@@ -12,7 +12,6 @@ from src.core.events import WorkflowCompleted, WorkflowStarted
 from src.services.audit import JsonFileAuditLogger
 from src.utils.errors import AuditError
 
-
 # ---------------------------------------------------------------------------
 # Fixtures / helpers
 # ---------------------------------------------------------------------------
