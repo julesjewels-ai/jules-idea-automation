@@ -13,10 +13,10 @@ def mock_context() -> dict[str, Any]:
         "scaffold": {
             "files": [
                 {"path": "src/main.py", "description": "Main entry point"},
-                {"path": "README.md", "description": "Documentation"}
+                {"path": "README.md", "description": "Documentation"},
             ],
             "requirements": ["requests", "pytest"],
-            "run_command": "python src/main.py"
+            "run_command": "python src/main.py",
         },
         "feature_maps": {
             "mvp_features": [
@@ -25,20 +25,21 @@ def mock_context() -> dict[str, Any]:
             ],
             "production_features": [
                 {"name": "Scaling", "priority": "Low"},
-            ]
-        }
+            ],
+        },
     }
 
-@pytest.mark.parametrize("scenario, expected", [
-    ("happy_path", "success"),
-    ("edge_case", "success"),
-    ("error_state", AttributeError),
-])
+
+@pytest.mark.parametrize(
+    "scenario, expected",
+    [
+        ("happy_path", "success"),
+        ("edge_case", "success"),
+        ("error_state", AttributeError),
+    ],
+)
 def test_print_demo_report_behavior(
-    mocker: MockerFixture,
-    mock_context: dict[str, Any],
-    scenario: str,
-    expected: str | type[Exception]
+    mocker: MockerFixture, mock_context: dict[str, Any], scenario: str, expected: str | type[Exception]
 ) -> None:
     # 1. Setup Mocks (Namespace Verified)
     # The target function `print_demo_report` is in `src.utils.reporter`.
@@ -56,7 +57,7 @@ def test_print_demo_report_behavior(
         scaffold = {}
         feature_maps = None
     elif scenario == "error_state":
-        scaffold = "invalid_scaffold_type" # Should be dict, string will raise AttributeError on .get()
+        scaffold = "invalid_scaffold_type"  # Should be dict, string will raise AttributeError on .get()
         feature_maps = None
 
     # 2. Execution & Validation
