@@ -36,37 +36,25 @@ def _make_workflow(
     gm = gemini if gemini is not None else MagicMock()
     jl = jules if jules is not None else MagicMock()
 
-    # Always set baseline defaults — callers override via side_effect
-    if gh.get_user.return_value is gh.get_user.default_return_value:
+        # Always set baseline defaults — callers override via side_effect
+    if isinstance(gh.get_user.return_value, MagicMock):
         gh.get_user.return_value = {"login": "testuser"}
-    if gh.create_repo.return_value is gh.create_repo.default_return_value:
+    if isinstance(gh.create_repo.return_value, MagicMock):
         gh.create_repo.return_value = {}
-    if gh.create_file.return_value is gh.create_file.default_return_value:
+    if isinstance(gh.create_file.return_value, MagicMock):
         gh.create_file.return_value = {}
-    if gh.create_files.return_value is gh.create_files.default_return_value:
+    if isinstance(gh.create_files.return_value, MagicMock):
         gh.create_files.return_value = {"files_created": 3}
 
-    if gm.generate_project_scaffold.return_value is gm.generate_project_scaffold.default_return_value:
+    if isinstance(gm.generate_project_scaffold.return_value, MagicMock):
         gm.generate_project_scaffold.return_value = {
-            "files": [
-                {"path": "main.py", "content": "print('hello')"},
-            ],
-            "requirements": ["pytest"],
-            "run_command": "python main.py",
-        }
-    if gm.generate_feature_maps.return_value is gm.generate_feature_maps.default_return_value:
-        gm.generate_feature_maps.return_value = {
-            "mvp_features": [],
-            "production_features": [],
+            "files": [{"path": "main.py", "content": "print('hello')"}],
         }
 
-    if jl.source_exists.return_value is jl.source_exists.default_return_value:
+    if isinstance(jl.source_exists.return_value, MagicMock):
         jl.source_exists.return_value = True
-    if jl.create_session.return_value is jl.create_session.default_return_value:
-        jl.create_session.return_value = {
-            "id": "session-123",
-            "url": "https://jules.google.com/sessions/session-123",
-        }
+    if isinstance(jl.create_session.return_value, MagicMock):
+        jl.create_session.return_value = {"id": "session-123", "url": "https://jules.google.com/session-123"}
 
     return IdeaWorkflow(github=gh, gemini=gm, jules=jl)
 

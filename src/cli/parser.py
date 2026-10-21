@@ -92,4 +92,7 @@ def create_parser() -> argparse.ArgumentParser:
     # Command: list
     subparsers.add_parser("list", help="List past generated projects and Jules sessions")
 
+    # Command: preflight
+    subparsers.add_parser("preflight", help="Check network connectivity and API credentials for all services")
+
     return parser
