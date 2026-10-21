@@ -36,7 +36,7 @@ def _make_workflow(
     gm = gemini if gemini is not None else MagicMock()
     jl = jules if jules is not None else MagicMock()
 
-        # Always set baseline defaults — callers override via side_effect
+    # Always set baseline defaults — callers override via side_effect
     if isinstance(gh.get_user.return_value, MagicMock):
         gh.get_user.return_value = {"login": "testuser"}
     if isinstance(gh.create_repo.return_value, MagicMock):
