@@ -29,8 +29,19 @@ __all__ = [
     "handle_list_sources",
     "handle_list_history",
     "handle_guide",
+    "handle_preflight",
     "dispatch_command",
 ]
+
+
+def handle_preflight() -> None:
+    """Handle the preflight command."""
+    from src.utils.config import preflight_check_credentials
+    from src.utils.reporter import Spinner
+
+    with Spinner("Running preflight checks...", success_message="All API credentials verified"):
+        preflight_check_credentials(print_status=True)
+    sys.exit(0)
 
 
 def handle_guide(args: Namespace) -> None:
@@ -74,6 +85,7 @@ def dispatch_command(args: Namespace) -> None:
         "guide": partial(handle_guide, args),
         "manual": partial(handle_manual, args),
         "list": partial(handle_list_history, args),
+        "preflight": handle_preflight,
     }
 
     handler = handlers.get(args.command)

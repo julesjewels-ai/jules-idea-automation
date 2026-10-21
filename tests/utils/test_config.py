@@ -106,3 +106,42 @@ class TestValidateEnvKeys:
             assert "github.com/settings/tokens" in exc_info.value.tip
             assert "jules.google.com" in exc_info.value.tip
             assert "aistudio.google.com" in exc_info.value.tip
+
+
+class TestPreflightCheckCredentials:
+    """Tests for preflight_check_credentials()."""
+
+    @patch("src.services.github.GitHubClient.get_user")
+    @patch("src.services.jules.JulesClient.list_sources")
+    @patch("google.genai.models.Models.list")
+    def test_preflight_all_success(self, mock_gemini_list, mock_jules_list, mock_github_user) -> None:
+        """When all credentials are valid, no error is raised."""
+        mock_github_user.return_value = {"login": "testuser"}
+        mock_jules_list.return_value = []
+        mock_gemini_list.return_value = iter([{"name": "models/gemini-pro"}])
+
+        env = _env_with(
+            GEMINI_API_KEY="gk_test",
+            GITHUB_TOKEN="ghp_test",
+            JULES_API_KEY="jk_test",
+        )
+        with patch.dict(os.environ, env, clear=True):
+            from src.utils.config import preflight_check_credentials
+
+            # Should not raise
+            preflight_check_credentials()
+
+    @patch("google.genai.models.Models.list")
+    def test_preflight_gemini_failure(self, mock_gemini_list) -> None:
+        """When Gemini API fails, ConfigurationError is raised with a clear message."""
+        mock_gemini_list.side_effect = Exception("API Key invalid")
+
+        env = _env_with(GEMINI_API_KEY="gk_bad")
+        with patch.dict(os.environ, env, clear=True):
+            from src.utils.config import preflight_check_credentials
+
+            with pytest.raises(ConfigurationError, match="Credential check failed") as exc_info:
+                preflight_check_credentials()
+
+            assert "GEMINI_API_KEY" in str(exc_info.value)
+            assert "invalid or expired" in str(exc_info.value)

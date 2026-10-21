@@ -24,7 +24,7 @@
   - *Acceptance*: Top-level `try/except` in `main.py` catches `AppError` subclasses and prints formatted panels. Tracebacks only in `--verbose` mode.
   - *Affected*: `main.py`, `src/utils/errors.py`
 
-- [ ] **P2** — **Network connectivity pre-check**: Before starting any workflow, ping the three APIs (Gemini, GitHub, Jules) to fail fast with a clear message instead of failing mid-workflow.
+- [x] **P2** — **Network connectivity pre-check**: Before starting any workflow, ping the three APIs (Gemini, GitHub, Jules) to fail fast with a clear message instead of failing mid-workflow.
   - *Acceptance*: `--preflight` flag or automatic check at workflow start. Prints which services are reachable.
   - *Affected*: `src/core/workflow.py`, `src/cli/commands.py`
 
