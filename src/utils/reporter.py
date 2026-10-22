@@ -61,7 +61,7 @@ def _create_top_border(title: str, width: int, color: str) -> str:
 
     # Ensure title fits
     if visual_len > width - 4:
-        title_text = title_text[:max(0, width - 5)] + "…"  # pyre-ignore[16]
+        title_text = title_text[: max(0, width - 5)] + "…"  # pyre-ignore[16]
         visual_len = _visual_width(title_text)
 
     left_pad = 2
@@ -372,6 +372,23 @@ def print_idea_summary(idea_data: dict[str, Any]) -> None:
     print("")  # spacing after
 
 
+def _get_prop(obj, prop: str) -> str:
+    """Extract property from dict or object safely."""
+    return obj.get(prop, "") if isinstance(obj, dict) else getattr(obj, prop, "")
+
+
+def _add_features_to_lines(features: list, lines: list, title: str, limit: int = 5, prefix: str | None = None) -> None:
+    if not features:
+        return
+    if prefix is not None:
+        lines.append(prefix)
+    lines.append(f"{Colors.BOLD}{title} ({len(features)} items):{Colors.ENDC}")
+    for item in features[:limit]:
+        lines.append(f"  [{_get_prop(item, 'priority')}] {_get_prop(item, 'name')}")
+    if len(features) > limit:
+        lines.append(f"  ... and {len(features) - limit} more")
+
+
 def print_demo_report(
     idea_data: dict[str, Any],
     scaffold: dict[str, Any],
@@ -382,8 +399,8 @@ def print_demo_report(
     files = scaffold.get("files", [])
     tree_lines = [f"{Colors.BOLD}📂 Generated Scaffold ({len(files)} files):{Colors.ENDC}"]
     for f in files:
-        path = f.get("path", "") if isinstance(f, dict) else getattr(f, "path", "")
-        desc = f.get("description", "") if isinstance(f, dict) else getattr(f, "description", "")
+        path = _get_prop(f, "path")
+        desc = _get_prop(f, "description")
         suffix = f"  {Colors.CYAN}# {desc}{Colors.ENDC}" if desc else ""
         tree_lines.append(f"  📄 {path}{suffix}")
 
@@ -407,23 +424,8 @@ def print_demo_report(
         mvp = feature_maps.get("mvp_features", [])
         prod = feature_maps.get("production_features", [])
         fm_lines = []
-        if mvp:
-            fm_lines.append(f"{Colors.BOLD}🎯 MVP Features ({len(mvp)} items):{Colors.ENDC}")
-            for item in mvp[:5]:
-                name = item.get("name", "") if isinstance(item, dict) else getattr(item, "name", "")
-                prio = item.get("priority", "") if isinstance(item, dict) else getattr(item, "priority", "")
-                fm_lines.append(f"  [{prio}] {name}")
-            if len(mvp) > 5:
-                fm_lines.append(f"  ... and {len(mvp) - 5} more")
-        if prod:
-            fm_lines.append("")
-            fm_lines.append(f"{Colors.BOLD}🚀 Production Features ({len(prod)} items):{Colors.ENDC}")
-            for item in prod[:3]:
-                name = item.get("name", "") if isinstance(item, dict) else getattr(item, "name", "")
-                prio = item.get("priority", "") if isinstance(item, dict) else getattr(item, "priority", "")
-                fm_lines.append(f"  [{prio}] {name}")
-            if len(prod) > 3:
-                fm_lines.append(f"  ... and {len(prod) - 3} more")
+        _add_features_to_lines(mvp, fm_lines, "🎯 MVP Features")
+        _add_features_to_lines(prod, fm_lines, "🚀 Production Features", limit=3, prefix="")
         if fm_lines:
             print_panel("\n".join(fm_lines), title="📋 Feature Maps", color=Colors.HEADER, width=70)
             print("")
