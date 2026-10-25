@@ -56,6 +56,16 @@ class BaseApiClient:
     def _request(self, method: str, url: str, **kwargs: Any) -> dict[str, Any]:
         """Execute an HTTP request and return parsed JSON.
 
+        Calls ``_request_raw`` internally and handles empty bodies.
+        """
+        response = self._request_raw(method, url, **kwargs)
+        if not response.text:
+            return {}
+        return response.json()  # type: ignore[no-any-return]
+
+    def _request_raw(self, method: str, url: str, **kwargs: Any) -> requests.Response:
+        """Execute an HTTP request and return the raw Response object.
+
         Retries up to ``max_retries`` times on transient failures
         (5xx, Timeout, ConnectionError) with exponential backoff.
         Raises a domain-specific ``AppError`` subclass on permanent failure.
@@ -64,14 +74,10 @@ class BaseApiClient:
 
         for attempt in range(1, self._max_retries + 1):
             try:
-                response = requests.request(
-                    method, url, headers=self.headers, timeout=self._timeout, **kwargs
-                )
+                response = requests.request(method, url, headers=self.headers, timeout=self._timeout, **kwargs)
                 response.raise_for_status()
 
-                if not response.text:
-                    return {}
-                return response.json()  # type: ignore[no-any-return]
+                return response
 
             except requests.exceptions.HTTPError as e:
                 status = e.response.status_code if e.response is not None else 0
