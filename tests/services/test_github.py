@@ -58,6 +58,31 @@ def test_create_files_success(github_client: Any) -> None:
         assert mock_requests.request.call_count == 7
 
 
+
+def test_validate_token_scopes_success(github_client: Any) -> None:
+    """Should not raise if 'repo' scope is present."""
+    with patch("src.services.http_client.requests") as mock_requests:
+        mock_requests.request.return_value = make_ok_response({}, headers={"X-OAuth-Scopes": "repo, gist"})
+        # Should not raise
+        github_client.validate_token_scopes()
+
+def test_validate_token_scopes_missing_header(github_client: Any) -> None:
+    """Should raise ConfigurationError if scope header is missing (e.g., fine-grained PAT)."""
+    from src.utils.errors import ConfigurationError
+    with patch("src.services.http_client.requests") as mock_requests:
+        mock_requests.request.return_value = make_ok_response({}, headers={})
+        with pytest.raises(ConfigurationError, match="missing the required 'repo' scope"):
+            github_client.validate_token_scopes()
+
+def test_validate_token_scopes_missing_repo(github_client: Any) -> None:
+    """Should raise ConfigurationError if 'repo' scope is missing."""
+    from src.utils.errors import ConfigurationError
+    with patch("src.services.http_client.requests") as mock_requests:
+        mock_requests.request.return_value = make_ok_response({}, headers={"X-OAuth-Scopes": "read:user"})
+        with pytest.raises(ConfigurationError, match="missing the required 'repo' scope"):
+            github_client.validate_token_scopes()
+
+
 # --- Error Handling ---
 
 

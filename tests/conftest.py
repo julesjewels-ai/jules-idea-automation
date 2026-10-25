@@ -22,11 +22,12 @@ def make_http_error(status_code: int, body: dict[str, Any] | None = None) -> req
     return requests.exceptions.HTTPError(response=response)
 
 
-def make_ok_response(json_data: Any, status_code: int = 200) -> MagicMock:
+def make_ok_response(json_data: Any, status_code: int = 200, headers: dict[str, str] | None = None) -> MagicMock:
     """Factory for successful mock responses."""
     resp = MagicMock()
     resp.json.return_value = json_data
     resp.status_code = status_code
     resp.text = "{}"
     resp.raise_for_status.return_value = None
+    resp.headers = headers or {}
     return resp
