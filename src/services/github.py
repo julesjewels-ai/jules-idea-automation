@@ -50,7 +50,7 @@ class GitHubClient(BaseApiClient):
         if "repo" not in parsed_scopes:
             raise ConfigurationError(
                 "GitHub token is missing the required 'repo' scope",
-                tip="Check your token settings at https://github.com/settings/tokens and ensure the 'repo' scope is checked."
+                tip="Check your token settings at https://github.com/settings/tokens and ensure the 'repo' scope is checked.",
             )
 
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
