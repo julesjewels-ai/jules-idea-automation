@@ -100,7 +100,14 @@ def preflight_check_credentials() -> None:
         try:
             from src.services.github import GitHubClient
 
-            GitHubClient(token=github_token).get_user()
+            GitHubClient(token=github_token).validate_token_scopes()
+        except ConfigurationError as exc:
+            logger.debug("GitHub scope validation failed: %s", exc)
+            # Use the specific message from validate_token_scopes
+            msg = f"{exc.args[0]}"
+            if exc.tip:
+                msg += f"\n  → {exc.tip}"
+            errors.append(msg)
         except Exception as exc:
             logger.debug("GitHub preflight failed: %s", exc)
             errors.append(
