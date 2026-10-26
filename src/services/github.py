@@ -42,6 +42,42 @@ class GitHubClient(BaseApiClient):
         """Gets information about the authenticated user."""
         return self._request("GET", f"{self.base_url}/user")
 
+    def validate_token_scopes(self) -> None:
+        """Validates that the provided GitHub token has the required 'repo' scope.
+
+        Raises
+        ------
+            ConfigurationError: If the token is invalid or missing the required scope.
+
+        """
+        import requests
+
+        try:
+            response = requests.get(
+                f"{self.base_url}/user",
+                headers=self.headers,
+                timeout=self._timeout,
+            )
+            response.raise_for_status()
+
+            scopes_header = response.headers.get("X-OAuth-Scopes", "")
+            scopes = [s.strip() for s in scopes_header.split(",") if s.strip()]
+
+            if "repo" not in scopes:
+                raise ConfigurationError(
+                    "GITHUB_TOKEN is missing the required 'repo' scope",
+                    tip=f"Your token currently has scopes: {', '.join(scopes) or 'none'}.\n"
+                    "Regenerate it at https://github.com/settings/tokens with the 'repo' scope checked.",
+                )
+
+        except requests.exceptions.RequestException as exc:
+            # We let the existing preflight check handle the invalid token case
+            # or wrap it if it's during runtime.
+            raise ConfigurationError(
+                "Failed to validate GITHUB_TOKEN scopes",
+                tip="Check your network connection and ensure your token is valid.",
+            ) from exc
+
     def create_repo(self, name: str, description: str, private: bool = True) -> dict[str, Any]:
         """Creates a new repository."""
         payload = {
