@@ -1,8 +1,10 @@
-import builtins
-import pytest
 from typing import Any
+
+import pytest
 from pytest_mock import MockerFixture
+
 from src.utils.reporter import print_demo_report
+
 
 @pytest.fixture
 def mock_context() -> dict[str, Any]:
@@ -14,35 +16,32 @@ def mock_context() -> dict[str, Any]:
         "scaffold": {
             "files": [{"path": "main.py", "description": "Entry point"}, "README.md"],
             "requirements": ["pytest", "requests"],
-            "run_command": "python main.py"
+            "run_command": "python main.py",
         },
         "feature_maps": {
             "mvp_features": [{"name": "Core Feature", "priority": "High"}],
-            "production_features": [{"name": "Auth", "priority": "Medium"}]
-        }
+            "production_features": [{"name": "Auth", "priority": "Medium"}],
+        },
     }
 
-@pytest.mark.parametrize("scenario, updates, expected", [
-    # Happy Path: All data is present
-    ("happy_path", {}, None),
 
-    # Edge Case: Missing optional parts (e.g. no feature maps, no reqs/run_cmd)
-    ("edge_case", {
-        "feature_maps": None,
-        "scaffold": {"files": []}
-    }, None),
-
-    # Error State: Bad type for scaffold causing AttributeError when .get is called
-    ("error_state", {
-        "scaffold": None
-    }, AttributeError),
-])
+@pytest.mark.parametrize(
+    "scenario, updates, expected",
+    [
+        # Happy Path: All data is present
+        ("happy_path", {}, None),
+        # Edge Case: Missing optional parts (e.g. no feature maps, no reqs/run_cmd)
+        ("edge_case", {"feature_maps": None, "scaffold": {"files": []}}, None),
+        # Error State: Bad type for scaffold causing AttributeError when .get is called
+        ("error_state", {"scaffold": None}, AttributeError),
+    ],
+)
 def test_print_demo_report_behavior(
     mocker: MockerFixture,
     mock_context: dict[str, Any],
     scenario: str,
     updates: dict[str, Any],
-    expected: type[Exception] | None
+    expected: type[Exception] | None,
 ) -> None:
     # 1. Setup Mocks (Namespace Verified)
     # The file uses `print_panel(...)` (imported internally) and `print(...)` (built-in)

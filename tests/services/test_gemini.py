@@ -92,7 +92,6 @@ def test_generate_idea_api_error(client: Any) -> None:
 def test_generate_idea_api_error_503_fallback(client: Any) -> None:
     """Test that a 503 error falls back to the second model, which also fails."""
 
-
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
     client.client.models.generate_content.side_effect = mock_error
 
@@ -101,30 +100,16 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
 
     assert "Gemini API Error" in str(excinfo.value)
     assert excinfo.value.tip is not None and "currently overloaded" in excinfo.value.tip
-    assert client.client.models.generate_content.call_count == 2
+    assert client.client.models.generate_content.call_count == 1
 
 
 def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
-    """Test that a 503 error falls back to the second model which succeeds."""
-
-
+    """Test that a 503 error falls back (removed fallback, just fails)."""
     api_error = MockAPIError("503 UNAVAILABLE", 503)
-
-    mock_success_response = MagicMock()
-    mock_success_response.text = json.dumps(
-        {"title": "Fallback App", "description": "App", "slug": "fallback", "tech_stack": [], "features": []}
-    )
-
-    client.client.models.generate_content.side_effect = [api_error, mock_success_response]
-
-    result = client.generate_idea()
-
-    assert result["title"] == "Fallback App"
-    assert client.client.models.generate_content.call_count == 2
-
-    calls = client.client.models.generate_content.call_args_list
-    assert calls[0].kwargs["model"] == "gemini-2.5-pro"
-    assert calls[1].kwargs["model"] == "gemini-2.5-flash"
+    client.client.models.generate_content.side_effect = api_error
+    with pytest.raises(GenerationError):
+        client.generate_idea()
+    assert client.client.models.generate_content.call_count == 1
 
 
 def test_extract_idea_from_text_success(client: Any) -> None:
