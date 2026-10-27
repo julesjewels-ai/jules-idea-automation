@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -37,6 +39,43 @@ class GitHubClient(BaseApiClient):
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
         )
+
+    def validate_token_scope(self) -> None:
+        """Verifies the GitHub token has the required 'repo' scope.
+
+        Raises
+        ------
+            ConfigurationError: If the token is missing the 'repo' scope.
+
+        """
+        # Make a direct request using requests to access headers since
+        # self._request strips headers and returns parsed JSON.
+
+        url = f"{self.base_url}/user"
+        try:
+            response = requests.get(url, headers=self.headers, timeout=self._timeout)
+            response.raise_for_status()
+
+            scopes_header = response.headers.get("X-OAuth-Scopes", "")
+            scopes = [s.strip() for s in scopes_header.split(",") if s.strip()]
+
+            if "repo" not in scopes:
+                raise ConfigurationError(
+                    "GITHUB_TOKEN is missing required 'repo' scope",
+                    tip="Regenerate your token at https://github.com/settings/tokens with the 'repo' scope checked.",
+                )
+        except requests.exceptions.HTTPError as e:
+            # Let the standard error handling catch API issues (like 401 Unauthorized)
+            status = e.response.status_code if e.response is not None else 0
+            if status == 401:
+                raise ConfigurationError(
+                    "GITHUB_TOKEN is set but invalid or expired", tip="Regenerate at https://github.com/settings/tokens"
+                )
+
+            tip = self._handle_http_error(e)
+            raise GitHubApiError(f"GitHub API Error: {e}", tip=tip)
+        except requests.exceptions.RequestException as e:
+            raise GitHubApiError(f"Network error: {e}", tip="Check your internet connection.")
 
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""
