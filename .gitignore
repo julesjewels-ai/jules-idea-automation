@@ -64,3 +64,4 @@ env/
 *.mov
 *.mkv
 *.webm
+.coverage
