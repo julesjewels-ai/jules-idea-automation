@@ -1,13 +1,13 @@
 """Tests for GitHubClient."""
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
 
 from src.services.github import GitHubClient
-from src.utils.errors import GitHubApiError
+from src.utils.errors import ConfigurationError, GitHubApiError
 from tests.conftest import make_http_error, make_ok_response
 
 
@@ -121,8 +121,9 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
@@ -130,3 +131,68 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
 
+
+def test_validate_token_scope_success(github_client: Any) -> None:
+    """Valid token with 'repo' scope should not raise an error."""
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.headers = {"X-OAuth-Scopes": "repo, workflow"}
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        github_client.validate_token_scope()
+
+
+def test_validate_token_scope_missing_repo(github_client: Any) -> None:
+    """Token missing 'repo' scope should raise ConfigurationError."""
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.headers = {"X-OAuth-Scopes": "workflow, read:org"}
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        with pytest.raises(ConfigurationError, match="missing the required 'repo' scope") as exc_info:
+            github_client.validate_token_scope()
+
+        assert "Regenerate your token with 'repo' scope" in (exc_info.value.tip or "")
+
+
+def test_validate_token_scope_invalid_token(github_client: Any) -> None:
+    """Invalid token (401) should raise ConfigurationError with friendly message."""
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+
+        # Requests HTTPError is raised when raise_for_status() is called
+        http_error = requests.exceptions.HTTPError(response=mock_response)
+        mock_response.raise_for_status.side_effect = http_error
+
+        mock_get.return_value = mock_response
+
+        with pytest.raises(ConfigurationError, match="GitHub API Error") as exc_info:
+            github_client.validate_token_scope()
+
+        assert "invalid or expired" in (exc_info.value.tip or "")
+
+
+@patch("time.sleep", return_value=None)
+def test_validate_token_scope_network_error(mock_sleep: MagicMock, github_client: Any) -> None:
+    """Network errors should be caught and raised as GitHubApiError."""
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_get.side_effect = requests.exceptions.ConnectionError("DNS failed")
+
+        with pytest.raises(GitHubApiError, match="after 3 attempts") as exc_info:
+            github_client.validate_token_scope()
+
+        assert "Check your internet connection" in (exc_info.value.tip or "")
+
+
+def test_validate_token_scope_fine_grained_pat(github_client: Any) -> None:
+    """Fine-grained PATs do not return X-OAuth-Scopes and should not raise an error."""
+    with patch("src.services.github.requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.headers = {}
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        github_client.validate_token_scope()

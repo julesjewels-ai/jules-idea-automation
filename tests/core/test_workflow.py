@@ -33,15 +33,21 @@ def _make_workflow(
     methods (e.g. via ``side_effect``) on their own mock before passing it.
     """
     gh = github if github is not None else MagicMock()
+    if isinstance(gh.get_user.return_value, MagicMock):
+        gh.get_user.return_value = {"login": "testuser"}
     gm = gemini if gemini is not None else MagicMock()
+    if isinstance(gm.generate_project_scaffold.return_value, MagicMock):
+        gm.generate_project_scaffold.return_value = {"files": []}
     jl = jules if jules is not None else MagicMock()
+    if isinstance(jl.create_session.return_value, MagicMock):
+        jl.create_session.return_value = {"id": "session-123", "url": "https://jules.google.com/sessions/session-123"}
 
     # Always set baseline defaults — callers override via side_effect
-    if gh.get_user.return_value is gh.get_user.default_return_value:
+    if isinstance(gh.get_user.return_value, MagicMock):
         gh.get_user.return_value = {"login": "testuser"}
-    if gh.create_repo.return_value is gh.create_repo.default_return_value:
+    if isinstance(gh.create_repo.return_value, MagicMock):
         gh.create_repo.return_value = {}
-    if gh.create_file.return_value is gh.create_file.default_return_value:
+    if isinstance(gh.create_file.return_value, MagicMock):
         gh.create_file.return_value = {}
     if gh.create_files.return_value is gh.create_files.default_return_value:
         gh.create_files.return_value = {"files_created": 3}
