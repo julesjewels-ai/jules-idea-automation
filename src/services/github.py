@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -37,6 +39,55 @@ class GitHubClient(BaseApiClient):
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
         )
+
+    def validate_token_scope(self) -> None:
+        """Validates that the token has the required scopes (e.g. 'repo')."""
+        import time
+
+        last_exception = None
+        for attempt in range(1, self._max_retries + 1):
+            try:
+                # We bypass _request to get access to headers but add our own retry loop
+                response = requests.get(f"{self.base_url}/user", headers=self.headers, timeout=self._timeout)
+                response.raise_for_status()
+
+                scopes_header = response.headers.get("X-OAuth-Scopes")
+                if scopes_header is not None:
+                    scopes = [s.strip() for s in scopes_header.split(",")]
+                    if "repo" not in scopes:
+                        raise ConfigurationError(
+                            "GITHUB_TOKEN is missing the required 'repo' scope",
+                            tip="Regenerate your token with 'repo' scope at https://github.com/settings/tokens and update your .env file.",
+                        )
+                return
+            except requests.exceptions.HTTPError as e:
+                status = e.response.status_code if e.response is not None else 0
+                if status in (401, 403):
+                    tip = self._status_tips.get(status, "Your GitHub token is invalid or lacks permissions.")
+                    raise ConfigurationError(f"GitHub API Error: {e}", tip=tip)
+
+                # Transient error
+                if status >= 500:
+                    last_exception = e
+                    if attempt < self._max_retries:
+                        time.sleep(self._retry_base_delay * (2 ** (attempt - 1)))
+                    continue
+
+                raise GitHubApiError(f"GitHub API Error: {e}")
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                last_exception = e
+                if attempt < self._max_retries:
+                    time.sleep(self._retry_base_delay * (2 ** (attempt - 1)))
+                continue
+            except requests.exceptions.RequestException as e:
+                raise GitHubApiError(f"Network error: {e}", tip="Check your internet connection.")
+
+        # If we exhausted retries
+        if last_exception:
+            raise GitHubApiError(
+                f"GitHub API Error after {self._max_retries} attempts: {last_exception}",
+                tip="Check your internet connection.",
+            )
 
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""
