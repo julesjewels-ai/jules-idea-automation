@@ -1,7 +1,10 @@
+from typing import Any
+
 import pytest
 from pytest_mock import MockerFixture
-from typing import Any
+
 from src.utils.reporter import print_demo_report
+
 
 @pytest.fixture
 def mock_context() -> dict[str, Any]:
@@ -10,34 +13,38 @@ def mock_context() -> dict[str, Any]:
         "scaffold": {
             "files": [
                 {"path": "src/main.py", "description": "Main entry point"},
-                {"path": "README.md", "description": "Documentation"}
+                {"path": "README.md", "description": "Documentation"},
             ],
             "requirements": ["pytest", "pydantic"],
-            "run_command": "python src/main.py"
+            "run_command": "python src/main.py",
         },
         "feature_maps": {
-            "mvp_features": [
-                {"name": "Feature 1", "priority": "High"},
-                {"name": "Feature 2", "priority": "Medium"}
-            ],
-            "production_features": [
-                {"name": "Prod Feature 1", "priority": "Low"}
-            ]
-        }
+            "mvp_features": [{"name": "Feature 1", "priority": "High"}, {"name": "Feature 2", "priority": "Medium"}],
+            "production_features": [{"name": "Prod Feature 1", "priority": "Low"}],
+        },
     }
 
-@pytest.mark.parametrize("idea_data_override, scaffold_override, feature_maps_override, expected", [
-    (None, None, None, None),  # Happy Path (uses mock_context defaults)
-    ({}, {}, {}, None),        # Edge Case (empty dictionaries, no files, no requirements, no feature_maps items)
-    (None, None, ValueError, AttributeError), # Error State (invalid type for feature_maps causing error during .get())
-])
+
+@pytest.mark.parametrize(
+    "idea_data_override, scaffold_override, feature_maps_override, expected",
+    [
+        (None, None, None, None),  # Happy Path (uses mock_context defaults)
+        ({}, {}, {}, None),  # Edge Case (empty dictionaries, no files, no requirements, no feature_maps items)
+        (
+            None,
+            None,
+            ValueError,
+            AttributeError,
+        ),  # Error State (invalid type for feature_maps causing error during .get())
+    ],
+)
 def test_print_demo_report_behavior(
     mocker: MockerFixture,
     mock_context: dict[str, Any],
     idea_data_override: Any,
     scaffold_override: Any,
     feature_maps_override: Any,
-    expected: type[Exception] | None
+    expected: type[Exception] | None,
 ) -> None:
     # 1. Setup Mocks (Namespace Verified)
     mock_print_panel = mocker.patch("src.utils.reporter.print_panel", autospec=True)
