@@ -1,7 +1,7 @@
 """Tests for GitHubClient."""
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -121,8 +121,9 @@ def test_request_timeout_raises_github_api_error(github_client: Any) -> None:
 
 def test_request_network_error_raises_github_api_error(github_client: Any) -> None:
     """ConnectionError should be retried and then surface as GitHubApiError."""
-    with patch("src.services.http_client.requests") as mock_requests, patch(
-        "src.services.http_client.time.sleep", return_value=None
+    with (
+        patch("src.services.http_client.requests") as mock_requests,
+        patch("src.services.http_client.time.sleep", return_value=None),
     ):
         mock_requests.request.side_effect = requests.exceptions.ConnectionError("DNS resolution failed")
         mock_requests.exceptions = requests.exceptions
@@ -130,3 +131,37 @@ def test_request_network_error_raises_github_api_error(github_client: Any) -> No
         with pytest.raises(GitHubApiError, match="connection failed after 3 attempts"):
             github_client.get_user()
 
+
+def test_validate_token_scope_missing_header(github_client: Any) -> None:
+    """Fine-grained tokens or GitHub Apps might not return the header, which is fine."""
+    with patch("src.services.github.requests") as mock_requests:
+        mock_response = MagicMock()
+        mock_response.headers = {}
+        mock_requests.get.return_value = mock_response
+
+        # Should not raise ConfigurationError
+        github_client.validate_token_scope()
+
+
+def test_validate_token_scope_missing_repo_scope(github_client: Any) -> None:
+    """If header is present but missing 'repo', raise ConfigurationError."""
+    from src.utils.errors import ConfigurationError
+
+    with patch("src.services.github.requests") as mock_requests:
+        mock_response = MagicMock()
+        mock_response.headers = {"X-OAuth-Scopes": "read:user, user:email"}
+        mock_requests.get.return_value = mock_response
+
+        with pytest.raises(ConfigurationError, match="missing the 'repo' scope"):
+            github_client.validate_token_scope()
+
+
+def test_validate_token_scope_valid_repo_scope(github_client: Any) -> None:
+    """If header is present and includes 'repo', it should pass."""
+    with patch("src.services.github.requests") as mock_requests:
+        mock_response = MagicMock()
+        mock_response.headers = {"X-OAuth-Scopes": "repo, user"}
+        mock_requests.get.return_value = mock_response
+
+        # Should not raise ConfigurationError
+        github_client.validate_token_scope()

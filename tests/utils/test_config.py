@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -106,3 +107,42 @@ class TestValidateEnvKeys:
             assert "github.com/settings/tokens" in exc_info.value.tip
             assert "jules.google.com" in exc_info.value.tip
             assert "aistudio.google.com" in exc_info.value.tip
+
+
+class TestPreflightCheckCredentials:
+    """Tests for preflight_check_credentials()."""
+
+    @patch("src.services.github.GitHubClient.validate_token_scope")
+    @patch("src.services.jules.JulesClient.list_sources")
+    def test_preflight_check_credentials_success(self, mock_list_sources: Any, mock_validate_scope: Any) -> None:
+        from src.utils.config import preflight_check_credentials
+
+        env = _env_with(GITHUB_TOKEN="ghp_test", JULES_API_KEY="jk_test")
+        with patch.dict(os.environ, env, clear=True):
+            preflight_check_credentials()
+
+        mock_validate_scope.assert_called_once()
+        mock_list_sources.assert_called_once()
+
+    @patch("src.services.github.GitHubClient.validate_token_scope")
+    def test_preflight_check_credentials_github_scope_error(self, mock_validate_scope: Any) -> None:
+        from src.utils.config import preflight_check_credentials
+
+        mock_validate_scope.side_effect = ConfigurationError("GitHub token is missing the 'repo' scope", tip="tip")
+
+        env = _env_with(GITHUB_TOKEN="ghp_test")
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ConfigurationError, match="Credential check failed") as exc_info:
+                preflight_check_credentials()
+            assert "tip" in str(exc_info.value)
+
+    @patch("src.services.github.GitHubClient.validate_token_scope")
+    def test_preflight_check_credentials_github_general_error(self, mock_validate_scope: Any) -> None:
+        from src.utils.config import preflight_check_credentials
+
+        mock_validate_scope.side_effect = Exception("General error")
+
+        env = _env_with(GITHUB_TOKEN="ghp_test")
+        with patch.dict(os.environ, env, clear=True):
+            with pytest.raises(ConfigurationError, match="GITHUB_TOKEN is set but invalid or expired"):
+                preflight_check_credentials()
