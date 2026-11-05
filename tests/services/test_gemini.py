@@ -16,9 +16,13 @@ class MockAPIError(errors.APIError):  # type: ignore[misc]
     """Reusable mock for google.genai APIError (used across several tests)."""
 
     def __init__(self, message: str, code: int):
-        self.message = message
+        self._mock_message = message
         self.code = code
-        super(Exception, self).__init__(message)  # type: ignore[misc]
+        mock_response = MagicMock()
+        mock_response.status_code = code
+        mock_response.json.return_value = {"error": {"message": self._mock_message, "status": "UNAVAILABLE"}}
+        super().__init__(code, mock_response)  # type: ignore[misc]
+        self.message = message
 
     def __str__(self) -> str:
         return self.message
@@ -92,7 +96,6 @@ def test_generate_idea_api_error(client: Any) -> None:
 def test_generate_idea_api_error_503_fallback(client: Any) -> None:
     """Test that a 503 error falls back to the second model, which also fails."""
 
-
     mock_error = MockAPIError("503 UNAVAILABLE", 503)
     client.client.models.generate_content.side_effect = mock_error
 
@@ -106,7 +109,6 @@ def test_generate_idea_api_error_503_fallback(client: Any) -> None:
 
 def test_generate_idea_api_error_503_fallback_success(client: Any) -> None:
     """Test that a 503 error falls back to the second model which succeeds."""
-
 
     api_error = MockAPIError("503 UNAVAILABLE", 503)
 
