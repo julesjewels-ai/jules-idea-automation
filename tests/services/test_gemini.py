@@ -16,9 +16,13 @@ class MockAPIError(errors.APIError):  # type: ignore[misc]
     """Reusable mock for google.genai APIError (used across several tests)."""
 
     def __init__(self, message: str, code: int):
-        self.message = message
+        self._mock_message = message
         self.code = code
-        super(Exception, self).__init__(message)  # type: ignore[misc]
+        mock_response = MagicMock()
+        mock_response.status_code = code
+        mock_response.json.return_value = {"error": {"message": self._mock_message, "status": "UNAVAILABLE"}}
+        super().__init__(code, mock_response)  # type: ignore[misc]
+        self.message = message
 
     def __str__(self) -> str:
         return self.message
