@@ -6,6 +6,8 @@ import base64
 import os
 from typing import Any
 
+import requests
+
 from src.services.http_client import BaseApiClient
 from src.utils.errors import ConfigurationError, GitHubApiError
 
@@ -37,6 +39,39 @@ class GitHubClient(BaseApiClient):
             service_name="GitHub",
             status_tips=_STATUS_TIPS,
         )
+
+    def validate_token_scopes(self) -> None:
+        """Verifies the GitHub token has the required 'repo' scope.
+
+        Raises
+        ------
+            ConfigurationError: If the token is invalid, expired, or missing the 'repo' scope.
+
+        """
+        try:
+            response = requests.get(
+                f"{self.base_url}/user",
+                headers=self.headers,
+                timeout=self._timeout,
+            )
+            response.raise_for_status()
+
+            scopes_header = response.headers.get("X-OAuth-Scopes")
+            if scopes_header is not None:
+                scopes = [s.strip() for s in scopes_header.split(",")]
+                if "repo" not in scopes:
+                    raise ConfigurationError(
+                        "GITHUB_TOKEN is missing the required 'repo' scope.",
+                        tip="Regenerate your token at https://github.com/settings/tokens with the 'repo' scope selected.",
+                    )
+        except requests.exceptions.HTTPError as e:
+            status = e.response.status_code if e.response is not None else 0
+            if status in (401, 403):
+                tip = self._status_tips.get(status, "Check your GitHub token.")
+                raise ConfigurationError(f"GitHub API Error: {e}", tip=tip)
+            raise ConfigurationError(f"GitHub API Error: {e}")
+        except requests.exceptions.RequestException as e:
+            raise ConfigurationError(f"Network error while validating GitHub token: {e}")
 
     def get_user(self) -> dict[str, Any]:
         """Gets information about the authenticated user."""
