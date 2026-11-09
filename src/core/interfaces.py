@@ -71,3 +71,36 @@ class CacheProvider(Protocol):
 
         """
         ...
+
+
+class ReportGenerator(Protocol):
+    """Protocol for report generation."""
+
+    def generate(self, event: Any) -> str:
+        """Generate a report from an event.
+
+        Args:
+        ----
+            event: The domain event to report on.
+
+        Returns:
+        -------
+            The generated report as a string.
+
+        """
+        ...
+
+
+class ReportRepository(Protocol):
+    """Protocol for report storage."""
+
+    def save_report(self, slug: str, content: str) -> None:
+        """Save a generated report.
+
+        Args:
+        ----
+            slug: The project slug.
+            content: The report content.
+
+        """
+        ...
